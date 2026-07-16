@@ -227,7 +227,7 @@ export default function FttaPage({
             <PlusCircle className="w-4 h-4" /> Cadastrar Novo Edifício em {activeTab === "lajeado" ? "Lajeado" : "Estrela"}
           </button>
         ) : (
-          <form onSubmit={handleSaveSite} className="card-modern border border-slate-100 rounded-2xl p-4 space-y-4 shadow-sm animate-fade-in font-sans">
+          <form onSubmit={handleSaveSite} className="card-modern border border-slate-100 rounded-2xl p-4 space-y-4 shadow-sm  font-sans">
             <h3 className="text-xs font-extrabold text-slate-800 uppercase pl-0.5">Novo Condomínio</h3>
 
             <div className="space-y-3 text-xs">
@@ -320,7 +320,7 @@ export default function FttaPage({
             <PlusCircle className="w-4 h-4" /> Solicitar Estudo de Viabilidade Predial
           </button>
         ) : (
-          <form onSubmit={handleSaveProspec} className="card-modern border border-slate-100 rounded-2xl p-4 space-y-4 shadow-sm animate-fade-in font-sans">
+          <form onSubmit={handleSaveProspec} className="card-modern border border-slate-100 rounded-2xl p-4 space-y-4 shadow-sm  font-sans">
             <h3 className="text-xs font-extrabold text-slate-800 uppercase pl-0.5">Nova Prospecção do Field</h3>
 
             <div className="space-y-3 text-xs">
@@ -419,7 +419,7 @@ export default function FttaPage({
             filteredProspecs.map(p => {
               const prov = p.adquado || "Verificando";
               return (
-                <div key={p._linha} className="card-modern border border-slate-300 rounded-2xl p-4 space-y-3 shadow-md select-none font-sans animate-fade-in -xl hover:border-slate-400 transition duration-200">
+                <div key={p._linha} className="card-modern border border-slate-300 rounded-2xl p-4 space-y-3 shadow-md select-none font-sans  -xl hover:border-slate-400 transition duration-200">
                   <div className="flex justify-between items-start gap-3">
                     <div>
                       <h3 className="font-extrabold text-slate-900 text-xs. leading-tight">{p.nome}</h3>

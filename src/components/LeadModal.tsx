@@ -219,7 +219,7 @@ export default function LeadModal({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[950] flex items-center justify-center font-sans tracking-tight" onClick={onClose}>
-      <div className="card-modern w-full h-full md:w-[98vw] md:max-w-7xl md:h-[98vh] md:rounded-3xl p-4 md:p-8 space-y-6 overflow-y-auto animate-fade-in select-none shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div className="card-modern w-full h-full md:w-[98vw] md:max-w-7xl md:h-[98vh] md:rounded-3xl p-4 md:p-8 space-y-6 overflow-y-auto  select-none shadow-2xl" onClick={e => e.stopPropagation()}>
         
         {/* Header toolbar */}
         <div className="flex justify-between items-start gap-4">
@@ -528,7 +528,7 @@ export default function LeadModal({
                )}
 
                {approachText && (
-                 <div className="mt-4 p-4 card-modern border border-sky-150 rounded-xl whitespace-pre-wrap text-[12px] text-slate-800 shadow-sm leading-relaxed border-l-4 border-l-sky-600 animate-fade-in space-y-3 flex-1 overflow-y-auto">
+                 <div className="mt-4 p-4 card-modern border border-sky-150 rounded-xl whitespace-pre-wrap text-[12px] text-slate-800 shadow-sm leading-relaxed border-l-4 border-l-sky-600  space-y-3 flex-1 overflow-y-auto">
                    <div className="font-sans leading-relaxed text-[11.5px] select-all">{approachText}</div>
                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                      <button

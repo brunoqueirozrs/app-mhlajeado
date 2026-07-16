@@ -82,7 +82,7 @@ export default function ObjectionsPage({
         )}
 
         {aiAnswer && (
-          <div id="obj-ai-response" className="p-4 bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 text-sky-950 font-medium font-sans text-xs rounded-xl leading-relaxed whitespace-pre-wrap animate-fade-in border-l-4 border-l-sky-500 shadow-sm">
+          <div id="obj-ai-response" className="p-4 bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 text-sky-950 font-medium font-sans text-xs rounded-xl leading-relaxed whitespace-pre-wrap  border-l-4 border-l-sky-500 shadow-sm">
             <div className="text-[9px] font-black uppercase text-sky-600 mb-1 flex items-center gap-1"><Lightbulb className="w-3.5 h-3.5" /> Argumento Recomendado:</div>
             {aiAnswer}
           </div>

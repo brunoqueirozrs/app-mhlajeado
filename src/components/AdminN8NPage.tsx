@@ -206,7 +206,7 @@ export const AdminN8NPage = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 w-full animate-fade-in pb-32 lg:pb-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 w-full  pb-32 lg:pb-8">
       {/* HEADER SECTION */}
       <div className="bg-gradient-to-br from-slate-900 via-sky-950 to-blue-900 rounded-3xl p-6 sm:p-8 shadow-xl text-white relative overflow-hidden">
          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-3xl opacity-10 pointer-events-none transform translate-x-1/3 -translate-y-1/3"></div>

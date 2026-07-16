@@ -252,7 +252,7 @@ export default function LeadForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-xs animate-fade-in">
+          <div className="grid grid-cols-2 gap-3 text-xs ">
             <div className="space-y-1">
               <label className="text-[10px] font-extrabold uppercase text-slate-400">Cidade</label>
               <select

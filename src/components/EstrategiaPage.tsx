@@ -688,7 +688,7 @@ function PdcaManager() {
 
 function UnifiedReportManager() {
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 ">
       <div className="text-center space-y-4 py-8">
         <div className="w-16 h-16 bg-blue-100 text-blue-900 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
           <FileText className="w-8 h-8" />
@@ -1519,7 +1519,7 @@ export default function EstrategiaPage({ loggedUser }: { loggedUser: string }) {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-[1400px] mx-auto space-y-6 md:space-y-8 animate-fade-in pb-24 md:pb-8">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto space-y-6 md:space-y-8  pb-24 md:pb-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shadow-sm">

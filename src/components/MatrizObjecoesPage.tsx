@@ -211,7 +211,7 @@ export default function MatrizObjecoesPage({ loggedUser, isAdmin }: { loggedUser
               </form>
 
               {aiResponse && (
-                <div className="mt-6 animate-fade-in">
+                <div className="mt-6 ">
                   <div className="bg-slate-800/80 border border-slate-700 p-4 rounded-xl text-sm leading-relaxed text-slate-200 max-h-[300px] overflow-y-auto shadow-inner">
                     <div className="markdown-body text-slate-200 text-xs sm:text-sm">
                       <ReactMarkdown>{aiResponse}</ReactMarkdown>
@@ -274,7 +274,7 @@ export default function MatrizObjecoesPage({ loggedUser, isAdmin }: { loggedUser
             </div>
 
             {isSuggesting && (
-              <form onSubmit={handleSuggestObjection} className="mb-6 bg-slate-50 border border-slate-200 rounded-2xl p-4 animate-fade-in relative">
+              <form onSubmit={handleSuggestObjection} className="mb-6 bg-slate-50 border border-slate-200 rounded-2xl p-4  relative">
                 <button 
                   type="button" 
                   onClick={() => setIsSuggesting(false)}

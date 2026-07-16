@@ -34,9 +34,9 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm ">
       <div 
-        className="card-modern border border-slate-200 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up"
+        className="card-modern border border-slate-200 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden "
         role="dialog"
         aria-modal="true"
       >

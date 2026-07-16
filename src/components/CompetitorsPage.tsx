@@ -257,7 +257,7 @@ export default function CompetitorsPage({
 
       {/* Admin inclusion form panel */}
       {isAdmin && isFormOpen && (
-        <form onSubmit={handleSaveSubmit} className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 text-white space-y-4 shadow-xl animate-fade-in font-sans">
+        <form onSubmit={handleSaveSubmit} className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 text-white space-y-4 shadow-xl  font-sans">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-sky-400" />
@@ -463,7 +463,7 @@ export default function CompetitorsPage({
 
       {/* Selected competitor specification details */}
       {selectedComp ? (
-        <div id="comp-detailed-card" className="card-modern border border-slate-200 rounded-2xl p-5 shadow-lg space-y-4 animate-fade-in font-sans">
+        <div id="comp-detailed-card" className="card-modern border border-slate-200 rounded-2xl p-5 shadow-lg space-y-4  font-sans">
           
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -723,7 +723,7 @@ export default function CompetitorsPage({
             )}
 
             {aiAnswer && (
-              <div id="comp-ai-response-box" className="p-3.5 bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 text-sky-950 font-medium font-sans text-xs rounded-xl leading-relaxed whitespace-pre-wrap animate-fade-in shadow-sm pl-4 pr-3 py-3 border-l-4 border-l-sky-500">
+              <div id="comp-ai-response-box" className="p-3.5 bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 text-sky-950 font-medium font-sans text-xs rounded-xl leading-relaxed whitespace-pre-wrap  shadow-sm pl-4 pr-3 py-3 border-l-4 border-l-sky-500">
                 {aiAnswer}
               </div>
             )}

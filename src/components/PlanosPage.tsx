@@ -244,7 +244,7 @@ export default function PlanosPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8 animate-fade-in">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8 ">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shadow-sm shrink-0">
@@ -385,7 +385,7 @@ export default function PlanosPage() {
 
       {/* Delivery Pitch Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 ">
           <div className="card-modern rounded-[24px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
               <div className="flex items-center gap-3">
@@ -450,7 +450,7 @@ export default function PlanosPage() {
                   </div>
 
                   {deliveryMethod === "gmail" && (
-                    <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 space-y-3 animate-fade-in">
+                    <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 space-y-3 ">
                       <div className="space-y-1">
                         <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider pl-1">E-mail do Destinatário</label>
                         <input

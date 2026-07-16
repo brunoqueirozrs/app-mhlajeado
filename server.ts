@@ -370,7 +370,9 @@ Você é o assistente de vendas da MHNET, empresa de internet fibra óptica (FTT
 Planos: 100Mbps a 1Gbps. Diferenciais: atendimento local humanizado, técnico no mesmo dia, sem fidelidade longa.
 Serviços: MHPlay (streaming), câmeras de segurança, telefone celular móvel, telefone fixo, IP fixo.
 Responda de forma direta, persuasiva, com excelente linguagem de vendas, objetiva e útil para colaboradores. Máximo 6 linhas. Use emojis regionais gaúchos ou de vendas de forma equilibrada.
-`;
+
+
+IMPORTANTE: RESPONDA SEMPRE E EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL (pt-BR). NEVER USE ENGLISH.`;
 
 // Persistent Storage setup (JSON files database)
 const DB_DIR = path.join(process.cwd(), "db_data");
@@ -559,7 +561,8 @@ const INITIAL_COBRANCAS = [
     telefone: "(51) 99344-9900",
     valor: 89.90,
     dataVencimento: "15/06/2026",
-    status: "Pendente",
+    
+        status: "Pendente",
     diasAtraso: 0,
     cidade: "Teutônia",
     plano: "MHNET Fibra 300Mbps",
@@ -2430,6 +2433,10 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
     const instalacaoIdx = headers.findIndex((h: string) => h.includes("data") || h.includes("instalação") || h.includes("instalacao"));
     const cpfIdx = headers.findIndex((h: string) => h.includes("cpf") || h.includes("cnpj"));
     const cidadeIdx = headers.findIndex((h: string) => h.includes("cidade") || h.includes("municipio"));
+    const cobranca1Idx = headers.findIndex((h: string) => h.includes("cobrança 1") || h.includes("cobranca 1"));
+    const cobranca2Idx = headers.findIndex((h: string) => h.includes("cobrança 2") || h.includes("cobranca 2"));
+    const cobranca3Idx = headers.findIndex((h: string) => h.includes("cobrança 3") || h.includes("cobranca 3"));
+
     const bairroIdx = headers.findIndex((h: string) => h.includes("bairro"));
     
     const clients = [];
@@ -2458,6 +2465,9 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
         rx_onu: row[11] || "",
         rx_olt: row[12] || "",
         status: "Pendente",
+        cobrancaMes1: cobranca1Idx >= 0 ? row[cobranca1Idx] : null,
+        cobrancaMes2: cobranca2Idx >= 0 ? row[cobranca2Idx] : null,
+        cobrancaMes3: cobranca3Idx >= 0 ? row[cobranca3Idx] : null,
         score: 0,
         dataConclusao: "",
         checklist: null,
@@ -2466,6 +2476,12 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
       
       if (posVendasData[id]) {
         Object.assign(clientObj, posVendasData[id]);
+      // Merge initial sheet data for these fields if not present in local state
+      if (!clientObj.checklist) clientObj.checklist = {};
+      if (!clientObj.checklist.cobrancaMes1 && clientObj.cobrancaMes1) clientObj.checklist.cobrancaMes1 = clientObj.cobrancaMes1;
+      if (!clientObj.checklist.cobrancaMes2 && clientObj.cobrancaMes2) clientObj.checklist.cobrancaMes2 = clientObj.cobrancaMes2;
+      if (!clientObj.checklist.cobrancaMes3 && clientObj.cobrancaMes3) clientObj.checklist.cobrancaMes3 = clientObj.cobrancaMes3;
+
       }
       
       clients.push(clientObj);
@@ -2487,7 +2503,54 @@ app.post("/api/pos-vendas/:id", (req, res) => {
   
   const wasNotConcluido = posVendasData[id].status !== "Concluído";
   Object.assign(posVendasData[id], updates);
+  
   writeJSONDb("posVendas.json", posVendasData);
+  
+  // Enviar para webhook e Apps Script para manter sincronizado o espelho do Fechamento
+  try {
+    const sheetName = id.split("-").slice(0, -1).join("-");
+    const rowIndex = id.split("-").pop();
+    
+    // Tentativa 1: Webhook N8N para atualizar a planilha se existir
+    const isTest = process.env.USE_N8N_TEST_POS_VENDA === "true";
+    let webhookUrl = isTest 
+      ? (process.env.N8N_TEST_POS_VENDA_WEBHOOK_URL || "http://localhost:5678/webhook-test/pos-venda") 
+      : (process.env.N8N_POS_VENDA_WEBHOOK_URL || "http://localhost:5678/webhook/pos-venda");
+      
+    if (webhookUrl) {
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_financeiro",
+          sheetName,
+          rowIndex,
+          nome: posVendasData[id].nome,
+          updates: updates.checklist
+        })
+      }).catch(e => console.error("Falha webhook posvenda sync:", e.message));
+    }
+
+    // Tentativa 2: Apps Script direto
+    if (process.env.APPS_SCRIPT_URL) {
+      fetch(process.env.APPS_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+        body: JSON.stringify({
+          route: "updateFechamentoRow",
+          payload: {
+            sheetName,
+            rowIndex,
+            nome: posVendasData[id].nome,
+            updates: updates.checklist
+          }
+        })
+      }).catch(e => console.error("Falha APPS_SCRIPT_URL posvenda sync:", e.message));
+    }
+  } catch (e) {
+    console.error("Erro ao sincronizar fechamento:", e);
+  }
+
 
   // If newly concluded, add to baseClients
   if (updates.status === "Concluído" && wasNotConcluido) {

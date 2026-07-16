@@ -105,7 +105,7 @@ export default function KaizenPage({ loggedUser }: Props) {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8 animate-fade-in">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8 ">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 rounded-[24px] p-6 shadow-xl relative overflow-hidden">
         {/* Abstract background decorative shapes */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
@@ -134,7 +134,7 @@ export default function KaizenPage({ loggedUser }: Props) {
       </div>
 
       {isAdding && (
-        <form onSubmit={handleAddItem} className="card-modern border border-slate-200 rounded-2xl p-6 shadow-sm animate-fade-in">
+        <form onSubmit={handleAddItem} className="card-modern border border-slate-200 rounded-2xl p-6 shadow-sm ">
           <h2 className="text-base font-extrabold text-slate-800 mb-4 flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-amber-500" />
             Sugerir Melhoria (Kaizen)

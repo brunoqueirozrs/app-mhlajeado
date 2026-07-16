@@ -75,7 +75,7 @@ export default function ChatModal({
         <div className="modal-handle w-12 h-1 bg-slate-200 rounded-full mx-auto mb-2" />
         
         {/* Header */}
-        <div className="flex justify-between items-center border-b border-b-slate-100 pb-3 flex-shrink-0 animate-fade-in pl-1 pr-1">
+        <div className="flex justify-between items-center border-b border-b-slate-100 pb-3 flex-shrink-0  pl-1 pr-1">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-sky-900 text-white flex items-center justify-center">
               <Bot className="w-4.5 h-4.5" />

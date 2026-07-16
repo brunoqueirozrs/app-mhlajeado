@@ -147,7 +147,7 @@ export default function CalculoMultaPage({ onBackToDashboard }: CalculoMultaPage
               </h2>
 
               {multaCalculada !== null ? (
-                <div className="w-full space-y-4 animate-fade-in my-6">
+                <div className="w-full space-y-4  my-6">
                   <div className="text-4xl md:text-5xl font-black font-mono text-slate-900 tracking-tighter">
                     R$ {multaCalculada > 0 ? multaCalculada.toFixed(2) : "0,00"}
                   </div>

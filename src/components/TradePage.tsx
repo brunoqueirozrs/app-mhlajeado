@@ -162,7 +162,7 @@ export default function TradePage({ loggedUser, isAdmin }: TradePageProps) {
   };
 
   const renderDashboard = () => (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 ">
       <div className="flex justify-between items-center card-modern p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h2 className="font-bold text-slate-800 flex items-center gap-2">
@@ -265,7 +265,7 @@ export default function TradePage({ loggedUser, isAdmin }: TradePageProps) {
   );
 
   const renderNovaAcao = () => (
-    <div className="max-w-3xl mx-auto card-modern border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm animate-fade-in">
+    <div className="max-w-3xl mx-auto card-modern border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm ">
       <div className="mb-6 pb-6 border-b border-slate-100">
         <h2 className="text-xl font-black text-slate-800">Registrar Nova Ação de Trade</h2>
         <p className="text-sm text-slate-500 mt-1">Preencha os dados da ativação externa para registrar a captação de leads.</p>
@@ -493,7 +493,7 @@ export default function TradePage({ loggedUser, isAdmin }: TradePageProps) {
   );
 
   const renderHistorico = () => (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 ">
       <div className="flex justify-between items-center card-modern p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h2 className="font-bold text-slate-800 flex items-center gap-2">

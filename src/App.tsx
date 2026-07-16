@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { 
   Bot, Wifi, WifiOff, RefreshCw, LogOut, Loader2, Award, ClipboardList, 
   MapPin, Users, HelpCircle, Activity, Info, CalendarDays, BookOpen, User, Lock, Sparkles, Coins, Download, Sliders, Link, Calculator, Lightbulb, UserCheck, Store, FileSpreadsheet, Zap
@@ -160,11 +159,11 @@ export default function App() {
       .then(res => res.json())
       .then(d => {
         if (d && d.status === "issues") {
-          if (d.missingKeys && d.missingKeys.length > 0) {
+          if (d.missingKeys && d.missingKeys.length> 0) {
             console.error("⚠️ Variáveis de ambiente obrigatórias ausentes no .env:", d.missingKeys);
             setMissingEnvKeys(d.missingKeys);
           }
-          if (d.invalidFormatKeys && d.invalidFormatKeys.length > 0) {
+          if (d.invalidFormatKeys && d.invalidFormatKeys.length> 0) {
             console.error("⚠️ Variáveis de ambiente com formato inválido no .env:", d.invalidFormatKeys);
             setInvalidEnvKeys(d.invalidFormatKeys);
           }
@@ -175,7 +174,7 @@ export default function App() {
     fetch("/api/vendors")
       .then(res => res.json())
       .then(d => {
-        if (d && d.vendors && d.vendors.length > 0) {
+        if (d && d.vendors && d.vendors.length> 0) {
           setRegisteredVendors(d.vendors);
           const combined = d.vendors.map((v: any) => v.nome);
           setAvailableVendors(combined);
@@ -335,8 +334,7 @@ export default function App() {
     } finally {
       setLoading(false);
       setIsSyncing(false);
-    }
-  };
+    ;
 
   const loadOfflineLocalStorageDataCache = () => {
     try {
@@ -348,14 +346,12 @@ export default function App() {
       if (cTasks) setTasks(JSON.parse(cTasks));
       if (cAbs) setAbsences(JSON.parse(cAbs));
       if (cCob) setCobrancas(JSON.parse(cCob));
-    } catch (e) {}
-  };
+    } catch (e) {;
 
   const saveOfflineCache = (key: string, data: any) => {
     try {
       localStorage.setItem(`cache_${key}`, JSON.stringify(data));
-    } catch (e) {}
-  };
+    } catch (e) {;
 
   useEffect(() => {
     if (loggedUser) {
@@ -368,7 +364,7 @@ export default function App() {
       
       return () => clearInterval(interval);
     }
-  }, [loggedUser]);
+    }, [loggedUser]);
 
   // Session Login workflow logic
   const processLoginAction = (cleanName: string) => {
@@ -419,12 +415,10 @@ export default function App() {
       if (result?.user) {
         const userName = result.user.displayName || result.user.email || "Usuário Vendedor";
         processLoginAction(userName);
-      }
-    } catch (e: any) {
+      } catch (e: any) {
       console.error(e);
       setLoginError("Erro ao autenticar com o Google. Tente novamente.");
     }
-  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -488,8 +482,7 @@ export default function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newLead)
         });
-      } catch (e) {}
-    } else {
+      } catch (e) { else {
       // Edit
       updatedLeads = leads.map(l => {
         if (l._linha === payload._linha) {
@@ -505,8 +498,7 @@ export default function App() {
          updatedLeads = updatedLeads.filter(l => l._linha !== payload._linha);
          if (payload.status === "Venda Fechada") {
            alert("Venda Fechada! Lead arquivado com sucesso.");
-         }
-      }
+         
       setLeads(updatedLeads);
       saveOfflineCache("leads", updatedLeads);
 
@@ -516,8 +508,7 @@ export default function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...payload, ultimaAtualizacao: `${todayStr} ${nowTimeStr}` })
         });
-      } catch (e) {}
-    }
+      } catch (e) {
     // Pull fresh
     fetchAllData();
   };
@@ -528,7 +519,7 @@ export default function App() {
       .filter(l => String(l._linha) !== String(rowId))
       .map(l => {
         const currentLinha = typeof l._linha === 'number' ? l._linha : parseInt(String(l._linha), 10);
-        if (currentLinha > deletedLinhaNum) {
+        if (currentLinha> deletedLinhaNum) {
           return { ...l, _linha: currentLinha - 1 };
         }
         return l;
@@ -552,8 +543,7 @@ export default function App() {
         body: JSON.stringify({ type: "site", data: ftItem })
       });
       fetchAllData();
-    } catch (e) {}
-  };
+    } catch (e) {;
 
   const handleSaveFttaProspKey = async (prosp: Omit<FttaProspeccao, "_linha">) => {
     try {
@@ -563,8 +553,7 @@ export default function App() {
         body: JSON.stringify({ type: "prospeccao", data: prosp })
       });
       fetchAllData();
-    } catch (e) {}
-  };
+    } catch (e) {;
 
   // 3. Tasks checklist actions callbacks
 
@@ -600,8 +589,7 @@ export default function App() {
           await createGoogleCalendarEvent(title, dateStr, timeStr);
         }
         await createGoogleTask(title, "Criada automaticamente pelo sistema", dateStr);
-      }
-    } catch (e) {
+       catch (e) {
       console.error("Error creating google task/event", e);
     }
 
@@ -614,8 +602,7 @@ export default function App() {
       const data = await resp.json();
       if (data.webhookStatus === 404 || data.webhookStatus === 500) {
         window.dispatchEvent(new CustomEvent("webhook-error"));
-      }
-    } catch (e) {}
+       catch (e) {}
     fetchAllData();
   };
 
@@ -678,8 +665,7 @@ export default function App() {
           token = result?.accessToken || null;
         } catch (e) {
           console.warn("Pop-up do Google bloqueado ou fechado", e);
-        }
-      }
+        
 
       if (token) {
         // Google Drive upload multipart form
@@ -720,8 +706,7 @@ export default function App() {
            driveLink = "https://drive.google.com/file/d/" + driveData.id;
         } else {
            console.warn("Google Drive upload failed:", await respUpload.text());
-        }
-      }
+        
     }
 
     const payload = {
@@ -764,8 +749,7 @@ export default function App() {
         body: JSON.stringify({ status })
       });
       fetchAllData();
-    } catch (e) {}
-  };
+    } catch (e) {;
 
   // 5. Portfolio base action registration calls
   const handleRegisterBaseAction = async (payload: Omit<BaseActionLog, "id" | "dataContato">) => {
@@ -833,8 +817,7 @@ export default function App() {
       if (d && d.vendors) {
         setRegisteredVendors(d.vendors);
         setAvailableVendors(d.vendors.map((v: any) => v.nome));
-      }
-    }
+      
   };
 
   const handleUpdateVendor = async (vendor: Vendor) => {
@@ -853,8 +836,7 @@ export default function App() {
       if (d && d.vendors) {
         setRegisteredVendors(d.vendors);
         setAvailableVendors(d.vendors.map((v: any) => v.nome));
-      }
-    }
+      
   };
 
   const handleDeleteVendor = async (id: string) => {
@@ -871,8 +853,7 @@ export default function App() {
       if (d && d.vendors) {
         setRegisteredVendors(d.vendors);
         setAvailableVendors(d.vendors.map((v: any) => v.nome));
-      }
-    }
+      
   };
 
   const handleBulkTransferLeads = async (fromSeller: string, toSeller: string) => {
@@ -907,8 +888,7 @@ export default function App() {
       setCompetitors(d.competitors || []);
     } else {
       throw new Error("Erro ao salvar concorrente no servidor.");
-    }
-  };
+    ;
 
   const handleDeleteCompetitor = async (id: string) => {
     const resp = await fetch(`/api/competitors/${id}`, {
@@ -919,8 +899,7 @@ export default function App() {
       setCompetitors(d.competitors || []);
     } else {
       throw new Error("Erro ao excluir concorrente do servidor.");
-    }
-  };
+    ;
 
   const handleSaveInstallation = async (inst: Installation) => {
     const resp = await fetch("/api/installations", {
@@ -934,13 +913,11 @@ export default function App() {
       
       if (d.webhookStatus === 404 || d.webhookStatus === 500) {
         window.dispatchEvent(new CustomEvent("webhook-error"));
-      }
-    } else {
+       else {
       let errorMessage = "Erro desconhecido";
       try { const d = await resp.json(); errorMessage = d.message || errorMessage; } catch(e) { errorMessage = `Erro do servidor (${resp.status})`; }
       throw new Error(errorMessage);
-    }
-  };
+    ;
 
   const handleDeleteInstallation = async (id: string) => {
     const resp = await fetch(`/api/installations/${id}`, {
@@ -951,8 +928,7 @@ export default function App() {
       setInstallations(d.installations || []);
     } else {
       throw new Error("Erro ao excluir agendamento de instalação.");
-    }
-  };
+    ;
 
   // 6. Deep sales Gemini AI integrations callbacks:
   const handleGenerateIAPitch = async (client: BaseClient) => {
@@ -1019,11 +995,9 @@ export default function App() {
         const d = await rBase.json();
         setBaseClients(d.clients || []);
         setBaseActions(d.actions || []);
-      }
-    } catch (e: any) {
+       catch (e: any) {
       console.error(e);
-    }
-  };
+    ;
 
   const handleSyncBase = async () => {
     setIsSyncing(true);
@@ -1047,15 +1021,13 @@ export default function App() {
         alert(`Sucesso! ${data.count} clientes importados diretamente da aba Base052026.`);
       } else {
         throw new Error(data.message || "Erro desconhecido durante o sync.");
-      }
-    } catch (e: any) {
+       catch (e: any) {
       console.error(e);
       alert("Erro ao sincronizar base: " + e.message);
     } finally {
       setIsSyncing(false);
       setLoading(false);
-    }
-  };
+    ;
 
   const handleSyncLeads = async () => {
     setIsSyncing(true);
@@ -1079,15 +1051,13 @@ export default function App() {
         alert(`Sucesso! ${data.count} leads importados diretamente da aba Acompanhamento de Lead | Abordagens.`);
       } else {
         throw new Error(data.message || "Erro desconhecido durante o de sync dos leads.");
-      }
-    } catch (e: any) {
+       catch (e: any) {
       console.error(e);
       alert("Erro ao sincronizar leads: " + e.message);
     } finally {
       setIsSyncing(false);
       setLoading(false);
-    }
-  };
+    ;
 
   const handleSyncFtta = async () => {
     setIsSyncing(true);
@@ -1111,15 +1081,13 @@ export default function App() {
         alert(`Sucesso! ${data.sitesCount} edifícios e ${data.prospeccoesCount} prospecções de FTTA importados diretamente das planilhas ("FTTA LAJEADO", "FTTA ESTRELA" e "FTTA PROSPECÇÃO").`);
       } else {
         throw new Error(data.message || "Erro desconhecido durante o de sync do FTTA.");
-      }
-    } catch (e: any) {
+       catch (e: any) {
       console.error(e);
       alert("Erro ao sincronizar FTTA: " + e.message);
     } finally {
       setIsSyncing(false);
       setLoading(false);
-    }
-  };
+    ;
 
   const handleSyncInstallations = async () => {
     setIsSyncing(true);
@@ -1141,15 +1109,13 @@ export default function App() {
         alert(`Sucesso! ${data.count} agendamentos importados diretamente da aba Agenda Instalação.`);
       } else {
         throw new Error(data.message || "Erro desconhecido durante o sync da agenda de instalação.");
-      }
-    } catch (e: any) {
+       catch (e: any) {
       console.error(e);
       alert("Erro ao sincronizar agenda de instalação: " + e.message);
     } finally {
       setIsSyncing(false);
       setLoading(false);
-    }
-  };
+    ;
 
   // RENDER FLOW FOR EXT PARTNER: NO LOGIN NEEDED
   if (isExternalPartnerMode) {
@@ -1158,8 +1124,7 @@ export default function App() {
         installations={installations}
         vendors={availableVendors}
         onSaveInstallation={handleSaveInstallation}
-        onDeleteInstallation={handleDeleteInstallation}
-      />
+        onDeleteInstallation={handleDeleteInstallation} />
     );
   }
 
@@ -1175,8 +1140,8 @@ export default function App() {
         <div className="max-w-md w-full text-center space-y-8 z-10 p-4">
           <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
             {/* Spinning gradient border */}
-            <div className="absolute inset-0 rounded-full border-4 border-slate-900 border-t-sky-400 border-r-sky-500 animate-spin" style={{ animationDuration: "1s" }} />
-            <div className="absolute inset-2 rounded-full border-2 border-slate-900 border-b-sky-300 border-l-blue-500 animate-spin" style={{ animationDuration: "0.6s", animationDirection: "reverse" }} />
+            <div className="absolute inset-0 rounded-full border-4 border-slate-900 border-t-sky-400 border-r-sky-500 animate-spin" style={{ animationDuration: "1s" }/>
+            <div className="absolute inset-2 rounded-full border-2 border-slate-900 border-b-sky-300 border-l-blue-500 animate-spin" style={{ animationDuration: "0.6s", animationDirection: "reverse" }/>
             
             <div className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-full flex items-center justify-center shadow-2xl">
               <Sparkles className="w-8 h-8 text-sky-400 animate-pulse" />
@@ -1194,24 +1159,14 @@ export default function App() {
 
           {/* Progress bar container */}
           <div className="w-full bg-slate-900 border border-slate-800 rounded-full h-3 p-0.5 overflow-hidden shadow-inner">
-            <motion.div 
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 2.5, ease: "easeInOut" }}
-              className="bg-gradient-to-r from-sky-500 via-sky-450 to-emerald-400 h-full rounded-full"
+            <div className="bg-gradient-to-r from-sky-500 via-sky-450 to-emerald-400 h-full rounded-full"
             />
           </div>
 
-          <motion.div 
-            key={loginStageText}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className="text-xs font-black tracking-wide text-slate-100 bg-slate-900/80 border border-slate-800 rounded-2xl py-3 px-5 inline-block mx-auto shadow-2xl backdrop-blur"
+          <div key={loginStageText} className="text-xs font-black tracking-wide text-slate-100 bg-slate-900/80 border border-slate-800 rounded-2xl py-3 px-5 inline-block mx-auto shadow-2xl backdrop-blur"
           >
             {loginStageText}
-          </motion.div>
+          </div>
         </div>
       </div>
     );
@@ -1226,11 +1181,7 @@ export default function App() {
         <div className="absolute bottom-[-10%] left-[-10%] w-[450px] h-[450px] bg-sky-950/15 rounded-full blur-[110px] pointer-events-none" />
 
         {/* Top title info logo */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="space-y-4 text-center mt-12 z-10"
+        <div className="space-y-4 text-center mt-12 z-10"
         >
           <div className="w-16 h-16 bg-gradient-to-tr from-sky-600 to-sky-600 text-white rounded-3xl flex items-center justify-center mx-auto shadow-xl border border-sky-500/35">
             <Wifi className="w-9 h-9 stroke-[2.5]" />
@@ -1239,14 +1190,10 @@ export default function App() {
             <h1 className="text-2xl font-black tracking-tight text-white uppercase">MHNET</h1>
             <p className="text-xs text-sky-450 font-extrabold tracking-widest uppercase mt-0.5">Gestor de Vendas Externas</p>
           </div>
-        </motion.div>
+        </div>
 
         {/* Login form box */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.15, duration: 0.5 }}
-          className="w-full max-w-sm mx-auto bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-2xl backdrop-blur-md z-15"
+        <div className="w-full max-w-sm mx-auto bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-2xl backdrop-blur-md z-15"
         >
           <div className="space-y-1.5 text-center">
             <h2 className="text-sm font-black uppercase text-slate-305 tracking-wider flex items-center justify-center gap-1.5 pl-0.5">
@@ -1266,12 +1213,11 @@ export default function App() {
               <div className="relative">
                 <select
                   value={loginTerm}
-                  onChange={(e) => setLoginTerm(e.target.value)}
-                  className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition font-medium appearance-none"
+                  onChange={(e) => setLoginTerm(e.target.value)} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition font-medium appearance-none"
                 >
                   <option value="" disabled>Selecione seu nome...</option>
                   {registeredVendors.map((vendor, idx) => (
-                    <option key={vendor.id || idx} value={vendor.nome}>
+                    <option key={vendor.id || idx} value={vendor.nome>
                       {vendor.nome}
                     </option>
                   ))}
@@ -1282,32 +1228,24 @@ export default function App() {
               </div>
             </div>
 
-            <motion.button
-              type="submit"
-              whileTap={{ scale: 0.95 }}
-              className="w-full py-3.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-black tracking-wider uppercase shadow-lg shadow-sky-900/40 active:scale-97 cursor-pointer transition duration-150 flex items-center justify-center gap-2"
+            <button type="submit"} className="w-full py-3.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-black tracking-wider uppercase shadow-lg shadow-sky-900/40 active:scale-97 cursor-pointer transition duration-150 flex items-center justify-center gap-2"
             >
               Entrar no Sistema
-            </motion.button>
+            </button>
 
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.95 }}
+            <button type="button"
               onClick={async () => {
                 if (deferredPrompt) {
                   deferredPrompt.prompt();
                   const { outcome } = await deferredPrompt.userChoice;
                   if (outcome === 'accepted') {
                     setDeferredPrompt(null);
-                  }
-                } else {
+                   else {
                   setShowPWAInstructions(true);
-                }
-              }}
-              className="w-full py-2.5 border border-slate-800 hover:bg-slate-900/60 text-slate-300 rounded-xl text-[10px] font-extrabold uppercase cursor-pointer transition flex items-center justify-center gap-1.5"
+                 className="w-full py-2.5 border border-slate-800 hover:bg-slate-900/60 text-slate-300 rounded-xl text-[10px] font-extrabold uppercase cursor-pointer transition flex items-center justify-center gap-1.5"
             >
               <Download className="w-4 h-4 text-sky-400" /> Instalar App
-            </motion.button>
+            </button>
           </form>
 
           <div className="sep h-[1px] bg-slate-800/60" />
@@ -1323,17 +1261,13 @@ export default function App() {
               <span className="font-bold">Argumentação com inteligente IA Gemini</span>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Footer */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none mb-4 z-10"
+        <div className="text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none mb-4 z-10"
         >
           MHNET VALE DO TAQUARI · LAJEADO
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -1355,10 +1289,9 @@ export default function App() {
             onNavigateToSellerLeads={(seller) => {
               setLeadsFilterSeller(seller);
               setActiveTab("leads");
-            }}
+            
             onSync={fetchAllData}
-            vendors={registeredVendors}
-          />
+            vendors={registeredVendors} />
         );
       case "leads":
         return (
@@ -1374,8 +1307,7 @@ export default function App() {
             onAddTask={handleAddTask}
             onNavigateToTasks={() => setActiveTab("tasks")}
             defaultViewMode="list"
-            initialSellerFilter={leadsFilterSeller}
-          />
+            initialSellerFilter={leadsFilterSeller} />
         );
       case "cadastroLead":
         return (
@@ -1403,8 +1335,7 @@ export default function App() {
             onRegisterFttaSite={handleSaveFttaItem}
             onRegisterFttaProsp={handleSaveFttaProspKey}
             initialTab={fttaTab}
-            onSyncFtta={handleSyncFtta}
-          />
+            onSyncFtta={handleSyncFtta} />
         );
       case "tasks":
         return (
@@ -1417,19 +1348,17 @@ export default function App() {
             leadsList={leads.map(l => l.nomeLead)}
             onNavigateToLeadDetail={(nome) => {
               setActiveTab("leads");
-            }}
+            
             vendorsList={registeredVendors.map(v => v.nome)}
             isAdmin={userRole === "admin"}
-            loggedUser={loggedUser}
-          />
+            loggedUser={loggedUser} />
         );
       case "indicators":
         return (
           <IndicatorsPage
             leads={leads}
             isAdmin={userRole === "admin"}
-            loggedUser={loggedUser}
-          />
+            loggedUser={loggedUser} />
         );
       case "base":
         return (
@@ -1441,8 +1370,7 @@ export default function App() {
             onRefreshBase={handleSyncBase}
             onFetchBaseLocal={handleFetchBaseLocal}
             loggedUser={loggedUser}
-            isAdmin={userRole === "admin"}
-          />
+            isAdmin={userRole === "admin"/>
         );
       case "cobrancas":
         return (
@@ -1453,8 +1381,7 @@ export default function App() {
             onUpdateCobranca={handleUpdateCobranca}
             onRegisterCobrancaLog={handleRegisterCobrancaLog}
             onGenerateIAPitch={handleGenerateIACobrancaPitch}
-            onRefreshData={fetchAllData}
-          />
+            onRefreshData={fetchAllData} />
         );
       case "competitors":
         return (
@@ -1463,14 +1390,12 @@ export default function App() {
             onAnalyzeWithAI={handleAnalyzeCompetitor}
             onSaveCompetitor={handleSaveCompetitor}
             onDeleteCompetitor={handleDeleteCompetitor}
-            isAdmin={userRole === "admin"}
-          />
+            isAdmin={userRole === "admin"/>
         );
       case "objections":
         return (
           <ObjectionsPage
-            onCombatObjection={handleCombatObjection}
-          />
+            onCombatObjection={handleCombatObjection} />
         );
       case "absences":
         return (
@@ -1478,17 +1403,16 @@ export default function App() {
             absences={absences}
             isAdmin={userRole === "admin"}
             onRegisterAbsence={handleRegisterAbsence}
-            onUpdateAbsence={handleUpdateAbsence}
-          />
+            onUpdateAbsence={handleUpdateAbsence} />
         );
       case "pos_venda":
-        return <PosVendaPage loggedUser={loggedUser!} isAdmin={userRole === "admin"} />;
+        return <PosVendaPage loggedUser={loggedUser!} isAdmin={userRole === "admin"/>;
       case "matriz_objecoes":
-        return <MatrizObjecoesPage loggedUser={loggedUser!} isAdmin={userRole === "admin"} />;
+        return <MatrizObjecoesPage loggedUser={loggedUser!} isAdmin={userRole === "admin"/>;
       case "trade":
-        return <TradePage loggedUser={loggedUser!} isAdmin={userRole === "admin"} />;
+        return <TradePage loggedUser={loggedUser!} isAdmin={userRole === "admin"/>;
       case "leads_frios":
-        return <LeadsFriosTab isAdmin={userRole === "admin"} vendors={availableVendors} loggedUser={loggedUser!} />;
+        return <LeadsFriosTab isAdmin={userRole === "admin"} vendors={availableVendors} loggedUser={loggedUser!/>;
       case "estrategia":
         return (
           <EstrategiaPage loggedUser={loggedUser} />
@@ -1496,8 +1420,7 @@ export default function App() {
       case "materials":
         return (
           <MaterialsPage
-            onBackToDashboard={() => setActiveTab("dashboard")}
-          />
+            onBackToDashboard={() => setActiveTab("dashboard")/>
         );
       case "planos":
         return (
@@ -1514,8 +1437,7 @@ export default function App() {
             onAddVendor={handleRegisterVendor}
             onUpdateVendor={handleUpdateVendor}
             onDeleteVendor={handleDeleteVendor}
-            onBulkTransfer={handleBulkTransferLeads}
-          />
+            onBulkTransfer={handleBulkTransferLeads} />
         );
       case "installations":
         return (
@@ -1525,8 +1447,7 @@ export default function App() {
             onSaveInstallation={handleSaveInstallation}
             onDeleteInstallation={handleDeleteInstallation}
             onSyncInstallations={handleSyncInstallations}
-            userRole={userRole}
-          />
+            userRole={userRole} />
         );
       case "installations_queue":
         return <InstallationsQueuePage />;
@@ -1537,19 +1458,17 @@ export default function App() {
       case "calculo_multa":
         return (
           <CalculoMultaPage 
-            onBackToDashboard={() => setActiveTab("dashboard")} 
-          />
+            onBackToDashboard={() => setActiveTab("dashboard")/>
         );
       default:
         return <div>Não encontrado</div>;
-    }
-  };
+    ;
 
   return (
     <div className="min-h-screen bg-[#EDF2F7] flex font-sans text-slate-900 leading-normal max-w-[1600px] mx-auto border-x border-slate-200/60 relative shadow-2xl overflow-hidden h-screen">
       {/* ALERTA DE ERRO DE WEBHOOK N8N (VISÍVEL APENAS PARA ADMIN) */}
       {webhookError && userRole === "admin" && (
-        <div className="absolute top-0 left-0 right-0 bg-rose-50 border-b border-rose-200 p-3 flex flex-col sm:flex-row items-center justify-between gap-4 z-[100] shadow-md animate-fade-in">
+        <div className="absolute top-0 left-0 right-0 bg-rose-50 border-b border-rose-200 p-3 flex flex-col sm:flex-row items-center justify-between gap-4 z-[100] shadow-md ">
           <div className="flex items-center gap-3">
             <div className="bg-rose-100 p-2 rounded-full">
               <Zap className="w-5 h-5 text-rose-600 animate-pulse" />
@@ -1562,21 +1481,17 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => {
+            <button onClick={() => {
                 fetch('/api/env/n8n').then(r => r.json()).then(d => {
                    const url = d.USE_N8N_TEST_AGENDAMENTO === "true" ? d.N8N_TEST_WEBHOOK_URL : d.N8N_WEBHOOK_URL;
                    if (url) window.open(url, '_blank');
                    else alert("URL não configurada no .env!");
                 }).catch(() => alert("Erro ao obter URL"));
-              }}
-              className="px-3 py-1.5 bg-white border border-rose-200 text-rose-700 text-xs font-bold rounded hover:bg-rose-100 shadow-sm transition-colors whitespace-nowrap"
+              } className="px-3 py-1.5 bg-white border border-rose-200 text-rose-700 text-xs font-bold rounded hover:bg-rose-100 shadow-sm transition-colors whitespace-nowrap"
             >
               Testar Conexão
             </button>
-            <button 
-              onClick={() => setWebhookError(false)}
-              className="px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded hover:bg-rose-700 shadow-sm transition-colors whitespace-nowrap"
+            <button onClick={() => setWebhookError(false)} className="px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded hover:bg-rose-700 shadow-sm transition-colors whitespace-nowrap"
             >
               Dispensar
             </button>
@@ -1597,7 +1512,7 @@ export default function App() {
           {/* Brand/Logo Section */}
           <div className="flex items-center gap-3 px-2 cursor-pointer shrink-0 mb-6" onClick={() => setActiveTab("dashboard")}>
             <div className="w-9 h-9 bg-sky-600 rounded-xl flex items-center justify-center text-white font-extrabold text-base shadow-lg shadow-sky-900/30">
-              M
+              MH
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-black tracking-tight text-white leading-none">Painel MHNET</span>
@@ -1612,273 +1527,213 @@ export default function App() {
             <div className="space-y-1">
               <span className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Painel de Trabalho</span>
               
-              <motion.button
-                onClick={() => setActiveTab("dashboard")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("dashboard")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "dashboard" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <Activity className="w-4 h-4 shrink-0 text-white" />
                 <span>Painel Principal</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("pos_venda")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("pos_venda")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "pos_venda" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <UserCheck className="w-4 h-4 shrink-0 text-white" />
                 <span>Pós Vendas</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("base")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("base")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "base" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <Award className="w-4 h-4 shrink-0 text-white" />
                 <span>Base de Clientes</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => {
+              <button onClick={() => {
                   setLeadsFilterSeller(null);
                   setActiveTab("leads");
                 }}
-                whileTap={{ scale: 0.95 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "leads" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <Users className="w-4 h-4 shrink-0 text-white" />
                 <span>Leads PAP (Funil)</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("leads_frios")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("leads_frios")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "leads_frios" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <FileSpreadsheet className="w-4 h-4 shrink-0 text-white " />
                 <span>Leads Frios</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("cobrancas")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("cobrancas")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "cobrancas" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900 block"
-                }`}
-              >
+                }`}>
                 <Coins className="w-4 h-4 shrink-0 text-white" />
                 <span>Controle de Cobranças</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("ftta")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("ftta")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "ftta" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <MapPin className="w-4 h-4 shrink-0 text-white" />
                 <span>Viabilidade FTTA</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("tasks")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("tasks")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "tasks" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <ClipboardList className="w-4 h-4 shrink-0 text-white" />
                 <span>Minhas Tarefas</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("installations")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("installations")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "installations" 
                     ? "bg-sky-600 text-white font-bold shadow-md shadow-sky-950" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <CalendarDays className="w-4 h-4 shrink-0 text-white" />
                 <span>Agenda de Instalações</span>
-              </motion.button>
-              <motion.button
-                onClick={() => setActiveTab("installations_queue")}
-                whileTap={{ scale: 0.95 }}
+              </button>
+              <button onClick={() => setActiveTab("installations_queue")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "installations_queue" 
                     ? "bg-sky-600 text-white font-bold shadow-md shadow-sky-950" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <ClipboardList className="w-4 h-4 shrink-0 text-white" />
                 <span>Fila de Monitoramento</span>
-              </motion.button>
+              </button>
             </div>
 
             {userRole === "admin" && (
               <div className="space-y-1">
                 <span className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2 mt-1">Gestão de Equipe</span>
-                <motion.button
-                  onClick={() => setActiveTab("protocolos_internos")}
-                  whileTap={{ scale: 0.95 }}
+                <button onClick={() => setActiveTab("protocolos_internos")}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                     activeTab === "protocolos_internos" 
                       ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                       : "text-white hover:bg-slate-900"
-                  }`}
-                >
+                  }`}>
                   <FileText className="w-4 h-4 shrink-0 text-white" />
                   <span>Protocolos Internos</span>
-                </motion.button>
-                <motion.button
-                  onClick={() => setActiveTab("estrategia")}
-                  whileTap={{ scale: 0.95 }}
+                </button>
+                <button onClick={() => setActiveTab("estrategia")}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                     activeTab === "estrategia" 
                       ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                       : "text-white hover:bg-slate-900"
-                  }`}
-                >
+                  }`}>
                   <Bot className="w-4 h-4 shrink-0 text-white" />
                   <span>Gestão Estratégica IA</span>
-                </motion.button>
-                <motion.button
-                  onClick={() => setActiveTab("vendedores")}
-                  whileTap={{ scale: 0.95 }}
+                </button>
+                <button onClick={() => setActiveTab("vendedores")}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                     activeTab === "vendedores" 
                       ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                       : "text-white hover:bg-slate-900"
-                  }`}
-                >
+                  }`}>
                   <Sliders className="w-4 h-4 shrink-0 text-white" />
                   <span>Vendedores & Metas</span>
-                </motion.button>
-                <motion.button
-                  onClick={() => setActiveTab("admin_n8n")}
-                  whileTap={{ scale: 0.95 }}
+                </button>
+                <button onClick={() => setActiveTab("admin_n8n")}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                     activeTab === "admin_n8n" 
                       ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                       : "text-white hover:bg-slate-900"
-                  }`}
-                >
+                  }`}>
                   <Link className="w-4 h-4 shrink-0 text-white" />
                   <span>Integrações N8N</span>
-                </motion.button>
+                </button>
               </div>
             )}
 
             <div className="space-y-1">
               <span className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Treinamento & Apoio</span>
 
-              <motion.button
-                onClick={() => setActiveTab("competitors")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("competitors")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "competitors" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <Sparkles className="w-4 h-4 shrink-0 text-white" />
                 <span>Análise Concorrência</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("calculo_multa")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("calculo_multa")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "calculo_multa" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900 block"
-                }`}
-              >
+                }`}>
                 <Calculator className="w-4 h-4 shrink-0 text-white" />
                 <span>Cálculo de Multa</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("objections")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("objections")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "objections" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <HelpCircle className="w-4 h-4 shrink-0 text-white" />
                 <span>Contorno de Objeções</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("trade")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("trade")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "trade" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <Store className="w-4 h-4 shrink-0 text-white" />
                 <span>Ações de Trade</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("absences")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("absences")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "absences" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <CalendarDays className="w-4 h-4 shrink-0 text-white" />
                 <span>Escala & Ausências</span>
-              </motion.button>
+              </button>
 
-              <motion.button
-                onClick={() => setActiveTab("materials")}
-                whileTap={{ scale: 0.95 }}
+              <button onClick={() => setActiveTab("materials")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "materials" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <BookOpen className="w-4 h-4 shrink-0 text-white" />
                 <span>Drive & Panfletos</span>
-              </motion.button>
+              </button>
 
 
               
@@ -1901,9 +1756,7 @@ export default function App() {
                 </span>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-slate-800/60 rounded-lg cursor-pointer transition active:scale-95 shrink-0"
+            <button onClick={handleLogout} className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-slate-800/60 rounded-lg cursor-pointer transition active:scale-95 shrink-0"
               title="Sair do expediente"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -1916,8 +1769,8 @@ export default function App() {
       {/* 2. Main Content Wrapper */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50 h-full">
 
-        {missingEnvKeys.length > 0 && (
-          <div className="bg-rose-500/10 border-b border-rose-500/20 px-6 py-2.5 flex items-start gap-3 text-rose-800 text-xs font-medium z-40 select-none animate-fade-in shrink-0">
+        {missingEnvKeys.length> 0 && (
+          <div className="bg-rose-500/10 border-b border-rose-500/20 px-6 py-2.5 flex items-start gap-3 text-rose-800 text-xs font-medium z-40 select-none  shrink-0">
             <span className="text-sm shrink-0">🚨</span>
             <div className="flex-1 space-y-0.5">
               <span className="font-extrabold uppercase tracking-wider text-[10px] text-rose-700 block">Variáveis de Ambiente Ausentes</span>
@@ -1929,17 +1782,15 @@ export default function App() {
                 Chaves ausentes: {missingEnvKeys.join(", ")}
               </p>
             </div>
-            <button 
-              onClick={() => setMissingEnvKeys([])} 
-              className="text-rose-600 hover:text-rose-800 px-2 py-1.5 rounded hover:bg-rose-500/10 transition font-black text-[10px] uppercase tracking-wider scale-95 shrink-0 cursor-pointer self-center"
+            <button onClick={() => setMissingEnvKeys([])} className="text-rose-600 hover:text-rose-800 px-2 py-1.5 rounded hover:bg-rose-500/10 transition font-black text-[10px] uppercase tracking-wider scale-95 shrink-0 cursor-pointer self-center"
             >
               Ciente
             </button>
           </div>
         )}
 
-        {invalidEnvKeys.length > 0 && (
-          <div className="bg-orange-500/10 border-b border-orange-500/20 px-6 py-2.5 flex items-start gap-3 text-orange-800 text-xs font-medium z-40 select-none animate-fade-in shrink-0">
+        {invalidEnvKeys.length> 0 && (
+          <div className="bg-orange-500/10 border-b border-orange-500/20 px-6 py-2.5 flex items-start gap-3 text-orange-800 text-xs font-medium z-40 select-none  shrink-0">
             <span className="text-sm shrink-0">⚠️</span>
             <div className="flex-1 space-y-0.5">
               <span className="font-extrabold uppercase tracking-wider text-[10px] text-orange-700 block">Variáveis de Ambiente com Formato Inválido</span>
@@ -1951,9 +1802,7 @@ export default function App() {
                 Chaves com formato inválido: {invalidEnvKeys.join(", ")}
               </p>
             </div>
-            <button 
-              onClick={() => setInvalidEnvKeys([])} 
-              className="text-orange-600 hover:text-orange-800 px-2 py-1.5 rounded hover:bg-orange-500/10 transition font-black text-[10px] uppercase tracking-wider scale-95 shrink-0 cursor-pointer self-center"
+            <button onClick={() => setInvalidEnvKeys([])} className="text-orange-600 hover:text-orange-800 px-2 py-1.5 rounded hover:bg-orange-500/10 transition font-black text-[10px] uppercase tracking-wider scale-95 shrink-0 cursor-pointer self-center"
             >
               Ciente
             </button>
@@ -1961,7 +1810,7 @@ export default function App() {
         )}
 
         {isAiKeyLeaked && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-start gap-3 text-amber-800 text-xs font-medium z-40 select-none animate-fade-in shrink-0">
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-start gap-3 text-amber-800 text-xs font-medium z-40 select-none  shrink-0">
             <span className="text-sm shrink-0">⚠️</span>
             <div className="flex-1 space-y-0.5">
               <span className="font-extrabold uppercase tracking-wider text-[10px] text-amber-700 block">Modo de Contingência (IA com Scripts Locais)</span>
@@ -1977,9 +1826,7 @@ export default function App() {
                 </p>
               )}
             </div>
-            <button 
-              onClick={() => setIsAiKeyLeaked(false)} 
-              className="text-amber-600 hover:text-amber-800 px-2 py-1.5 rounded hover:bg-amber-500/10 transition font-black text-[10px] uppercase tracking-wider scale-95 shrink-0 cursor-pointer self-center"
+            <button onClick={() => setIsAiKeyLeaked(false)} className="text-amber-600 hover:text-amber-800 px-2 py-1.5 rounded hover:bg-amber-500/10 transition font-black text-[10px] uppercase tracking-wider scale-95 shrink-0 cursor-pointer self-center"
             >
               Compreendi
             </button>
@@ -1990,7 +1837,7 @@ export default function App() {
         <nav className="h-14 lg:hidden flex items-center justify-between px-4 bg-white border-b border-slate-200 shrink-0 z-40 select-none">
           <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveTab("dashboard")}>
             <div className="w-7 h-7 bg-sky-600 rounded-lg flex items-center justify-center text-white font-extrabold text-xs shadow-sm">
-              M
+              MH
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-bold text-slate-900 leading-none">Painel MHNET</span>
@@ -2006,9 +1853,7 @@ export default function App() {
               </span>
             </div>
 
-            <button
-              onClick={handleLogout}
-              className="p-1.5 bg-slate-50 border border-slate-200 text-slate-550 rounded-lg hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
+            <button onClick={handleLogout} className="p-1.5 bg-slate-50 border border-slate-200 text-slate-550 rounded-lg hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
               title="Sair"
             >
               <LogOut className="w-3 h-3" />
@@ -2022,17 +1867,13 @@ export default function App() {
           <div className="mb-6 relative">
             <div className="relative">
               <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
+              <input type="text"
                 placeholder="Buscar globalmente (leads, clientes, tarefas...)"
                 value={globalSearchTerm}
-                onChange={(e) => setGlobalSearchTerm(e.target.value)}
-                className="w-full bg-white border border-slate-200/80 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold text-slate-700 shadow-sm focus:outline-none focus:ring-4 focus:ring-sky-500/10 focus:border-sky-400 transition-all placeholder:text-slate-400/70"
+                onChange={(e) => setGlobalSearchTerm(e.target.value)} className="w-full bg-white border border-slate-200/80 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-bold text-slate-700 shadow-sm focus:outline-none focus:ring-4 focus:ring-sky-500/10 focus:border-sky-400 transition-all placeholder:text-slate-400/70"
               />
               {globalSearchTerm && (
-                <button 
-                  onClick={() => setGlobalSearchTerm("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full p-1 transition"
+                <button onClick={() => setGlobalSearchTerm("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full p-1 transition"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -2040,7 +1881,7 @@ export default function App() {
             </div>
             {/* Search Results Dropdown-like view but inline to push content down */}
             {globalSearchTerm && (
-              <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-xl space-y-4 max-h-[60vh] overflow-y-auto animate-fade-in z-50 relative">
+              <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-xl space-y-4 max-h-[60vh] overflow-y-auto  z-50 relative">
                 <h3 className="text-xs font-black uppercase text-sky-500 tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                   <Sparkles className="w-4 h-4" /> Resultados de Busca
                 </h3>
@@ -2127,154 +1968,115 @@ export default function App() {
         {/* Compact Interactive Tab Bar Panel (Mobile Only - hidden on desktop lg) */}
         <nav className="lg:hidden bg-white border-t border-slate-200 py-2 px-4 flex overflow-x-auto gap-5 items-center shadow-[0_-2px_10px_rgba(0,0,0,0.02)] z-50 shrink-0 select-none font-sans [&::-webkit-scrollbar]:hidden">
           
-          <motion.button
-            onClick={() => setActiveTab("dashboard")}
-            whileTap={{ scale: 0.90 }}
+          <button onClick={() => setActiveTab("dashboard")}
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "dashboard" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-            }`}
-          >
+            }`}>
             <Activity className="w-4 h-4" />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">Home</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            onClick={() => {
+          <button onClick={() => {
               setLeadsFilterSeller(null);
               setActiveTab("leads");
-            }}
-            whileTap={{ scale: 0.90 }}
+            
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "leads" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-            }`}
-          >
+            }`}>
             <Users className="w-4 h-4" />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">Leads</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            onClick={() => setActiveTab("base")}
-            whileTap={{ scale: 0.90 }}
+          <button onClick={() => setActiveTab("base")}
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "base" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-            }`}
-          >
+            }`}>
             <Award className="w-4 h-4" />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">Base</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            onClick={() => setActiveTab("leads_frios")}
-            whileTap={{ scale: 0.90 }}
+          <button onClick={() => setActiveTab("leads_frios")}
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "leads_frios" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-            }`}
-          >
+            }`}>
             <FileSpreadsheet className="w-4 h-4 " />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">Frios</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            onClick={() => setActiveTab("cobrancas")}
-            whileTap={{ scale: 0.90 }}
+          <button onClick={() => setActiveTab("cobrancas")}
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "cobrancas" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-            }`}
-          >
+            }`}>
             <Coins className="w-4 h-4 text-rose-500" />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">Cobrar</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            onClick={() => setActiveTab("ftta")}
-            whileTap={{ scale: 0.90 }}
+          <button onClick={() => setActiveTab("ftta")}
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "ftta" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-            }`}
-          >
+            }`}>
             <MapPin className="w-4 h-4" />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">FTTA</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            onClick={() => setActiveTab("tasks")}
-            whileTap={{ scale: 0.90 }}
+          <button onClick={() => setActiveTab("tasks")}
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "tasks" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-            }`}
-          >
+            }`}>
             <ClipboardList className="w-4 h-4" />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">Tarefas</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            onClick={() => setActiveTab("installations")}
-            whileTap={{ scale: 0.90 }}
+          <button onClick={() => setActiveTab("installations")}
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "installations" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-            }`}
-          >
+            }`}>
             <CalendarDays className="w-4 h-4" />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">Agenda</span>
-          </motion.button>
+          </button>
 
           {userRole === "admin" && (
             <>
-              <motion.button
-                onClick={() => setActiveTab("estrategia")}
-                whileTap={{ scale: 0.90 }}
+              <button onClick={() => setActiveTab("estrategia")}
                 className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
                   activeTab === "estrategia" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-                }`}
-              >
+                }`}>
                 <Bot className="w-4 h-4 text-blue-500" />
                 <span className="text-[9px] font-extrabold uppercase tracking-tight">Estratégia</span>
-              </motion.button>
-              <motion.button
-                onClick={() => setActiveTab("vendedores")}
-                whileTap={{ scale: 0.90 }}
+              </button>
+              <button onClick={() => setActiveTab("vendedores")}
                 className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
                   activeTab === "vendedores" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-                }`}
-              >
+                }`}>
                 <Sliders className="w-4 h-4 text-sky-500" />
                 <span className="text-[9px] font-extrabold uppercase tracking-tight">Metas</span>
-              </motion.button>
-              <motion.button
-                onClick={() => setActiveTab("admin_n8n")}
-                whileTap={{ scale: 0.90 }}
+              </button>
+              <button onClick={() => setActiveTab("admin_n8n")}
                 className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
                   activeTab === "admin_n8n" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-                }`}
-              >
+                }`}>
                 <Link className="w-4 h-4 text-blue-500" />
                 <span className="text-[9px] font-extrabold uppercase tracking-tight">N8N</span>
-              </motion.button>
+              </button>
             </>
           )}
 
 
 
-          <motion.button
-            onClick={() => setActiveTab("pos_venda")}
-            whileTap={{ scale: 0.90 }}
+          <button onClick={() => setActiveTab("pos_venda")}
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "pos_venda" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-            }`}
-          >
+            }`}>
             <UserCheck className="w-4 h-4 text-emerald-500" />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">Pós Venda</span>
-          </motion.button>
-          <motion.button
-            onClick={() => setActiveTab("trade")}
-            whileTap={{ scale: 0.90 }}
+          </button>
+          <button onClick={() => setActiveTab("trade")}
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "trade" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
-            }`}
-          >
+            }`}>
             <Store className="w-4 h-4 text-sky-500" />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">Trade</span>
-          </motion.button>
+          </button>
 
         </nav>
 
@@ -2293,17 +2095,14 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => {
+            <button onClick={() => {
                 localStorage.setItem('pwa_banner_dismissed', 'true');
                 setShowPWABanner(false);
-              }}
-              className="px-2 py-1.5 text-slate-400 hover:text-white text-[10px] font-bold uppercase"
+              } className="px-2 py-1.5 text-slate-400 hover:text-white text-[10px] font-bold uppercase"
             >
               Agora não
             </button>
-            <button
-              onClick={async () => {
+            <button onClick={async () => {
                 if (deferredPrompt) {
                   deferredPrompt.prompt();
                   const { outcome } = await deferredPrompt.userChoice;
@@ -2311,13 +2110,10 @@ export default function App() {
                     setDeferredPrompt(null);
                     setShowPWABanner(false);
                     localStorage.setItem('pwa_banner_dismissed', 'true');
-                  }
-                } else {
+                   else {
                   setShowPWAInstructions(true);
                   setShowPWABanner(false);
-                }
-              }}
-              className="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-[10px] font-bold uppercase hover:bg-sky-500 shadow shadow-sky-900/50"
+                 className="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-[10px] font-bold uppercase hover:bg-sky-500 shadow shadow-sky-900/50"
             >
               Instalar
             </button>
@@ -2325,18 +2121,16 @@ export default function App() {
         </div>
       )}
       {/* Floating AI Agent trigger bubble */}
-      <button
-        id="floating-ai-agent-trigger-badge"
+      <button id="floating-ai-agent-trigger-badge"
         onClick={() => {
           setIsAiChatOpen(true);
           setUnreadAiTips(0);
           setIsBadgePulsing(false);
-        }}
-        className={`fixed bottom-16 right-4 lg:bottom-6 lg:right-6 w-12 h-12 bg-gradient-to-tr from-sky-600 to-sky-800 text-white rounded-2xl shadow-xl hover:scale-110 hover:-translate-y-1 active:scale-95 transition-all duration-300 ease-out flex items-center justify-center border border-sky-500/50 hover:shadow-sky-900/10 z-[99999] cursor-pointer ${isBadgePulsing ? 'animate-ping' : 'animate-pulse-light'}`}
+        } className={`fixed bottom-16 right-4 lg:bottom-6 lg:right-6 w-12 h-12 bg-gradient-to-tr from-sky-600 to-sky-800 text-white rounded-2xl shadow-xl hover:scale-110 hover:-translate-y-1 active:scale-95 transition-all duration-300 ease-out flex items-center justify-center border border-sky-500/50 hover:shadow-sky-900/10 z-[99999] cursor-pointer ${isBadgePulsing ? 'animate-ping' : 'animate-pulse-light'}`}
         title="Assistente Comercial IA"
       >
         <Bot className="w-6 h-6 stroke-[2.2]" />
-        {unreadAiTips > 0 && (
+        {unreadAiTips> 0 && (
           <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-slate-900 shadow-md">
             {unreadAiTips}
           </span>
@@ -2347,8 +2141,7 @@ export default function App() {
       <ChatModal
         isOpen={isAiChatOpen}
         onClose={() => setIsAiChatOpen(false)}
-        onSendChatMessage={handleSendChatMessage}
-      />
+        onSendChatMessage={handleSendChatMessage} />
 
     </div>
   );

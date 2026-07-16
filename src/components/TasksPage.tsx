@@ -224,7 +224,7 @@ export default function TasksPage({
   if (!isClient) return null;
 
   return (
-    <div id="tasks-viewport" className="space-y-4 pb-12 animate-fade-in">
+    <div id="tasks-viewport" className="space-y-4 pb-12 ">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 className="text-xl font-extrabold text-slate-805 tracking-tight flex items-center gap-1.5">
           <CheckSquare className="w-5 h-5 text-sky-950" />
@@ -266,7 +266,7 @@ export default function TasksPage({
       
 
       {isAdding && (
-        <form onSubmit={handleSubmit} className="card-modern border border-[#616b78] rounded-2xl p-4 space-y-3 shadow-md animate-fade-in">
+        <form onSubmit={handleSubmit} className="card-modern border border-[#616b78] rounded-2xl p-4 space-y-3 shadow-md ">
           <div className="text-xs font-black uppercase text-sky-950 mb-2">Adicionar Tarefa</div>
           
           <div className="space-y-1">
@@ -354,7 +354,7 @@ export default function TasksPage({
           )}
         </div>
       ) : (
-        <div className="space-y-4 animate-fade-in">
+        <div className="space-y-4 ">
           <div className="bg-slate-800 text-white p-4 rounded-2xl mb-4 shadow-lg">
             <h3 className="font-black text-lg">Matriz de Eisenhower</h3>
             <p className="text-slate-300 text-xs font-medium mt-1">
@@ -404,7 +404,7 @@ export default function TasksPage({
 
       
       {isAdmin && (
-        <div className="mt-8 pt-6 border-t border-slate-200 animate-fade-in">
+        <div className="mt-8 pt-6 border-t border-slate-200 ">
           <h3 className="font-extrabold text-slate-800 mb-3 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-sky-600" />
             Agenda de Compromissos do Dia

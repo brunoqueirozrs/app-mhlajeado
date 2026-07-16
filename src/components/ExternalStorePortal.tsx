@@ -25,7 +25,6 @@ import {
   Trash2,
   Edit3
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 import { Installation } from "../types";
 
 interface ExternalStorePortalProps {
@@ -44,12 +43,11 @@ function parseProtocolText(raw: string) {
   
   const parts = raw.split(" - ");
   let name = "";
-  if (parts.length > 0) {
+  if (parts.length> 0) {
     const rawName = parts[parts.length - 1].trim();
     if (rawName && !rawName.toUpperCase().includes("PROTOCOLO") && !rawName.toUpperCase().includes("ATIVAÇÃO")) {
       name = rawName;
-    }
-  }
+    
   return { 
     protocol: protocol || "Pendente", 
     name: name || "Cliente Desconhecido" 
@@ -151,8 +149,7 @@ export default function ExternalStorePortal({
       setFormCidade("Lajeado");
       setSelectedDayAndSlot({ date: dateStr, slot: slotIdx });
       setIsModalOpen(true);
-    }
-  };
+    ;
 
   // Extra Slot Modal
   const [extraSlotModal, setExtraSlotModal] = useState({ isOpen: false, date: "", password: "", error: "" });
@@ -187,8 +184,7 @@ export default function ExternalStorePortal({
       setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" });
     } else {
       setExtraSlotModal(prev => ({ ...prev, error: "Senha incorreta. Tente novamente." }));
-    }
-  };
+    ;
 
 
   const handleSaveModalSubmit = async (e: React.FormEvent) => {
@@ -234,16 +230,14 @@ export default function ExternalStorePortal({
       setProtocolRawInput("");
     } catch (e: any) {
       alert("Erro ao salvar: " + e.message);
-    }
-  };
+    ;
 
   const handleDeleteClick = async (id: string) => {
     if (confirm("Deseja realmente desmarcar este agendamento comercial?")) {
       await onDeleteInstallation(id);
       setIsModalOpen(false);
       setCurrentInstallation(null);
-    }
-  };
+    ;
 
   const handleCopyBroadcast = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -258,8 +252,7 @@ export default function ExternalStorePortal({
       case 3: return "Slot 3 (Tarde - Espaço 1)";
       case 4: return "Slot 4 (Tarde - Espaço 2)";
       default: return `Slot ${slot} (Extra)`;
-    }
-  };
+    ;
 
   const getSlotTimeLabel = (slot: number) => {
     switch (slot) {
@@ -268,8 +261,7 @@ export default function ExternalStorePortal({
       case 3: return "13:30 às 15:30";
       case 4: return "15:30 às 17:30";
       default: return "A combinar";
-    }
-  };
+    ;
 
   const getStatusColor = (status: Installation["status"]) => {
     switch (status) {
@@ -278,8 +270,7 @@ export default function ExternalStorePortal({
       case "Cancelada": return "bg-rose-500/10 text-rose-400 border border-rose-500/20";
       case "Reagendada": return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
       default: return "bg-slate-500/10 text-slate-355 border border-slate-500/10";
-    }
-  };
+    ;
 
   const liveParsed = parseProtocolText(protocolRawInput);
 
@@ -307,11 +298,9 @@ export default function ExternalStorePortal({
         const swapPayload2 = { ...targetInst, dataAgendamento: draggedInst.dataAgendamento, slotIndex: draggedInst.slotIndex, horario: getSlotTimeLabel(draggedInst.slotIndex!) };
         await onSaveInstallation(swapPayload1);
         await onSaveInstallation(swapPayload2);
-      }
-    } catch (err) {
+       catch (err) {
       console.error("Drop err:", err);
-    }
-  };
+    ;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
@@ -354,23 +343,17 @@ export default function ExternalStorePortal({
         {/* Date Selector Dashboard and Search */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900 p-4 rounded-xl border border-slate-850 shadow-md">
           <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrevWeek}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-750 transition cursor-pointer"
+            <button onClick={handlePrevWeek} className="p-2 rounded-lg bg-slate-800 hover:bg-slate-750 transition cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 text-slate-300" />
             </button>
             
-            <button
-              onClick={handleResetToToday}
-              className="px-3 py-1.5 rounded-lg bg-slate-850 hover:bg-slate-750 text-xs font-bold text-slate-300 transition cursor-pointer"
+            <button onClick={handleResetToToday} className="px-3 py-1.5 rounded-lg bg-slate-850 hover:bg-slate-750 text-xs font-bold text-slate-300 transition cursor-pointer"
             >
               Hoje
             </button>
 
-            <button
-              onClick={handleNextWeek}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-750 transition cursor-pointer"
+            <button onClick={handleNextWeek} className="p-2 rounded-lg bg-slate-800 hover:bg-slate-750 transition cursor-pointer"
             >
               <ArrowRight className="w-4 h-4 text-slate-300" />
             </button>
@@ -384,31 +367,23 @@ export default function ExternalStorePortal({
 
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
-            <input
-              type="text"
+            <input type="text"
               placeholder="Pesquisar por cliente / consultor..."
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition"
+              onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition"
             />
           </div>
         </div>
 
         {/* Dynamic AI Success warning panel after saving */}
         {successAiMessage && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            className="p-4 bg-emerald-950/20 border border-emerald-900/30 rounded-2xl space-y-3"
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-emerald-450 font-bold text-xs">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Instalação Protocolada com Sucesso!</span>
               </div>
-              <button 
-                onClick={() => setSuccessAiMessage(null)}
-                className="text-slate-400 hover:text-white text-xs cursor-pointer"
+              <button onClick={() => setSuccessAiMessage(null)} className="text-slate-400 hover:text-white text-xs cursor-pointer"
               >
                 Declinar
               </button>
@@ -416,9 +391,7 @@ export default function ExternalStorePortal({
             <p className="text-[11px] text-slate-300 font-mono bg-slate-900/60 p-3 rounded-lg leading-relaxed whitespace-pre-line">
               {successAiMessage}
             </p>
-            <button
-              onClick={() => handleCopyBroadcast(successAiMessage)}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition cursor-pointer"
+            <button onClick={() => handleCopyBroadcast(successAiMessage)} className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition cursor-pointer"
             >
               {copiedSuccess ? (
                 <>
@@ -432,7 +405,7 @@ export default function ExternalStorePortal({
                 </>
               )}
             </button>
-          </motion.div>
+          </div>
         )}
 
         {/* 7 Columns GRID for external team */}
@@ -444,16 +417,11 @@ export default function ExternalStorePortal({
             const formattedLabel = dayName.charAt(0).toUpperCase() + dayName.slice(1);
             
             return (
-              <div 
-                key={dateStr}
-                className={`flex flex-col bg-slate-900 rounded-xl overflow-hidden border ${
+              <div key={dateStr} className={`flex flex-col bg-slate-900 rounded-xl overflow-hidden border ${
                   isToday ? "border-sky-500 shadow-xl" : "border-slate-800"
-                }`}
-              >
+                }`}>
                 {/* Header */}
-                <div 
-                  onClick={() => setSelectedDayDetails(dateStr)}
-                  className={`p-3 text-center border-b cursor-pointer hover:bg-opacity-80 transition ${
+                <div onClick={() => setSelectedDayDetails(dateStr)} className={`p-3 text-center border-b cursor-pointer hover:bg-opacity-80 transition ${
                   isToday ? "bg-sky-600 text-white font-bold hover:bg-sky-500" : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-900"
                 }`}>
                   <span className="text-[10px] uppercase font-bold tracking-wider block opacity-80">{formattedLabel}</span>
@@ -484,9 +452,7 @@ export default function ExternalStorePortal({
                         return renderSlotCard(dateStr, slotIdx, matched);
                       });
                     })()}
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleAddExtraSlotClick(dateStr); }}
-                      className="mt-2 w-full p-2 border border-dashed border-slate-700/50 rounded-lg text-slate-400 hover:text-slate-200 hover:border-slate-500 hover:bg-slate-800 transition text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
+                    <button onClick={(e) => { e.stopPropagation(); handleAddExtraSlotClick(dateStr); } className="mt-2 w-full p-2 border border-dashed border-slate-700/50 rounded-lg text-slate-400 hover:text-slate-200 hover:border-slate-500 hover:bg-slate-800 transition text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3 h-3" /> Slot Extra
                     </button>
@@ -499,22 +465,11 @@ export default function ExternalStorePortal({
       </main>
 
       {/* DAY DETAILS MODAL */}
-      <AnimatePresence>
+      
         {selectedDayDetails && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-              onClick={() => setSelectedDayDetails(null)}
-            />
-            <motion.div
-              initial={{ scale: 0.95, y: 15, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl z-10 text-white flex flex-col"
-            >
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelectedDayDetails(null)/>
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-lg bg-sky-500/10 text-sky-400">
@@ -529,9 +484,7 @@ export default function ExternalStorePortal({
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedDayDetails(null)}
-                  className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+                <button onClick={() => setSelectedDayDetails(null)} className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -556,11 +509,9 @@ export default function ExternalStorePortal({
                              <div className="flex justify-between items-start gap-2">
                                <div>
                                  <h4 className="font-bold text-sm text-white">{inst.nomeCliente}</h4>
-                                 {inst.observacao && <p className="text-xs font-mono text-slate-400 mt-0.5">{inst.observacao.substring(0, 80)}{inst.observacao.length > 80 ? '...' : ''}</p>}
+                                 {inst.observacao && <p className="text-xs font-mono text-slate-400 mt-0.5">{inst.observacao.substring(0, 80)}{inst.observacao.length> 80 ? '...' : ''}</p>}
                                </div>
-                               <button
-                                 onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx, inst); }}
-                                 className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-bold text-white transition cursor-pointer"
+                               <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx, inst); } className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-bold text-white transition cursor-pointer"
                                >
                                  Abrir
                                </button>
@@ -589,9 +540,7 @@ export default function ExternalStorePortal({
                         ) : (
                           <div className="flex items-center justify-between h-full">
                             <span className="text-sm text-slate-500 italic">Slot Livre</span>
-                            <button
-                               onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx); }}
-                               className="px-3 py-1.5 border border-slate-700 hover:border-sky-500 hover:text-sky-400 rounded-lg text-xs font-bold text-slate-400 transition cursor-pointer"
+                            <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx); } className="px-3 py-1.5 border border-slate-700 hover:border-sky-500 hover:text-sky-400 rounded-lg text-xs font-bold text-slate-400 transition cursor-pointer"
                              >
                                Agendar
                              </button>
@@ -602,32 +551,26 @@ export default function ExternalStorePortal({
                   );
                 })}
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+      
 
       {/* EXTRA SLOT MODAL */}
       {extraSlotModal.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })} />
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-700/60 p-6 rounded-2xl w-full max-w-sm relative z-10 shadow-2xl"
-          >
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })/>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <h3 className="text-lg font-bold text-white mb-2">Liberar Slot Extra</h3>
             <p className="text-xs text-slate-400 mb-4">Insira a senha de administrador (Gerente) para adicionar um novo slot para o dia {new Date(extraSlotModal.date + "T12:00:00").toLocaleDateString("pt-BR")}.</p>
             
-            <input
-              type="password"
+            <input type="password"
               placeholder="Senha de liberação"
               value={extraSlotModal.password}
               onChange={e => setExtraSlotModal(prev => ({ ...prev, password: e.target.value }))}
               onKeyDown={e => {
                 if (e.key === "Enter") handleConfirmExtraSlot();
-              }}
-              className="w-full bg-slate-950 border border-slate-800 text-white p-3 rounded-xl text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 outline-none"
+              } className="w-full bg-slate-950 border border-slate-800 text-white p-3 rounded-xl text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 outline-none"
               autoFocus
             />
             {extraSlotModal.error && (
@@ -635,43 +578,27 @@ export default function ExternalStorePortal({
             )}
 
             <div className="flex gap-3 justify-end mt-6">
-              <button
-                type="button"
-                onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })}
-                className="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition"
+              <button type="button"
+                onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })} className="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition"
               >
                 Cancelar
               </button>
-              <button
-                type="button"
-                onClick={handleConfirmExtraSlot}
-                className="px-4 py-2 rounded-lg text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-lg shadow-sky-600/20"
+              <button type="button"
+                onClick={handleConfirmExtraSlot} className="px-4 py-2 rounded-lg text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-lg shadow-sky-600/20"
               >
                 Confirmar e Liberar
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
 
       {/* QUICK EXPEDITED BOOKING DIRECT DIALOG */}
-      <AnimatePresence>
+      
         {isModalOpen && selectedDayAndSlot && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-              onClick={() => setIsModalOpen(false)}
-            />
-
-            <motion.div 
-              initial={{ scale: 0.95, y: 15, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="relative w-full max-w-lg bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl z-10 text-white"
-            >
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setIsModalOpen(false)/>
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-lg bg-sky-500/15 text-sky-400">
@@ -685,9 +612,7 @@ export default function ExternalStorePortal({
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-1 rounded-lg hover:bg-slate-850 text-slate-400 hover:text-white transition cursor-pointer"
+                <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-lg hover:bg-slate-850 text-slate-400 hover:text-white transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -703,8 +628,7 @@ export default function ExternalStorePortal({
                     placeholder="Exemplo de conteúdo copiado do MHNET:
 Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cliente - NATALIA REGINA DE BORTOLI"
                     value={protocolRawInput}
-                    onChange={e => setProtocolRawInput(e.target.value)}
-                    className="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 placeholder-slate-650 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition leading-relaxed resize-none"
+                    onChange={e => setProtocolRawInput(e.target.value)} className="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 placeholder-slate-650 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition leading-relaxed resize-none"
                   />
                 </div>
 
@@ -731,8 +655,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                     </label>
                     <select
                       value={formCidade}
-                      onChange={e => setFormCidade(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                      onChange={e => setFormCidade(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
                     >
                       <option value="Lajeado">Lajeado</option>
                           <option value="Estrela">Estrela</option>
@@ -745,12 +668,11 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                     </label>
                     <select
                       value={formVendedor}
-                      onChange={e => setFormVendedor(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                      onChange={e => setFormVendedor(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
                     >
                       <option value="">Selecione...</option>
                       {vendors.map(v => (
-                        <option key={v} value={v}>{v}</option>
+                        <option key={v} value={v>{v}</option>
                       ))}
                     </select>
                   </div>
@@ -761,8 +683,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                     </label>
                     <select
                       value={formStatus}
-                      onChange={e => setFormStatus(e.target.value as any)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                      onChange={e => setFormStatus(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
                     >
                       <option value="Pendente">Pendente</option>
                       <option value="Confirmada">Confirmada</option>
@@ -772,10 +693,8 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
 
                 <div className="flex items-center justify-between border-t border-slate-800 pt-4 mt-6">
                   {currentInstallation ? (
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteClick(currentInstallation.id)}
-                      className="flex items-center gap-1 py-1.5 px-3 rounded-lg bg-rose-950/30 hover:bg-rose-900 border border-rose-800/40 text-rose-450 hover:text-white text-xs cursor-pointer transition font-bold"
+                    <button type="button"
+                      onClick={() => handleDeleteClick(currentInstallation.id)} className="flex items-center gap-1 py-1.5 px-3 rounded-lg bg-rose-950/30 hover:bg-rose-900 border border-rose-800/40 text-rose-450 hover:text-white text-xs cursor-pointer transition font-bold"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Excluir</span>
@@ -785,48 +704,39 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                   )}
 
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-750 text-xs font-bold text-slate-350 transition cursor-pointer"
+                    <button type="button"
+                      onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-750 text-xs font-bold text-slate-350 transition cursor-pointer"
                     >
                       Voltar
                     </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white transition cursor-pointer"
+                    <button type="submit"} className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white transition cursor-pointer"
                     >
                       Salvar Agendamento
                     </button>
                   </div>
                 </div>
               </form>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+      
     </div>
   );
 
   function renderSlotCard(dateStr: string, slotIdx: number, matched?: Installation) {
     if (matched) {
       return (
-        <div 
-          key={slotIdx}
+        <div key={slotIdx}
           draggable
           onDragStart={(e) => handleDragStart(e, matched)}
           onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop(e, dateStr, slotIdx, matched)}
-          className={`p-2.5 rounded-lg border text-left flex flex-col justify-between min-h-[95px] relative group text-xs cursor-grab active:cursor-grabbing ${getStatusColor(matched.status)}`}
-        >
+          onDrop={(e) => handleDrop(e, dateStr, slotIdx, matched)} className={`p-2.5 rounded-lg border text-left flex flex-col justify-between min-h-[95px] relative group text-xs cursor-grab active:cursor-grabbing ${getStatusColor(matched.status)}`}>
           <div className="flex items-start justify-between gap-1">
             <span className="font-bold text-[11px] truncate leading-tight flex-1 text-slate-250 block max-w-[85%]">
               {matched.nomeCliente}
             </span>
             <div className="opacity-0 group-hover:opacity-100 transition shrink-0">
-              <button
-                onClick={() => handleSlotClick(dateStr, slotIdx, matched)}
-                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+              <button onClick={() => handleSlotClick(dateStr, slotIdx, matched)} className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
               >
                 <Edit3 className="w-3 h-3" />
               </button>
@@ -847,17 +757,13 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
     }
 
     return (
-      <button
-        key={slotIdx}
-        onClick={() => handleSlotClick(dateStr, slotIdx)}
+      <button key={slotIdx} onClick={() => handleSlotClick(dateStr, slotIdx)}
         onDragOver={handleDragOver}
-        onDrop={(e) => handleDrop(e, dateStr, slotIdx)}
-        className="w-full p-3 rounded-lg border border-dashed border-slate-800 hover:border-sky-650/40 text-left flex flex-col items-center justify-center min-h-[95px] text-slate-650 hover:text-slate-300 hover:bg-sky-950/5 transition cursor-pointer"
+        onDrop={(e) => handleDrop(e, dateStr, slotIdx)} className="w-full p-3 rounded-lg border border-dashed border-slate-800 hover:border-sky-650/40 text-left flex flex-col items-center justify-center min-h-[95px] text-slate-650 hover:text-slate-300 hover:bg-sky-950/5 transition cursor-pointer"
       >
         <Plus className="w-4 h-4 mb-1 text-slate-600" />
         <span className="text-[8px] font-extrabold uppercase tracking-widest block text-slate-550">Disponível</span>
         <span className="text-[7.5px] font-mono text-slate-600 mt-0.5">{getSlotTimeLabel(slotIdx).split(" às ")[0]}</span>
       </button>
     );
-  }
-}
+  

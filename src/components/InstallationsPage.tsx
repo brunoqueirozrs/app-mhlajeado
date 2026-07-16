@@ -25,7 +25,6 @@ import {
   ArrowRight,
   ClipboardList
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 import { Installation } from "../types";
 import ConfirmModal from "./ConfirmModal";
 
@@ -47,12 +46,11 @@ function parseProtocolText(raw: string) {
   
   const parts = raw.split(" - ");
   let name = "";
-  if (parts.length > 0) {
+  if (parts.length> 0) {
     const rawName = parts[parts.length - 1].trim();
     if (rawName && !rawName.toUpperCase().includes("PROTOCOLO") && !rawName.toUpperCase().includes("ATIVAÇÃO")) {
       name = rawName;
-    }
-  }
+    
   return { 
     protocol: protocol || "Pendente", 
     name: name || "Cliente Desconhecido" 
@@ -187,8 +185,7 @@ export default function InstallationsPage({
       setFormCpf("");
       setSelectedDayAndSlot({ date: dateStr, slot: slotIdx });
       setIsModalOpen(true);
-    }
-  };
+    ;
 
   // Extra Slot Modal
   const [extraSlotModal, setExtraSlotModal] = useState({ isOpen: false, date: "", password: "", error: "" });
@@ -222,8 +219,7 @@ export default function InstallationsPage({
       setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" });
     } else {
       setExtraSlotModal(prev => ({ ...prev, error: "Senha incorreta. Tente novamente." }));
-    }
-  };
+    ;
 
   const handleSaveModal = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,8 +241,7 @@ export default function InstallationsPage({
         // Remove o nono dígito (9) para integração com WhatsApp/n8n se houver 13 dígitos numéros (55 + 11 dígitos)
         if (finalPhone.length === 13 && finalPhone[4] === '9') {
           finalPhone = finalPhone.slice(0, 4) + finalPhone.slice(5);
-        }
-      }
+        
 
       const payload: Installation = {
         id: currentInstallation?.id || "",
@@ -274,8 +269,7 @@ export default function InstallationsPage({
       setProtocolRawInput("");
     } catch (e: any) {
       alert("Erro ao salvar agendamento: " + e.message);
-    }
-  };
+    ;
 
   const handleDeleteClick = (id: string) => {
     setInstToDelete(id);
@@ -310,8 +304,7 @@ export default function InstallationsPage({
       case 3: return "Slot 3 (Tarde - Espaço 1)";
       case 4: return "Slot 4 (Tarde - Espaço 2)";
       default: return `Slot ${slot} (Extra)`;
-    }
-  };
+    ;
 
   const getSlotTimeLabel = (slot: number) => {
     switch (slot) {
@@ -320,8 +313,7 @@ export default function InstallationsPage({
       case 3: return "13:30 às 15:30";
       case 4: return "15:30 às 17:30";
       default: return "A combinar";
-    }
-  };
+    ;
 
   const getStatusColor = (status: Installation["status"]) => {
     switch (status) {
@@ -330,8 +322,7 @@ export default function InstallationsPage({
       case "Cancelada": return "bg-rose-500/10 text-rose-400 border border-rose-500/20";
       case "Reagendada": return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
       default: return "bg-slate-500/10 text-slate-350 border border-slate-500/10";
-    }
-  };
+    ;
 
   // Quick live state for parsing
   const liveParsed = parseProtocolText(protocolRawInput);
@@ -372,11 +363,9 @@ export default function InstallationsPage({
         const swapPayload2 = { ...targetInst, dataAgendamento: draggedInst.dataAgendamento, slotIndex: draggedInst.slotIndex, horario: getSlotTimeLabel(draggedInst.slotIndex!) };
         await onSaveInstallation(swapPayload1);
         await onSaveInstallation(swapPayload2);
-      }
-    } catch (err) {
+       catch (err) {
       console.error("Drop err:", err);
-    }
-  };
+    ;
 
   return (
     <div className="space-y-6 pb-20">
@@ -396,27 +385,22 @@ export default function InstallationsPage({
 
         <div className="flex items-center gap-3 shrink-0">
           {onSyncInstallations && (
-            <button
-              onClick={async () => {
+            <button onClick={async () => {
                 setIsSyncing(true);
                 try {
                   await onSyncInstallations();
                 } finally {
                   setIsSyncing(false);
                 }
-              }}
-              disabled={isSyncing}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-550 disabled:opacity-50 text-white text-xs font-semibold cursor-pointer transition shadow-sm"
+              disabled={isSyncing} className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-550 disabled:opacity-50 text-white text-xs font-semibold cursor-pointer transition shadow-sm"
               title="Sincronizar agendamentos diretamente do Google Sheets"
             >
-              <CalendarDays className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+              <CalendarDays className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`/>
               <span>{isSyncing ? "Sincronizando..." : "Sincronizar Planilha"}</span>
             </button>
           )}
 
-          <button
-            onClick={handleCopyExternalLink}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 text-xs font-semibold cursor-pointer transition shadow-sm"
+          <button onClick={handleCopyExternalLink} className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 text-xs font-semibold cursor-pointer transition shadow-sm"
           >
             {copiedLink ? (
               <>
@@ -436,24 +420,18 @@ export default function InstallationsPage({
       {/* Week Controller Dashboard */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-md">
         <div className="flex items-center gap-2 text-slate-200">
-          <button
-            onClick={handlePrevWeek}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+          <button onClick={handlePrevWeek} className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-white transition cursor-pointer"
             title="Semana Anterior"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           
-          <button
-            onClick={handleResetToToday}
-            className="px-3 py-1.5 rounded-lg bg-slate-850 hover:bg-slate-750 text-xs font-semibold transition cursor-pointer text-slate-300"
+          <button onClick={handleResetToToday} className="px-3 py-1.5 rounded-lg bg-slate-850 hover:bg-slate-750 text-xs font-semibold transition cursor-pointer text-slate-300"
           >
             Hoje
           </button>
 
-          <button
-            onClick={handleNextWeek}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+          <button onClick={handleNextWeek} className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-white transition cursor-pointer"
             title="Próxima Semana"
           >
             <ArrowRight className="w-4 h-4" />
@@ -469,12 +447,10 @@ export default function InstallationsPage({
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
-            <input
-              type="text"
+            <input type="text"
               placeholder="Buscar por cliente, protocolo..."
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-600 transition"
+              onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-600 transition"
             />
           </div>
         </div>
@@ -489,19 +465,13 @@ export default function InstallationsPage({
           const formattedLabel = dayName.charAt(0).toUpperCase() + dayName.slice(1);
           
           return (
-            <div 
-              key={dateStr} 
-              className={`flex flex-col bg-slate-900 rounded-xl overflow-hidden border ${
+            <div key={dateStr} className={`flex flex-col bg-slate-900 rounded-xl overflow-hidden border ${
                 isToday ? "border-sky-500 shadow-lg shadow-sky-950/20" : "border-slate-800"
-              }`}
-            >
+              }`}>
               {/* Day Header */}
-              <div 
-                onClick={() => setSelectedDayDetails(dateStr)}
-                className={`p-3 text-center border-b cursor-pointer hover:bg-opacity-80 transition ${
+              <div onClick={() => setSelectedDayDetails(dateStr)} className={`p-3 text-center border-b cursor-pointer hover:bg-opacity-80 transition ${
                   isToday ? "bg-sky-600 text-white hover:bg-sky-500" : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-900"
-                }`}
-              >
+                }`}>
                 <div className="text-[10px] font-bold tracking-wider uppercase opacity-75">{formattedLabel}</div>
                 <div className="text-sm font-extrabold">{day.toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}</div>
               </div>
@@ -533,9 +503,7 @@ export default function InstallationsPage({
                       return renderSlotCell(dateStr, slotIdx, inst);
                     });
                   })()}
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleAddExtraSlotClick(dateStr); }}
-                    className="mt-2 w-full p-2 border border-dashed border-slate-700/50 rounded-lg text-slate-500 hover:text-slate-300 hover:border-slate-500 transition text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
+                  <button onClick={(e) => { e.stopPropagation(); handleAddExtraSlotClick(dateStr); } className="mt-2 w-full p-2 border border-dashed border-slate-700/50 rounded-lg text-slate-500 hover:text-slate-300 hover:border-slate-500 transition text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3 h-3" /> Slot Extra
                   </button>
@@ -560,22 +528,11 @@ export default function InstallationsPage({
       </div>
 
       {/* DAY DETAILS MODAL */}
-      <AnimatePresence>
+      
         {selectedDayDetails && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-              onClick={() => setSelectedDayDetails(null)}
-            />
-            <motion.div
-              initial={{ scale: 0.95, y: 15, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl z-10 text-white flex flex-col"
-            >
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelectedDayDetails(null)/>
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-lg bg-sky-500/10 text-sky-400">
@@ -590,9 +547,7 @@ export default function InstallationsPage({
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedDayDetails(null)}
-                  className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+                <button onClick={() => setSelectedDayDetails(null)} className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -617,11 +572,9 @@ export default function InstallationsPage({
                              <div className="flex justify-between items-start gap-2">
                                <div>
                                  <h4 className="font-bold text-sm text-white">{inst.nomeCliente}</h4>
-                                 {inst.observacao && <p className="text-xs font-mono text-slate-400 mt-0.5">{inst.observacao.substring(0, 80)}{inst.observacao.length > 80 ? '...' : ''}</p>}
+                                 {inst.observacao && <p className="text-xs font-mono text-slate-400 mt-0.5">{inst.observacao.substring(0, 80)}{inst.observacao.length> 80 ? '...' : ''}</p>}
                                </div>
-                               <button
-                                 onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx, inst); }}
-                                 className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-bold text-white transition cursor-pointer"
+                               <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx, inst); } className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-bold text-white transition cursor-pointer"
                                >
                                  Abrir
                                </button>
@@ -651,9 +604,7 @@ export default function InstallationsPage({
                         ) : (
                           <div className="flex items-center justify-between h-full">
                             <span className="text-sm text-slate-500 italic">Slot Livre</span>
-                            <button
-                               onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx); }}
-                               className="px-3 py-1.5 border border-slate-700 hover:border-sky-500 hover:text-sky-400 rounded-lg text-xs font-bold text-slate-400 transition cursor-pointer"
+                            <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx); } className="px-3 py-1.5 border border-slate-700 hover:border-sky-500 hover:text-sky-400 rounded-lg text-xs font-bold text-slate-400 transition cursor-pointer"
                              >
                                Agendar
                              </button>
@@ -664,32 +615,26 @@ export default function InstallationsPage({
                   );
                 })}
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+      
 
       {/* EXTRA SLOT MODAL */}
       {extraSlotModal.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })} />
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-slate-700/60 p-6 rounded-2xl w-full max-w-sm relative z-10 shadow-2xl"
-          >
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })/>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative z-10 w-full max-w-sm">
             <h3 className="text-lg font-bold text-white mb-2">Liberar Slot Extra</h3>
             <p className="text-xs text-slate-400 mb-4">Insira a senha de administrador ou gerente para adicionar um novo slot para o dia {new Date(extraSlotModal.date + "T12:00:00").toLocaleDateString("pt-BR")}.</p>
             
-            <input
-              type="password"
+            <input type="password"
               placeholder="Senha de liberação"
               value={extraSlotModal.password}
               onChange={e => setExtraSlotModal(prev => ({ ...prev, password: e.target.value }))}
               onKeyDown={e => {
                 if (e.key === "Enter") handleConfirmExtraSlot();
-              }}
-              className="w-full bg-slate-950 border border-slate-800 text-white p-3 rounded-xl text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 outline-none"
+              } className="w-full bg-slate-950 border border-slate-800 text-white p-3 rounded-xl text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 outline-none"
               autoFocus
             />
             {extraSlotModal.error && (
@@ -697,43 +642,27 @@ export default function InstallationsPage({
             )}
 
             <div className="flex gap-3 justify-end mt-6">
-              <button
-                type="button"
-                onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })}
-                className="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition cursor-pointer"
+              <button type="button"
+                onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })} className="px-4 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition cursor-pointer"
               >
                 Cancelar
               </button>
-              <button
-                type="button"
-                onClick={handleConfirmExtraSlot}
-                className="px-4 py-2 rounded-lg text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-lg shadow-sky-600/20 cursor-pointer"
+              <button type="button"
+                onClick={handleConfirmExtraSlot} className="px-4 py-2 rounded-lg text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-lg shadow-sky-600/20 cursor-pointer"
               >
                 Confirmar
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
 
       {/* QUICK AGENDAMENTO DIALOG MODAL */}
-      <AnimatePresence>
+      
         {isModalOpen && selectedDayAndSlot && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/75 backdrop-blur-sm"
-              onClick={() => setIsModalOpen(false)}
-            />
-            
-            <motion.div 
-              initial={{ scale: 0.95, y: 15, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="relative w-full max-w-xl bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl z-10 text-white overflow-hidden"
-            >
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setIsModalOpen(false)/>
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-lg bg-sky-500/10 text-sky-400">
@@ -749,9 +678,7 @@ export default function InstallationsPage({
                   </div>
                 </div>
                 
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-1 rounded-lg hover:bg-slate-850 text-slate-400 hover:text-white transition cursor-pointer"
+                <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-lg hover:bg-slate-850 text-slate-400 hover:text-white transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -759,18 +686,12 @@ export default function InstallationsPage({
 
               {currentInstallation && (
                 <div className="flex gap-4 border-b border-slate-800 mb-4 pb-2">
-                  <button
-                    type="button"
-                    onClick={() => setModalTab('acao')}
-                    className={`text-xs font-bold pb-2 border-b-2 transition cursor-pointer ${modalTab === 'acao' ? 'border-amber-500 text-amber-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
-                  >
+                  <button type="button"
+                    onClick={() => setModalTab('acao')} className={`text-xs font-bold pb-2 border-b-2 transition cursor-pointer ${modalTab === 'acao' ? 'border-amber-500 text-amber-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
                     Ação Técnica
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setModalTab('cadastro')}
-                    className={`text-xs font-bold pb-2 border-b-2 transition cursor-pointer ${modalTab === 'cadastro' ? 'border-sky-500 text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
-                  >
+                  <button type="button"
+                    onClick={() => setModalTab('cadastro')} className={`text-xs font-bold pb-2 border-b-2 transition cursor-pointer ${modalTab === 'cadastro' ? 'border-sky-500 text-sky-400' : 'border-transparent text-slate-500 hover:text-slate-300'}`}>
                     Cadastro / Edição
                   </button>
                 </div>
@@ -789,8 +710,7 @@ export default function InstallationsPage({
                         placeholder="Cole aqui o texto do protocolo exemplo:
 Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cliente - NATALIA REGINA DE BORTOLI"
                         value={protocolRawInput}
-                        onChange={e => setProtocolRawInput(e.target.value)}
-                        className="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition leading-relaxed resize-none"
+                        onChange={e => setProtocolRawInput(e.target.value)} className="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition leading-relaxed resize-none"
                       />
                       <p className="text-[10px] text-slate-500 mt-1">
                         Não é necessário digitar nome ou outros campos. Nosso motor inteligente analisa a string e cria as notificações.
@@ -825,12 +745,11 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         </label>
                         <select
                           value={formVendedor}
-                          onChange={e => setFormVendedor(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          onChange={e => setFormVendedor(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
                         >
                           <option value="">Selecione...</option>
                           {vendors.map(v => (
-                            <option key={v} value={v}>{v}</option>
+                            <option key={v} value={v>{v}</option>
                           ))}
                         </select>
                       </div>
@@ -842,8 +761,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         </label>
                         <select
                           value={formCidade}
-                          onChange={e => setFormCidade(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          onChange={e => setFormCidade(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
                         >
                           <option value="Lajeado">Lajeado</option>
                           <option value="Estrela">Estrela</option>
@@ -856,8 +774,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         </label>
                         <select
                           value={formStatus}
-                          onChange={e => setFormStatus(e.target.value as any)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          onChange={e => setFormStatus(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
                         >
                           <option value="Pendente">Pendente</option>
                           <option value="Confirmada">Confirmada</option>
@@ -873,12 +790,10 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
                           CPF do Cliente *
                         </label>
-                        <input
-                          type="text"
+                        <input type="text"
                           value={formCpf}
                           onChange={e => setFormCpf(e.target.value)}
-                          placeholder="Ex: 000.000.000-00"
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          placeholder="Ex: 000.000.000-00"} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
                         />
                       </div>
                       <div>
@@ -887,12 +802,10 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         </label>
                         <div className="flex bg-slate-950 border border-slate-800 rounded-lg focus-within:border-sky-500 overflow-hidden">
                           <span className="px-2 text-xs text-slate-500 bg-slate-900/50 border-r border-slate-800 flex items-center justify-center">+55</span>
-                          <input
-                            type="text"
+                          <input type="text"
                             value={formTelefone}
                             onChange={e => setFormTelefone(e.target.value)}
-                            placeholder="Ex: 51988887777"
-                            className="w-full bg-transparent p-2 text-xs text-white focus:outline-none"
+                            placeholder="Ex: 51988887777"} className="w-full bg-transparent p-2 text-xs text-white focus:outline-none"
                           />
                         </div>
                       </div>
@@ -900,12 +813,10 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
                           Endereço Completo
                         </label>
-                        <input
-                          type="text"
+                        <input type="text"
                           value={formEndereco}
                           onChange={e => setFormEndereco(e.target.value)}
-                          placeholder="Rua, Número, Bairro"
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          placeholder="Rua, Número, Bairro"} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
                         />
                       </div>
                     </div>
@@ -931,15 +842,13 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                             <input 
                               value={formTelefone}
                               onChange={e => setFormTelefone(e.target.value)}
-                              placeholder="Ex: 51988887777"
-                              className="w-full bg-transparent p-2 text-xs text-white focus:outline-none"
+                              placeholder="Ex: 51988887777"} className="w-full bg-transparent p-2 text-xs text-white focus:outline-none"
                             />
                           </div>
                           {formTelefone && formTelefone !== "Consulte no Protocolo" && (
                             <a 
                               href={`https://wa.me/${formTelefone.replace(/\D/g, '').startsWith('55') ? formTelefone.replace(/\D/g, '') : '55' + formTelefone.replace(/\D/g, '')}`}
-                              target="_blank" rel="noreferrer"
-                              className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center justify-center transition"
+                              target="_blank" rel="noreferrer"} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center justify-center transition"
                               title="Chamar no WhatsApp"
                             >
                               <span className="font-bold text-xs whitespace-nowrap">Chamar</span>
@@ -956,8 +865,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                          </label>
                          <input
                            value={formEndereco}
-                           onChange={e => setFormEndereco(e.target.value)}
-                           className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                           onChange={e => setFormEndereco(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
                          />
                       </div>
                       <div>
@@ -967,8 +875,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                          <input
                            value={formCoordenadas}
                            placeholder="-29.xxxx, -51.xxxx"
-                           onChange={e => setFormCoordenadas(e.target.value)}
-                           className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                           onChange={e => setFormCoordenadas(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
                          />
                       </div>
                     </div>
@@ -980,8 +887,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                       <div className="flex gap-2">
                         <select
                           value={formAtividade}
-                          onChange={e => setFormAtividade(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                          onChange={e => setFormAtividade(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
                         >
                           <option value="">Selecione...</option>
                           <option value="Deslocamento">Deslocamento (Avisar Cliente)</option>
@@ -991,13 +897,11 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                           <option value="Pendente">Retorno Necessário / Problema</option>
                         </select>
                         {formAtividade === "Deslocamento" && formTelefone && formTelefone !== "Consulte no Protocolo" && (
-                          <button
-                            type="button"
+                          <button type="button"
                             onClick={() => {
                               const msg = `Olá, ${liveParsed.name || 'cliente'}! O técnico da MHNET está a caminho da sua residência para realizar o serviço agendado.`;
                               window.open(`https://wa.me/${formTelefone.replace(/\D/g, '').startsWith('55') ? formTelefone.replace(/\D/g, '') : '55' + formTelefone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, "_blank");
-                            }}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-2 rounded-lg whitespace-nowrap transition cursor-pointer flex items-center justify-center"
+                            } className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-2 rounded-lg whitespace-nowrap transition cursor-pointer flex items-center justify-center"
                           >
                             WhatsApp Aviso
                           </button>
@@ -1012,10 +916,8 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
 
                 <div className="flex items-center justify-between border-t border-slate-800 pt-4 mt-6">
                   {currentInstallation ? (
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteClick(currentInstallation.id)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-950/45 hover:bg-rose-900 border border-rose-800/50 text-rose-450 hover:text-white text-xs font-semibold cursor-pointer transition"
+                    <button type="button"
+                      onClick={() => handleDeleteClick(currentInstallation.id)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-950/45 hover:bg-rose-900 border border-rose-800/50 text-rose-450 hover:text-white text-xs font-semibold cursor-pointer transition"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Excluir Reserva</span>
@@ -1025,16 +927,12 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                   )}
 
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-xs font-bold text-slate-300 transition cursor-pointer"
+                    <button type="button"
+                      onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-xs font-bold text-slate-300 transition cursor-pointer"
                     >
                       Cancelar
                     </button>
-                    <button
-                      type="submit"
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 -lg -sky-950/30 text-xs font-bold text-white transition cursor-pointer"
+                    <button type="submit"} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 -lg -sky-950/30 text-xs font-bold text-white transition cursor-pointer"
                     >
                       <Check className="w-4 h-4" />
                       <span>Confirmar Agendamento</span>
@@ -1042,30 +940,17 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                   </div>
                 </div>
               </form>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+      
 
       {/* THE AMAZING AI WARNING BROADCAST DRAWER */}
-      <AnimatePresence>
+      
         {viewingAiInst && (
           <div className="fixed inset-0 z-50 flex items-center justify-end p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
-              onClick={() => setViewingAiInst(null)}
-            />
-
-            <motion.div 
-              initial={{ x: "100%", opacity: 0.9 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "100%", opacity: 0.9 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-md h-full bg-slate-900 border-l border-slate-800 p-6 shadow-2xl z-10 text-white flex flex-col justify-between overflow-y-auto"
-            >
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setViewingAiInst(null)/>
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10">
               <div className="space-y-6">
                 <div className="flex items-start justify-between border-b border-slate-800 pb-4">
                   <div className="space-y-1">
@@ -1077,9 +962,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                     <p className="text-[10px] text-slate-450">{viewingAiInst.observacao || "Protocolo Pendente"}</p>
                   </div>
 
-                  <button 
-                    onClick={() => setViewingAiInst(null)}
-                    className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-450 transition cursor-pointer"
+                  <button onClick={() => setViewingAiInst(null)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-450 transition cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1110,9 +993,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
               </div>
 
               <div className="border-t border-slate-800 pt-4 mt-6">
-                <button
-                  onClick={() => handleCopyAlert(viewingAiInst.aiNotificationMessage || "", viewingAiInst.id)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 font-bold text-xs text-white transition cursor-pointer shadow-lg shadow-sky-950/35"
+                <button onClick={() => handleCopyAlert(viewingAiInst.aiNotificationMessage || "", viewingAiInst.id)} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 font-bold text-xs text-white transition cursor-pointer shadow-lg shadow-sky-950/35"
                 >
                   {copiedId === viewingAiInst.id ? (
                     <>
@@ -1127,10 +1008,10 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                   )}
                 </button>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+      
 
       <ConfirmModal
         isOpen={!!instToDelete}
@@ -1138,8 +1019,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
         message="Tem certeza que deseja excluir permanentemente esta reserva de instalação do calendário?"
         confirmText="Excluir"
         onConfirm={confirmDeleteInstallation}
-        onCancel={() => setInstToDelete(null)}
-      />
+        onCancel={() => setInstToDelete(null)/>
     </div>
   );
 
@@ -1147,23 +1027,18 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
   function renderSlotCell(dateStr: string, slotIdx: number, inst?: Installation) {
     if (inst) {
       return (
-        <div 
-          key={slotIdx}
+        <div key={slotIdx}
           draggable
           onDragStart={(e) => handleDragStart(e, inst)}
           onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop(e, dateStr, slotIdx, inst)}
-          className={`p-2.5 rounded-lg border text-left flex flex-col justify-between transition relative group min-h-[95px] overflow-hidden cursor-grab active:cursor-grabbing ${getStatusColor(inst.status)}`}
-        >
+          onDrop={(e) => handleDrop(e, dateStr, slotIdx, inst)} className={`p-2.5 rounded-lg border text-left flex flex-col justify-between transition relative group min-h-[95px] overflow-hidden cursor-grab active:cursor-grabbing ${getStatusColor(inst.status)}`}>
           {/* Header row inside slot */}
           <div className="flex items-start justify-between gap-1">
             <span className="font-bold text-[11px] truncate leading-tight flex-1 text-slate-200 block max-w-[85%] font-sans">
               {inst.nomeCliente}
             </span>
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition shrink-0">
-              <button
-                onClick={() => handleSlotClick(dateStr, slotIdx, inst)}
-                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-350 hover:text-white transition cursor-pointer"
+              <button onClick={() => handleSlotClick(dateStr, slotIdx, inst)} className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-350 hover:text-white transition cursor-pointer"
                 title="Editar Agendamento"
               >
                 <Edit3 className="w-3 h-3" />
@@ -1189,9 +1064,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
               {inst.status}
             </span>
 
-            <button
-              onClick={() => setViewingAiInst(inst)}
-              className="flex items-center gap-0.5 text-[8.5px] font-bold text-sky-300 hover:text-white border border-sky-400/20 hover:border-sky-400 px-1 py-0.5 rounded cursor-pointer transition bg-sky-950/20 shadow-sm"
+            <button onClick={() => setViewingAiInst(inst)} className="flex items-center gap-0.5 text-[8.5px] font-bold text-sky-300 hover:text-white border border-sky-400/20 hover:border-sky-400 px-1 py-0.5 rounded cursor-pointer transition bg-sky-950/20 shadow-sm"
               title="Ver Aviso IA"
             >
               <Sparkles className="w-2.5 h-2.5 shrink-0 animate-pulse text-sky-400" />
@@ -1204,17 +1077,13 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
 
     // Default empty slot
     return (
-      <button
-        key={slotIdx}
-        onClick={() => handleSlotClick(dateStr, slotIdx)}
+      <button key={slotIdx} onClick={() => handleSlotClick(dateStr, slotIdx)}
         onDragOver={handleDragOver}
-        onDrop={(e) => handleDrop(e, dateStr, slotIdx)}
-        className="w-full p-3 rounded-lg border border-dashed border-slate-800 hover:border-sky-600/40 text-left flex flex-col items-center justify-center min-h-[95px] text-slate-600 hover:text-slate-300 hover:bg-sky-950/5 transition cursor-pointer"
+        onDrop={(e) => handleDrop(e, dateStr, slotIdx)} className="w-full p-3 rounded-lg border border-dashed border-slate-800 hover:border-sky-600/40 text-left flex flex-col items-center justify-center min-h-[95px] text-slate-600 hover:text-slate-300 hover:bg-sky-950/5 transition cursor-pointer"
       >
         <Plus className="w-4 h-4 mb-1 text-slate-600 group-hover:text-sky-400" />
         <span className="text-[8.5px] font-extrabold uppercase tracking-widest text-slate-550">Disponível</span>
         <span className="text-[8px] font-mono text-slate-600 mt-1">Horário: {getSlotTimeLabel(slotIdx).split(" às ")[0]}</span>
       </button>
     );
-  }
-}
+  

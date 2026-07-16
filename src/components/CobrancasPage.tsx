@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { motion } from "motion/react";
 import { 
   FileText, Search, Filter, AlertCircle, CheckCircle, Clock,
   Smartphone, MessageSquare, Plus, Save, Phone, ClipboardList,
@@ -22,6 +21,19 @@ interface CobrancasPageProps {
   onGenerateIAPitch: (cobranca: Cobranca) => Promise<string>;
   onRefreshData?: () => void;
 }
+
+
+const formatPlano = (plano?: string) => {
+  if (!plano) return "Sem Plano";
+  let result = plano;
+  const match = plano.match(/(\d+\s*(?:Mbps|Gbps|Mb|Gb|Mega|Giga))/i);
+  if (match) {
+    result = match[1];
+    if (/wifitotal/i.test(plano)) {
+      result += " + WIFITotal";
+    
+  return result;
+};
 
 export default function CobrancasPage({
   cobrancas,
@@ -95,7 +107,7 @@ export default function CobrancasPage({
     let headers: string[] = [];
     let dataStartIdx = 0;
     
-    if (lines.length > 0) {
+    if (lines.length> 0) {
       const firstLineCells = lines[0].split("\t");
       const hasKeywords = firstLineCells.some(c => 
         /contrato|cliente|nome|valor|vencimento|telefone|cidade|plano/i.test(c)
@@ -103,8 +115,7 @@ export default function CobrancasPage({
       if (hasKeywords) {
         headers = firstLineCells.map(h => h.trim().toLowerCase());
         dataStartIdx = 1;
-      }
-    }
+      
     
     for (let i = dataStartIdx; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -131,7 +142,7 @@ export default function CobrancasPage({
       let dataAtivacao = "";
       let acaoEnvio = "";
       
-      if (headers.length > 0) {
+      if (headers.length> 0) {
         headers.forEach((h, cellIdx) => {
           const val = (cells[cellIdx] || "").trim();
           if (!val) return;
@@ -187,8 +198,7 @@ export default function CobrancasPage({
           const m = parts[1].trim().padStart(2, "0");
           const d = parts[0].trim().padStart(2, "0");
           dataVencimento = `${y}-${m}-${d}`;
-        }
-      } else if (!dataVencimento) {
+         else if (!dataVencimento) {
         dataVencimento = new Date().toISOString().split("T")[0];
       }
       
@@ -198,12 +208,11 @@ export default function CobrancasPage({
       if (!isNaN(dVent.getTime())) {
         const diffTime = Date.now() - dVent.getTime();
         const calculated = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (calculated > 0) {
+        if (calculated> 0) {
           diasAtraso = calculated;
         } else {
           diasAtraso = 0;
-        }
-      }
+        
       
       results.push({
         idContrato,
@@ -213,7 +222,7 @@ export default function CobrancasPage({
         dataVencimento,
         cidade,
         plano,
-        status: diasAtraso > 0 ? "Vencido" : "Pendente",
+        status: diasAtraso> 0 ? "Vencido" : "Pendente",
         diasAtraso,
         observacao: observacao || "Importado da planilha",
         historicoContatos: [],
@@ -225,7 +234,7 @@ export default function CobrancasPage({
         canal,
         dataAtivacao,
         numeroFaturas,
-        acaoEnvio: acaoEnvio || (diasAtraso > 0 ? "Pendente" : "")
+        acaoEnvio: acaoEnvio || (diasAtraso> 0 ? "Pendente" : "")
       });
     }
     setBulkPreview(results);
@@ -250,14 +259,11 @@ export default function CobrancasPage({
         setBulkPreview([]);
         if (onRefreshData) {
           onRefreshData();
-        }
-      } else {
+         else {
         throw new Error(data.message || "Erro desconhecido");
-      }
-    } catch (e: any) {
+       catch (e: any) {
       alert("Falha ao salvar cobranças: " + e.message);
-    }
-  };
+    ;
 
   // Auto-select first item when details or something opens
   const handleOpenDetails = (item: Cobranca) => {
@@ -317,8 +323,7 @@ export default function CobrancasPage({
 
     } catch (e: any) {
       alert("Erro ao registrar ligação: " + e.message);
-    }
-  };
+    ;
 
   const handleSubmitContactLog = async () => {
     if (!selectedItem) return;
@@ -352,11 +357,9 @@ export default function CobrancasPage({
       const fresh = cobrancas.find(x => x.idContrato === selectedItem.idContrato);
       if (fresh) {
         setSelectedItem(fresh);
-      }
-    } catch (e: any) {
+       catch (e: any) {
       alert("Erro ao registrar atendimento: " + e.message);
-    }
-  };
+    ;
 
   // Mark invoice as PAID
   const handleMarkAsPaid = async (item: Cobranca) => {
@@ -386,8 +389,7 @@ export default function CobrancasPage({
       setIsDetailsOpen(false);
     } catch (e: any) {
       alert("Erro ao dar baixa na fatura: " + e.message);
-    }
-  };
+    ;
 
   // Request AI Customized approach message via Gemini API
   const handleRequestAiDraft = async () => {
@@ -401,8 +403,7 @@ export default function CobrancasPage({
       setAiDraftMessage("Olá! Identificamos uma pendência em sua assinatura MHNET. Por favor, regularize via código pix ou boleto bancário.");
     } finally {
       setAiGenerating(false);
-    }
-  };
+    ;
 
   // Launch pre-filled WhatsApp Web link
   const handleOpenWhatsAppChat = (item: Cobranca, customMessage?: string) => {
@@ -443,7 +444,7 @@ export default function CobrancasPage({
         telefone: newTelefone.trim(),
         valor: parsedValor,
         dataVencimento: newDataVencimento,
-        status: calculatedDelay > 0 ? "Vencido" : "Pendente",
+        status: calculatedDelay> 0 ? "Vencido" : "Pendente",
         diasAtraso: calculatedDelay,
         cidade: newCidade,
         plano: newPlano,
@@ -472,8 +473,7 @@ export default function CobrancasPage({
       setNewObs("");
     } catch (e: any) {
       alert("Erro ao cadastrar cobrança: " + e.message);
-    }
-  };
+    ;
 
   // Get unique list of cities for dropdown
   const cidadesDisponiveis = Array.from(new Set(cobrancas.map(c => c.cidade || "Outro"))).filter(Boolean);
@@ -496,17 +496,17 @@ export default function CobrancasPage({
     .reduce((acc, c) => acc + (c.valor || 0), 0);
 
   const totalContratosVencidos = cobrancas.filter(c => c.status === "Vencido").length;
-  const totalContratosAtendidos = cobrancas.filter(c => c.historicoContatos.length > 1).length;
+  const totalContratosAtendidos = cobrancas.filter(c => c.historicoContatos.length> 1).length;
 
   const totalClientesValidos = cobrancas.length;
-  const taxaAdimplencia = totalClientesValidos > 0 
+  const taxaAdimplencia = totalClientesValidos> 0 
     ? Math.round(((cobrancas.filter(c => c.status === "Pago" || c.status === "Pendente").length) / totalClientesValidos) * 100)
     : 100;
 
   const totalEmFila = cobrancas.filter(c => c.statusEnvio === "Em Fila").length;
   const totalEnviado = cobrancas.filter(c => c.statusEnvio === "Enviado").length;
   const totalN8N = totalEmFila + totalEnviado;
-  const progressPercent = totalN8N > 0 ? Math.round((totalEnviado / totalN8N) * 100) : 0;
+  const progressPercent = totalN8N> 0 ? Math.round((totalEnviado / totalN8N) * 100) : 0;
   const estMinutes = Math.ceil((totalEmFila * 90) / 60);
 
   // Auto-filter based on N8N rules
@@ -567,8 +567,7 @@ export default function CobrancasPage({
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(filteredList.map(c => c.idContrato)));
-    }
-  };
+    ;
 
   const handleToggleRow = (id: string) => {
     const next = new Set(selectedIds);
@@ -641,8 +640,7 @@ export default function CobrancasPage({
       if (onRefreshData) onRefreshData();
     } catch (error: any) {
       alert("Falha ao disparar envio: " + error.message);
-    }
-  };
+    ;
 
   const confirmAndDispatch = async () => {
     setIsConfirmDispatchOpen(false);
@@ -680,21 +678,19 @@ export default function CobrancasPage({
       alert("Falha ao disparar lote: " + error.message);
     } finally {
       setIsDispatching(false);
-    }
-  };
+    ;
 
   if (viewMode === "dashboard") {
     return (
       <CobrancasDashboard 
         cobrancas={cobrancas} 
         onClose={() => setViewMode("lista")} 
-        onOpenDetails={(item) => handleOpenContactLog(item)} 
-      />
+        onOpenDetails={(item) => handleOpenContactLog(item)/>
     );
   }
 
   return (
-    <div id="cobrancas-module" className="cobrancas-page-container space-y-6 font-sans relative">
+    <div id="cobrancas-module"} className="cobrancas-page-container space-y-6 font-sans relative">
 
       {/* Modal Confirmar Disparo */}
       {isConfirmDispatchOpen && (
@@ -713,22 +709,18 @@ export default function CobrancasPage({
                   Tempo estimado: <strong className="text-slate-800">{
                     (() => {
                       const estTime = Math.ceil((selectedIds.size * 90) / 60);
-                      return estTime > 60 ? `${Math.floor(estTime/60)}h ${estTime%60}min` : `${estTime} min`;
+                      return estTime> 60 ? `${Math.floor(estTime/60)}h ${estTime%60}min` : `${estTime} min`;
                     })()
                   }</strong>
                 </p>
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setIsConfirmDispatchOpen(false)}
-                className="px-4 py-2 font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200"
+              <button onClick={() => setIsConfirmDispatchOpen(false)} className="px-4 py-2 font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200"
               >
                 Cancelar
               </button>
-              <button
-                onClick={confirmAndDispatch}
-                className="px-4 py-2 font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600"
+              <button onClick={confirmAndDispatch} className="px-4 py-2 font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600"
               >
                 Confirmar
               </button>
@@ -749,33 +741,25 @@ export default function CobrancasPage({
         </div>
         <div className="flex gap-2">
           {onRefreshData && (
-            <button
-              onClick={onRefreshData}
-              className="p-2.5 card-modern border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-sky-600 rounded-xl transition cursor-pointer"
+            <button onClick={onRefreshData} className="p-2.5 card-modern border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-sky-600 rounded-xl transition cursor-pointer"
               title="Recarregar Clientes e Contas da Planilha"
             >
               <Clock className="w-4 h-4" />
             </button>
           )}
-          <button
-            onClick={() => setViewMode("dashboard")}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md shadow-slate-900/20 cursor-pointer transition active:scale-95 shrink-0"
+          <button onClick={() => setViewMode("dashboard")} className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md shadow-slate-900/20 cursor-pointer transition active:scale-95 shrink-0"
           >
             <Bot className="w-4 h-4 text-emerald-400" />
             <span>Dashboard Gerencial</span>
           </button>
-          <button
-            onClick={() => setIsBulkImportOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 card-modern hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-rose-700 rounded-xl text-xs font-bold shadow-sm cursor-pointer transition active:scale-95 shrink-0"
+          <button onClick={() => setIsBulkImportOpen(true)} className="flex items-center gap-2 px-4 py-2.5 card-modern hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-rose-700 rounded-xl text-xs font-bold shadow-sm cursor-pointer transition active:scale-95 shrink-0"
             title="Importar cobranças direto de planilhas copiando e colando"
           >
             <ClipboardList className="w-4.5 h-4.5" />
             <span>Importar</span>
           </button>
           
-          <button
-            onClick={() => setIsNewCobrancaOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-900/10 cursor-pointer transition active:scale-95 shrink-0"
+          <button onClick={() => setIsNewCobrancaOpen(true)} className="flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-900/10 cursor-pointer transition active:scale-95 shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Inserir Manual</span>
@@ -790,7 +774,7 @@ export default function CobrancasPage({
           <div className="flex justify-between items-center">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Em Atraso</span>
             <div className="bg-rose-50 px-2 py-0.5 rounded text-rose-600 text-xs font-bold font-mono">
-              {cobrancas.filter(c => c.diasAtraso > 0).length} clientes
+              {cobrancas.filter(c => c.diasAtraso> 0).length} clientes
             </div>
           </div>
           <div className="flex justify-between items-center">
@@ -802,7 +786,7 @@ export default function CobrancasPage({
           <div className="flex justify-between items-center pt-2 border-t border-slate-100">
             <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider">A Serem Chamados</span>
             <div className="bg-amber-100 px-2 py-0.5 rounded text-amber-700 text-xs font-bold font-mono">
-              {cobrancas.filter(c => c.diasAtraso > 0 && (!c.acaoEnvio || c.acaoEnvio === "Sem Contato" || c.acaoEnvio === "Pendente")).length}
+              {cobrancas.filter(c => c.diasAtraso> 0 && (!c.acaoEnvio || c.acaoEnvio === "Sem Contato" || c.acaoEnvio === "Pendente")).length}
             </div>
           </div>
         </div>
@@ -812,7 +796,7 @@ export default function CobrancasPage({
           <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-2">Inadimplência por Cidade (Top 3)</div>
           <div className="space-y-2 flex-1">
             {Object.entries(
-              cobrancas.filter(c => c.diasAtraso > 0).reduce((acc, curr) => {
+              cobrancas.filter(c => c.diasAtraso> 0).reduce((acc, curr) => {
                 const city = curr.cidade || "Desconhecida";
                 acc[city] = (acc[city] || 0) + 1;
                 return acc;
@@ -831,14 +815,14 @@ export default function CobrancasPage({
           <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-2">Inadimplência Bairro/Cid (Top 3)</div>
           <div className="space-y-2 flex-1">
             {Object.entries(
-              cobrancas.filter(c => c.diasAtraso > 0).reduce((acc, curr) => {
+              cobrancas.filter(c => c.diasAtraso> 0).reduce((acc, curr) => {
                 const bn = `${curr.bairro || "Sem bairro"} (${curr.cidade || ""})`;
                 acc[bn] = (acc[bn] || 0) + 1;
                 return acc;
               }, {} as Record<string, number>)
             ).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([bairro, count]) => (
               <div key={bairro} className="flex justify-between items-center text-xs">
-                <span className="text-slate-800 font-bold truncate pr-2" title={bairro}>{bairro}</span>
+                <span className="text-slate-800 font-bold truncate pr-2" title={bairro>{bairro}</span>
                 <span className="font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">{count}</span>
               </div>
             ))}
@@ -850,14 +834,14 @@ export default function CobrancasPage({
           <div className="text-[9px] text-sky-300 font-bold uppercase tracking-wider mb-2">Planos mais Inadimplentes</div>
           <div className="space-y-2 flex-1">
             {Object.entries(
-              cobrancas.filter(c => c.diasAtraso > 0).reduce((acc, curr) => {
-                const p = curr.plano || "Outros";
+              cobrancas.filter(c => c.diasAtraso> 0).reduce((acc, curr) => {
+                const p = formatPlano(curr.plano) || "Outros";
                 acc[p] = (acc[p] || 0) + 1;
                 return acc;
               }, {} as Record<string, number>)
             ).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([plano, count]) => (
               <div key={plano} className="flex justify-between items-center text-xs">
-                <span className="text-sky-100 font-semibold truncate pr-2" title={plano}>{plano}</span>
+                <span className="text-sky-100 font-semibold truncate pr-2" title={plano>{plano}</span>
                 <span className="font-mono text-sky-300 bg-black/20 px-1.5 py-0.5 rounded text-[10px]">{count}</span>
               </div>
             ))}
@@ -872,22 +856,17 @@ export default function CobrancasPage({
           
           <div className="sm:col-span-4 relative font-sans">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-            <input
-              type="text"
-              placeholder="Pesquisar por Código, Nome..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 hover:bg-slate-50 focus:bg-white leading-none transition"
+            <input type="text"
+              placeholder="Pesquisar por Código, Nome..."} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 hover:bg-slate-50 focus:bg-white leading-none transition"
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
+              onChange={e => setSearchTerm(e.target.value)/>
           </div>
 
           <div className="sm:col-span-3 flex items-center gap-2">
             <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <select
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+            <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
               value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-            >
+              onChange={e => setFilterStatus(e.target.value)>
               <option value="Todos">Status: Todos</option>
               <option value="Pendente">A vencer / Pendente</option>
               <option value="Vencido">Atrasado / Vencido</option>
@@ -897,24 +876,20 @@ export default function CobrancasPage({
           </div>
 
           <div className="sm:col-span-3">
-            <select
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+            <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
               value={filterCidade}
-              onChange={e => setFilterCidade(e.target.value)}
-            >
+              onChange={e => setFilterCidade(e.target.value)>
               <option value="Todos">Cidade: Todas</option>
               {cidadesDisponiveis.map(c => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c>{c}</option>
               ))}
             </select>
           </div>
 
           <div className="sm:col-span-2">
-            <select
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+            <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
               value={filterN8N}
-              onChange={e => setFilterN8N(e.target.value)}
-            >
+              onChange={e => setFilterN8N(e.target.value)>
               <option value="Todos">N8N: Todos</option>
               <option value="NaoEnviado">N8N: Não Enviados</option>
               <option value="Enviado">N8N: Enviados</option>
@@ -931,59 +906,47 @@ export default function CobrancasPage({
         {/* Bulk Action Header */}
         <div className="bg-slate-50 border-b border-slate-100 p-3 sm:px-5 sm:py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <input 
-              type="checkbox"
+            <input type="checkbox"
               id="select-all-cobrancas"
-              checked={selectedIds.size > 0 && selectedIds.size === filteredList.length}
+              checked={selectedIds.size> 0 && selectedIds.size === filteredList.length}
               ref={input => {
                 if (input) {
-                  input.indeterminate = selectedIds.size > 0 && selectedIds.size < filteredList.length;
+                  input.indeterminate = selectedIds.size> 0 && selectedIds.size < filteredList.length;
                 }
-              }}
-              onChange={handleToggleSelectAll}
-              className="w-4 h-4 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
+              onChange={handleToggleSelectAll} className="w-4 h-4 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
             />
-            <label htmlFor="select-all-cobrancas" className="text-xs font-bold text-slate-700 select-none cursor-pointer">
-              {selectedIds.size > 0 
+            <label htmlFor="select-all-cobrancas"} className="text-xs font-bold text-slate-700 select-none cursor-pointer">
+              {selectedIds.size> 0 
                 ? `${selectedIds.size} clientes selecionados (de ${filteredList.length} filtrados)` 
                 : `Selecionar todos (${filteredList.length} filtrados)`}
             </label>
           </div>
 
           <div className="flex gap-2">
-            <button
-              onClick={handleExportCSV}
-              disabled={filteredList.length === 0}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 ${
-                filteredList.length > 0
+            <button onClick={handleExportCSV}
+              disabled={filteredList.length === 0} className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 ${
+                filteredList.length> 0
                   ? "bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 cursor-pointer"
                   : "bg-slate-100 text-slate-400 cursor-not-allowed"
-              }`}
-            >
+              }`}>
               <Download className="w-3.5 h-3.5" />
               Extrair Planilha
             </button>
-            <button
-              onClick={() => {
+            <button onClick={() => {
                 if (onRefreshData) {
                   onRefreshData();
                   alert("Sincronizando cobranças com a planilha Google Sheets...");
-                }
-              }}
-              className="px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 cursor-pointer"
+                 className="px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Sincronizar Planilha
             </button>
-            <button
-              id="btn-disparo-massa"
+            <button id="btn-disparo-massa"
               onClick={() => setIsConfirmDispatchOpen(true)}
-              disabled={selectedIds.size === 0 || isDispatching}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2
-                ${selectedIds.size > 0 && !isDispatching
+              disabled={selectedIds.size === 0 || isDispatching} className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2
+                ${selectedIds.size> 0 && !isDispatching
                   ? "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 cursor-pointer" 
-                  : "bg-slate-100 text-slate-400 cursor-not-allowed"}`}
-            >
+                  : "bg-slate-100 text-slate-400 cursor-not-allowed"}`}>
               {isDispatching ? (
                 <span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-rose-500 rounded-full animate-spin" />
               ) : (
@@ -995,11 +958,11 @@ export default function CobrancasPage({
         </div>
 
         {/* Evolução de Envios N8N - Abaixo dos botões */}
-        {totalN8N > 0 && (
+        {totalN8N> 0 && (
           <div className="bg-white border-b border-slate-100 p-4 sm:px-5 space-y-2 relative overflow-hidden">
             <div className="flex items-center justify-between text-xs font-bold">
               <div className="flex items-center gap-2">
-                {totalEmFila > 0 ? (
+                {totalEmFila> 0 ? (
                   <RefreshCw className="w-3.5 h-3.5 text-sky-500 animate-spin" />
                 ) : (
                   <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
@@ -1012,19 +975,14 @@ export default function CobrancasPage({
             </div>
             
             <div className="relative w-full h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-              <motion.div 
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPercent}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
-              {totalEmFila > 0 && (
-                <motion.div 
-                  className="absolute top-0 left-0 h-full w-full bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                  initial={{ x: '-100%' }}
-                  animate={{ x: '100%' }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                />
+              <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full"
+               }
+               %` 
+               />
+              {totalEmFila> 0 && (
+                <div className="absolute top-0 left-0 h-full w-full bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                 
+                 />
               )}
             </div>
           </div>
@@ -1035,15 +993,12 @@ export default function CobrancasPage({
             <thead>
               <tr className="bg-slate-50/75 border-b border-slate-100 text-[9.5px] font-black uppercase text-slate-400 select-none tracking-widest">
                 <th className="py-4 px-4 w-10 text-center">
-                  <input 
-                    type="checkbox"
-                    className="cobrancas-table-header w-3.5 h-3.5 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
-                    checked={selectedIds.size > 0 && selectedIds.size === filteredList.length}
+                  <input type="checkbox"} className="cobrancas-table-header w-3.5 h-3.5 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
+                    checked={selectedIds.size> 0 && selectedIds.size === filteredList.length}
                     ref={input => {
                       if (input) {
-                        input.indeterminate = selectedIds.size > 0 && selectedIds.size < filteredList.length;
+                        input.indeterminate = selectedIds.size> 0 && selectedIds.size < filteredList.length;
                       }
-                    }}
                     onChange={handleToggleSelectAll}
                     title="Selecionar todos os filtrados"
                   />
@@ -1057,25 +1012,18 @@ export default function CobrancasPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredList.length > 0 ? (
+              {filteredList.length> 0 ? (
                 filteredList.map((item, index) => {
                      
                   return (
-                    <tr 
-                      key={`${item.idContrato}-${index}`} 
-                      className={`hover:bg-slate-50/50 transition duration-100 alignment cursor-pointer ${selectedIds.has(item.idContrato) ? 'bg-sky-50/30' : ''}`}
-                      onClick={(e) => {
+                    <tr key={`${item.idContrato}-${index}` className={`hover:bg-slate-50/50 transition duration-100 alignment cursor-pointer ${selectedIds.has(item.idContrato) ? 'bg-sky-50/30' : ''}` onClick={(e) => {
                         if ((e.target as HTMLElement).closest('input[type="checkbox"], button')) return;
-                        handleOpenDetails(item);
-                      }}
-                    >
+                        handleOpenDetails(item); }}>
                       {/* Checkbox */}
                       <td className="py-3 px-4 text-center">
-                        <input 
-                          type="checkbox"
+                        <input type="checkbox"
                           checked={selectedIds.has(item.idContrato)}
-                          onChange={() => handleToggleRow(item.idContrato)}
-                          className="w-4 h-4 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
+                          onChange={() => handleToggleRow(item.idContrato)} className="w-4 h-4 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
                         />
                       </td>
 
@@ -1084,7 +1032,7 @@ export default function CobrancasPage({
                         <div className="text-[10px] text-slate-400 font-mono font-bold tracking-tight mb-0.5" title="Código / CPF">
                           {item.cpfCnpj || item.idContrato}
                         </div>
-                        <div className="font-extrabold text-slate-800 leading-tight block truncate whitespace-normal max-w-[200px] transform hover:scale-105 hover:text-sky-600 transition-all origin-left cursor-pointer" title={item.nomeCliente}>
+                        <div className="font-extrabold text-slate-800 leading-tight block truncate whitespace-normal max-w-[200px] transform hover:scale-105 hover:text-sky-600 transition-all origin-left cursor-pointer" title={item.nomeCliente>
                           {item.nomeCliente}
                         </div>
                       </td>
@@ -1105,11 +1053,11 @@ export default function CobrancasPage({
                       {/* Faturamento, Vencimento, Nº Faturas e Dias de Atraso */}
                       <td className="py-3 px-4 min-w-[140px]">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${item.diasAtraso > 0 ? "bg-rose-50 text-rose-700" : "bg-[#E6FAF1] text-emerald-700"}`}>
-                            {item.diasAtraso > 0 ? "Em Atraso" : "Em Dia"}
+                          <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${item.diasAtraso> 0 ? "bg-rose-50 text-rose-700" : "bg-[#E6FAF1] text-emerald-700"}`}>
+                            {item.diasAtraso> 0 ? "Em Atraso" : "Em Dia"}
                           </span>
                           <span className="font-extrabold text-rose-600 font-mono text-[11px] flex items-center" title="Dias Intevalo Hoje - Vencimento">
-                            {item.diasAtraso > 0 && <span className="mr-1">{item.diasAtraso}d</span>}
+                            {item.diasAtraso> 0 && <span className="mr-1">{item.diasAtraso}d</span>}
                           </span>
                         </div>
                         <div className="text-[10px] text-slate-500 font-bold max-w-[140px] truncate">
@@ -1120,10 +1068,10 @@ export default function CobrancasPage({
                       {/* App / Info */}
                       <td className="py-3 px-4 min-w-[120px]">
                         <div className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5 mb-0.5">
-                          Baixou App: <span className={item.baixouApp === "Sim" ? "text-emerald-600" : "text-amber-600"}>{item.baixouApp || "Não"}</span>
+                          Baixou App: <span className={item.baixouApp === "Sim" ? "text-emerald-600" : "text-amber-600">{item.baixouApp || "Não"}</span>
                         </div>
                         <div className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]" title="Plano">
-                          {item.plano || "Sem Plano"}
+                          {formatPlano(item.plano)}
                         </div>
                       </td>
                       {/* Status de Envio */}
@@ -1154,40 +1102,33 @@ export default function CobrancasPage({
                       <td className="py-3 px-4 text-right pr-6 min-w-[150px]">
                         <div className="flex justify-end gap-1.5 font-sans">
                           {/* Manual Dispatch N8N Button */}
-                          <motion.button
-                            onClick={() => handleSingleDispatch(item)}
+                          <button onClick={() => handleSingleDispatch(item)}
                             disabled={item.statusEnvio === "Enviado" || item.statusEnvio === "Em Fila"}
-                            whileTap={{ scale: 0.93 }}
                             className={`px-2.5 py-1.5 border rounded-lg text-[10.5px] uppercase font-black tracking-wide transition flex items-center gap-1 ${
                               item.statusEnvio === "Enviado" || item.statusEnvio === "Em Fila"
                                 ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
                                 : "bg-slate-50 hover:bg-rose-50 border-slate-200 hover:border-rose-200 text-slate-700 hover:text-rose-600 cursor-pointer"
                             }`}
-                            title={item.statusEnvio === "Enviado" || item.statusEnvio === "Em Fila" ? "Já enviado ao N8N" : "Disparo Manual (N8N)"}
-                          >
+                            title={item.statusEnvio === "Enviado" || item.statusEnvio === "Em Fila" ? "Já enviado ao N8N" : "Disparo Manual (N8N)">
                             <Send className="w-3.5 h-3.5" />
                             <span>Enviar</span>
-                          </motion.button>
+                          </button>
 
                           {/* Quick WhatsApp push */}
-                          <motion.button
-                            onClick={() => handleOpenWhatsAppChat(item)}
-                            whileTap={{ scale: 0.88 }}
+                          <button onClick={() => handleOpenWhatsAppChat(item)}
                             className="p-1.5 bg-[#E6FAF1] hover:bg-emerald-100 text-[#00A86B] border border-emerald-250 rounded-lg cursor-pointer transition"
                             title="Cobrar diretamente no WhatsApp (Texto padrão)"
                           >
                             <Send className="w-3.5 h-3.5" />
-                          </motion.button>
+                          </button>
 
                           {/* Mark paid Quick */}
-                          <motion.button
-                            onClick={() => handleMarkAsPaid(item)}
-                            whileTap={{ scale: 0.88 }}
+                          <button onClick={() => handleMarkAsPaid(item)}
                             className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg cursor-pointer transition shadow-sm active:scale-90"
                             title="Confirmar pagamento ou baixar"
                           >
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          </motion.button>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1208,16 +1149,16 @@ export default function CobrancasPage({
 
         {/* Mobile Cards (telas pequenas) */}
         <div className="md:hidden divide-y divide-slate-100 font-sans">
-          {filteredList.length > 0 ? (
+          {filteredList.length> 0 ? (
             filteredList.map((item, index) => (
-              <div key={`${item.idContrato}-${index}`} className="p-4 bg-white space-y-3">
+              <div key={`${item.idContrato}-${index}` className="p-4 bg-white space-y-3">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <div className="text-[10px] text-slate-400 font-mono font-bold tracking-tight mb-0.5">{item.cpfCnpj || item.idContrato}</div>
                     <div className="font-extrabold text-slate-800 leading-tight text-sm transform hover:scale-105 hover:text-sky-600 transition-all origin-left cursor-pointer">{item.nomeCliente}</div>
                   </div>
-                  <span className={`shrink-0 inline-block px-2 py-1 rounded-lg text-[9px] font-black uppercase ${item.diasAtraso > 0 ? "bg-rose-50 text-rose-700" : "bg-[#E6FAF1] text-emerald-700"}`}>
-                    {item.diasAtraso > 0 ? "Em Atraso" : "Em Dia"}
+                  <span className={`shrink-0 inline-block px-2 py-1 rounded-lg text-[9px] font-black uppercase ${item.diasAtraso> 0 ? "bg-rose-50 text-rose-700" : "bg-[#E6FAF1] text-emerald-700"}`}>
+                    {item.diasAtraso> 0 ? "Em Atraso" : "Em Dia"}
                   </span>
                 </div>
 
@@ -1228,7 +1169,7 @@ export default function CobrancasPage({
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-bold block">Vencimento</span>
-                    <span className="font-bold text-rose-600">{item.dataVencimento} {item.diasAtraso > 0 && `(${item.diasAtraso}d)`}</span>
+                    <span className="font-bold text-rose-600">{item.dataVencimento} {item.diasAtraso> 0 && `(${item.diasAtraso}d)`}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase font-bold block">Contatos</span>
@@ -1242,11 +1183,9 @@ export default function CobrancasPage({
                 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                   <div className="flex-1 flex items-center gap-2">
-                    <input 
-                      type="checkbox"
+                    <input type="checkbox"
                       checked={selectedIds.has(item.idContrato)}
-                      onChange={() => handleToggleRow(item.idContrato)}
-                      className="w-4 h-4 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
+                      onChange={() => handleToggleRow(item.idContrato)} className="w-4 h-4 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
                     />
                     <span className="text-[11px] font-bold text-slate-600">
                       Selecionar
@@ -1280,9 +1219,7 @@ export default function CobrancasPage({
                 <h3 className="text-lg font-black tracking-tight">{selectedItem.nomeCliente}</h3>
                 <div className="flex items-center gap-3">
                   <p className="text-xs text-slate-400 font-mono font-bold uppercase">Contrato ID: {selectedItem.idContrato} · Telefone: {selectedItem.telefone}</p>
-                  <button 
-                    onClick={() => { setIsRegistroRapidoOpen(true); setRegistroRapidoAtendeu(null); setRegistroRapidoRelato(""); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                  <button onClick={() => { setIsRegistroRapidoOpen(true); setRegistroRapidoAtendeu(null); setRegistroRapidoRelato(""); } className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold transition-all cursor-pointer"
                   >
                     <Phone className="w-3.5 h-3.5" />
                     Registro Rápido de Ligação
@@ -1290,9 +1227,7 @@ export default function CobrancasPage({
                 </div>
               </div>
 
-              <button
-                onClick={() => setIsDetailsOpen(false)}
-                className="p-1.5 bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white rounded-lg transition text-xs font-bold leading-none shrink-0"
+              <button onClick={() => setIsDetailsOpen(false)} className="p-1.5 bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white rounded-lg transition text-xs font-bold leading-none shrink-0"
               >
                 ✕ Fechar
               </button>
@@ -1309,7 +1244,7 @@ export default function CobrancasPage({
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-200/60 rounded-xl">
                   <span className="text-[8.5px] text-slate-400 font-black uppercase tracking-wider block">Plano Atual</span>
-                  <span className="text-xs font-bold text-slate-800 truncate block mt-1">{selectedItem.plano}</span>
+                  <span className="text-xs font-bold text-slate-800 truncate block mt-1">{formatPlano(selectedItem.plano)}</span>
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-200/60 rounded-xl">
                   <span className="text-[8.5px] text-slate-400 font-black uppercase tracking-wider block">Status atual</span>
@@ -1336,10 +1271,8 @@ export default function CobrancasPage({
                       </div>
                     </div>
                     
-                    <button
-                      onClick={handleRequestAiDraft}
-                      disabled={aiGenerating}
-                      className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-[10px] uppercase font-black tracking-wide cursor-pointer transition flex items-center gap-1 shadow-md shadow-sky-900/10 disabled:opacity-50"
+                    <button onClick={handleRequestAiDraft}
+                      disabled={aiGenerating} className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-[10px] uppercase font-black tracking-wide cursor-pointer transition flex items-center gap-1 shadow-md shadow-sky-900/10 disabled:opacity-50"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-200" />
                       <span>{aiGenerating ? "Redigindo..." : "Gerar Roteiro IA"}</span>
@@ -1352,19 +1285,15 @@ export default function CobrancasPage({
                         {aiDraftMessage}
                       </div>
                       <div className="flex justify-end gap-1.5">
-                        <button
-                          onClick={() => {
+                        <button onClick={() => {
                             navigator.clipboard.writeText(aiDraftMessage);
                             alert("Mensagem da IA copiada para a área de transferência! Cole no chat do cliente.");
-                          }}
-                          className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-[10px] uppercase font-black cursor-pointer transition"
+                          } className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-[10px] uppercase font-black cursor-pointer transition"
                         >
                           Copiar Texto
                         </button>
                         
-                        <button
-                          onClick={() => handleOpenWhatsAppChat(selectedItem, aiDraftMessage)}
-                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] uppercase font-black cursor-pointer transition flex items-center gap-1"
+                        <button onClick={() => handleOpenWhatsAppChat(selectedItem, aiDraftMessage)} className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] uppercase font-black cursor-pointer transition flex items-center gap-1"
                         >
                           <Send className="w-3 h-3" />
                           <span>Enviar no WhatsApp</span>
@@ -1382,7 +1311,7 @@ export default function CobrancasPage({
               <div className="space-y-3">
                 <div className="text-xs font-black uppercase text-slate-400 block tracking-widest">Linha do Tempo de Atendimentos</div>
                 <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 bg-slate-50/50">
-                  {selectedItem.historicoContatos && selectedItem.historicoContatos.length > 0 ? (
+                  {selectedItem.historicoContatos && selectedItem.historicoContatos.length> 0 ? (
                     selectedItem.historicoContatos.map((log, lidx) => (
                       <div key={lidx} className="p-3.5 space-y-1">
                         <div className="flex justify-between items-center text-[10px]">
@@ -1405,29 +1334,23 @@ export default function CobrancasPage({
 
             {/* Modal Footer */}
             <div className="p-4 bg-slate-50 border-t border-slate-150 flex justify-end gap-2 shrink-0 select-none">
-              <button
-                onClick={() => setIsDetailsOpen(false)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold leading-none cursor-pointer transition"
+              <button onClick={() => setIsDetailsOpen(false)} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold leading-none cursor-pointer transition"
               >
                 Voltar
               </button>
               
               {selectedItem.status !== "Pago" && (
-                <button
-                  onClick={() => {
+                <button onClick={() => {
                     setIsDetailsOpen(false);
                     handleOpenContactLog(selectedItem);
-                  }}
-                  className="px-4 py-2 bg-sky-650 hover:bg-sky-600 text-white rounded-xl text-xs font-bold leading-none cursor-pointer transition"
+                  } className="px-4 py-2 bg-sky-650 hover:bg-sky-600 text-white rounded-xl text-xs font-bold leading-none cursor-pointer transition"
                 >
                   Registrar Contato
                 </button>
               )}
 
               {selectedItem.status !== "Pago" && (
-                <button
-                  onClick={() => handleMarkAsPaid(selectedItem)}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold leading-none cursor-pointer transition"
+                <button onClick={() => handleMarkAsPaid(selectedItem)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold leading-none cursor-pointer transition"
                 >
                   Baixar Pago
                 </button>
@@ -1448,9 +1371,7 @@ export default function CobrancasPage({
                 <span className="text-[9px] font-black uppercase tracking-wider block">Registrar Contato</span>
                 <h3 className="text-sm font-black uppercase tracking-tight block">Acordo/Cobrança: {selectedItem.nomeCliente}</h3>
               </div>
-              <button
-                onClick={() => setIsContactLogOpen(false)}
-                className="p-1 px-2.5 bg-slate-900/10 hover:bg-slate-900/20 text-slate-950 border border-slate-950/20 text-xs font-bold leading-none shrink-0 rounded-lg transition"
+              <button onClick={() => setIsContactLogOpen(false)} className="p-1 px-2.5 bg-slate-900/10 hover:bg-slate-900/20 text-slate-950 border border-slate-950/20 text-xs font-bold leading-none shrink-0 rounded-lg transition"
               >
                 ✕
               </button>
@@ -1462,16 +1383,12 @@ export default function CobrancasPage({
                 <label className="text-[10px] font-black uppercase text-slate-400 block pl-0.5 pr-0.5">Tipo de Contato</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(["WhatsApp", "Telefone", "Sistema"] as const).map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setLogTipo(t)}
-                      className={`py-2 text-center text-xs font-extrabold rounded-xl border transition ${
+                    <button key={t} type="button"
+                      onClick={() => setLogTipo(t)} className={`py-2 text-center text-xs font-extrabold rounded-xl border transition ${
                         logTipo === t 
                           ? "bg-slate-900 text-white border-slate-900" 
                           : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200"
-                      }`}
-                    >
+                      }`}>
                       {t}
                     </button>
                   ))}
@@ -1483,32 +1400,26 @@ export default function CobrancasPage({
                 <textarea
                   
                   placeholder="Ex: Cliente disse que teve imprevistos de saúde e que pagará na próxima sexta-feira o boleto."
-                  rows={4}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-slate-400 focus:card-modern rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none leading-relaxed transition"
+                  rows={4} className="w-full bg-slate-50 border border-slate-200 focus:border-slate-400 focus:card-modern rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none leading-relaxed transition"
                   value={logDescricao}
-                  onChange={e => setLogDescricao(e.target.value)}
-                />
+                  onChange={e => setLogDescricao(e.target.value)/>
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
+                <input type="checkbox"
                   id="contatoEfetivoCheck"
                   checked={contatoEfetivo}
-                  onChange={e => setContatoEfetivo(e.target.checked)}
-                  className="rounded border-slate-300 w-4 h-4 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  onChange={e => setContatoEfetivo(e.target.checked)} className="rounded border-slate-300 w-4 h-4 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                 />
-                <label htmlFor="contatoEfetivoCheck" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                <label htmlFor="contatoEfetivoCheck"} className="text-xs font-bold text-slate-700 cursor-pointer select-none">
                   Contato Efetivo? (Atendeu e conversou)
                 </label>
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-400 block pl-0.5">Motivo da Inadimplência (Diagnóstico)</label>
-                <select
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-slate-400 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:outline-none transition"
+                <select className="w-full bg-slate-50 border border-slate-200 focus:border-slate-400 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:outline-none transition"
                   value={motivoInadimplencia}
-                  onChange={e => setMotivoInadimplencia(e.target.value)}
-                >
+                  onChange={e => setMotivoInadimplencia(e.target.value)>
                   <option value="">Selecione o Motivo (Opcional)</option>
                   <option value="Esquecimento">Esquecimento</option>
                   <option value="Desemprego/Dificuldade Financeira">Desemprego / Dificuldade Financeira</option>
@@ -1522,26 +1433,19 @@ export default function CobrancasPage({
               {/* Settlement Agreement (Promise) checkbox togglers */}
               <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-4 h-4"
+                  <input type="checkbox"} className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-4 h-4"
                     checked={prometeuPagamento}
-                    onChange={e => setPrometeuPagamento(e.target.checked)}
-                  />
+                    onChange={e => setPrometeuPagamento(e.target.checked)/>
                   <span className="text-xs font-black text-slate-700 uppercase">Houve Promessa de Pagamento?</span>
                 </label>
 
                 {prometeuPagamento && (
                   <div className="space-y-1">
                     <span className="text-[10px] font-bold text-slate-400 block pl-0.5">Previsão Acordada de Pagamento</span>
-                    <input
-                      
-                      type="text"
-                      placeholder="Ex: 12/06/2026"
-                      className="w-full card-modern border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                    <input type="text"
+                      placeholder="Ex: 12/06/2026"} className="w-full card-modern border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
                       value={promessaData}
-                      onChange={e => setPromessaData(e.target.value)}
-                    />
+                      onChange={e => setPromessaData(e.target.value)/>
                   </div>
                 )}
               </div>
@@ -1549,16 +1453,12 @@ export default function CobrancasPage({
             </div>
 
             <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2 shrink-0">
-              <button
-                onClick={() => setIsContactLogOpen(false)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold cursor-pointer transition leading-none select-none"
+              <button onClick={() => setIsContactLogOpen(false)} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold cursor-pointer transition leading-none select-none"
               >
                 Cancelar
               </button>
               
-              <button
-                onClick={handleSubmitContactLog}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer transition leading-none select-none shadow-md shadow-emerald-900/10"
+              <button onClick={handleSubmitContactLog} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer transition leading-none select-none shadow-md shadow-emerald-900/10"
               >
                 Salvar Anotação
               </button>
@@ -1578,9 +1478,7 @@ export default function CobrancasPage({
                 <span className="text-[9px] font-black uppercase tracking-wider text-sky-300 block">Cadastrar Novo Record</span>
                 <h3 className="text-base font-black tracking-tight">Cobrança Comercial / Inadimplente</h3>
               </div>
-              <button
-                onClick={() => setIsNewCobrancaOpen(false)}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-sky-100 hover:text-white transition font-sans text-xs font-bold leading-none pr-3"
+              <button onClick={() => setIsNewCobrancaOpen(false)} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-sky-100 hover:text-white transition font-sans text-xs font-bold leading-none pr-3"
               >
                 ✕ Fechar
               </button>
@@ -1591,73 +1489,51 @@ export default function CobrancasPage({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Contrato Código *</label>
-                  <input
-                    
-                    type="text"
-                    placeholder="Ex: MHN98721"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none uppercase"
+                  <input type="text"
+                    placeholder="Ex: MHN98721"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none uppercase"
                     value={newIdContrato}
-                    onChange={e => setNewIdContrato(e.target.value)}
-                  />
+                    onChange={e => setNewIdContrato(e.target.value)/>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Telefone de Contato *</label>
-                  <input
-                    
-                    type="text"
-                    placeholder="Ex: (51) 99872-6543"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                  <input type="text"
+                    placeholder="Ex: (51) 99872-6543"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
                     value={newTelefone}
-                    onChange={e => setNewTelefone(e.target.value)}
-                  />
+                    onChange={e => setNewTelefone(e.target.value)/>
                 </div>
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Nome Completo do Cliente *</label>
-                <input
-                  
-                  type="text"
-                  placeholder="Ex: Clóvis Roberto Born"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                <input type="text"
+                  placeholder="Ex: Clóvis Roberto Born"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
                   value={newNomeCliente}
-                  onChange={e => setNewNomeCliente(e.target.value)}
-                />
+                  onChange={e => setNewNomeCliente(e.target.value)/>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Valor da Fatura (R$) *</label>
-                  <input
-                    
-                    type="text"
-                    placeholder="Ex: 119.90"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none text-right font-mono"
+                  <input type="text"
+                    placeholder="Ex: 119.90"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none text-right font-mono"
                     value={newValor}
-                    onChange={e => setNewValor(e.target.value)}
-                  />
+                    onChange={e => setNewValor(e.target.value)/>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Data Vencimento *</label>
-                  <input
-                    
-                    type="text"
-                    placeholder="Ex: 10/06/2026"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                  <input type="text"
+                    placeholder="Ex: 10/06/2026"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
                     value={newDataVencimento}
-                    onChange={e => setNewDataVencimento(e.target.value)}
-                  />
+                    onChange={e => setNewDataVencimento(e.target.value)/>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Cidade</label>
-                  <select
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold cursor-pointer text-slate-705 focus:outline-none"
+                  <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold cursor-pointer text-slate-705 focus:outline-none"
                     value={newCidade}
-                    onChange={e => setNewCidade(e.target.value)}
-                  >
+                    onChange={e => setNewCidade(e.target.value)>
                     <option value="Lajeado">Lajeado</option>
                     <option value="Estrela">Estrela</option>
                     <option value="Arroio do Meio">Arroio do Meio</option>
@@ -1667,12 +1543,9 @@ export default function CobrancasPage({
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Plano</label>
-                  <input
-                    type="text"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                  <input type="text"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
                     value={newPlano}
-                    onChange={e => setNewPlano(e.target.value)}
-                  />
+                    onChange={e => setNewPlano(e.target.value)/>
                 </div>
               </div>
 
@@ -1680,24 +1553,18 @@ export default function CobrancasPage({
                 <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Observações Internas (Opcional)</label>
                 <textarea
                   rows={2}
-                  placeholder="Observações de inadimplência histórica ou facilidades de contato"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-medium focus:outline-none leading-normal"
+                  placeholder="Observações de inadimplência histórica ou facilidades de contato"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-medium focus:outline-none leading-normal"
                   value={newObs}
-                  onChange={e => setNewObs(e.target.value)}
-                />
+                  onChange={e => setNewObs(e.target.value)/>
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-2 text-right">
-                <button
-                  type="button"
-                  onClick={() => setIsNewCobrancaOpen(false)}
-                  className="px-4 py-2 bg-slate-200 hover:bg-slate-355 text-slate-800 rounded-xl text-xs font-bold leading-none cursor-pointer"
+                <button type="button"
+                  onClick={() => setIsNewCobrancaOpen(false)} className="px-4 py-2 bg-slate-200 hover:bg-slate-355 text-slate-800 rounded-xl text-xs font-bold leading-none cursor-pointer"
                 >
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-sky-650 hover:bg-sky-600 text-white rounded-xl text-xs font-bold leading-none cursor-pointer flex items-center gap-1.5"
+                <button type="submit"} className="px-4 py-2 bg-sky-650 hover:bg-sky-600 text-white rounded-xl text-xs font-bold leading-none cursor-pointer flex items-center gap-1.5"
                 >
                   <Save className="w-4.5 h-4.5" />
                   <span>Salvar Cobrança</span>
@@ -1720,13 +1587,11 @@ export default function CobrancasPage({
                 <span className="text-[9px] font-black uppercase tracking-wider text-rose-500 block">Importador de Planilhas Excel / TSV</span>
                 <h3 className="text-base font-black tracking-tight">Cobranças em Lote / Copiar e Colar</h3>
               </div>
-              <button
-                onClick={() => {
+              <button onClick={() => {
                   setIsBulkImportOpen(false);
                   setBulkText("");
                   setBulkPreview([]);
-                }}
-                className="p-1 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-slate-100 hover:text-white transition font-sans text-xs font-bold leading-none"
+                } className="p-1 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-slate-100 hover:text-white transition font-sans text-xs font-bold leading-none"
               >
                 ✕ Fechar
               </button>
@@ -1748,17 +1613,15 @@ export default function CobrancasPage({
                 <label className="text-[10px] font-black text-slate-400 uppercase block pl-0.5">Área de Colagem (Ctrl+V)</label>
                 <textarea
                   placeholder="Cole as colunas de sua planilha de cobrança aqui..."
-                  rows={6}
-                  className="w-full bg-slate-50 border border-slate-200 focus:border-sky-500 focus:card-modern rounded-xl py-3 px-4 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none leading-relaxed transition"
+                  rows={6} className="w-full bg-slate-50 border border-slate-200 focus:border-sky-500 focus:card-modern rounded-xl py-3 px-4 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none leading-relaxed transition"
                   value={bulkText}
                   onChange={e => {
                     setBulkText(e.target.value);
                     parseBulkPaste(e.target.value);
-                  }}
-                />
+                  }/>
               </div>
 
-              {bulkPreview.length > 0 ? (
+              {bulkPreview.length> 0 ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase text-slate-500 block pl-0.5">Pré-visualização: {bulkPreview.length} registros detectados</span>
@@ -1797,20 +1660,16 @@ export default function CobrancasPage({
             </div>
 
             <div className="p-4 bg-slate-50 border-t border-slate-150 flex justify-end gap-2 shrink-0">
-              <button
-                onClick={() => {
+              <button onClick={() => {
                   setIsBulkImportOpen(false);
                   setBulkText("");
                   setBulkPreview([]);
-                }}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold leading-none cursor-pointer transition select-none"
+                } className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold leading-none cursor-pointer transition select-none"
               >
                 Cancelar
               </button>
               <button
-                disabled={bulkPreview.length === 0}
-                onClick={handleSaveBulk}
-                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold cursor-pointer transition flex items-center gap-1 shadow shadow-rose-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={bulkPreview.length === 0} onClick={handleSaveBulk} className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-extrabold cursor-pointer transition flex items-center gap-1 shadow shadow-rose-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="w-4 h-4" />
                 <span>Salvar {bulkPreview.length} Cobranças no Banco</span>
@@ -1831,9 +1690,7 @@ export default function CobrancasPage({
                 <span className="text-[9px] font-black uppercase tracking-wider block text-sky-200">Ligação Telefônica</span>
                 <h3 className="text-sm font-black uppercase tracking-tight block">Registro Rápido</h3>
               </div>
-              <button
-                onClick={() => setIsRegistroRapidoOpen(false)}
-                className="p-1 px-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition"
+              <button onClick={() => setIsRegistroRapidoOpen(false)} className="p-1 px-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-bold transition"
               >
                 ✕
               </button>
@@ -1844,16 +1701,12 @@ export default function CobrancasPage({
               
               {registroRapidoAtendeu === null && (
                 <div className="grid grid-cols-2 gap-3 mt-4">
-                  <button
-                    onClick={() => handleRegistroRapidoSubmit(false)}
-                    className="p-3 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-xl font-bold text-sm transition flex flex-col items-center justify-center gap-1"
+                  <button onClick={() => handleRegistroRapidoSubmit(false)} className="p-3 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-xl font-bold text-sm transition flex flex-col items-center justify-center gap-1"
                   >
                     <Phone className="w-5 h-5 mb-1" />
                     Não Atendeu
                   </button>
-                  <button
-                    onClick={() => setRegistroRapidoAtendeu(true)}
-                    className="p-3 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl font-bold text-sm transition flex flex-col items-center justify-center gap-1"
+                  <button onClick={() => setRegistroRapidoAtendeu(true)} className="p-3 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl font-bold text-sm transition flex flex-col items-center justify-center gap-1"
                   >
                     <CheckCircle className="w-5 h-5 mb-1" />
                     Sim, Atendeu
@@ -1862,24 +1715,19 @@ export default function CobrancasPage({
               )}
 
               {registroRapidoAtendeu === true && (
-                <div className="space-y-3 mt-4 animate-fade-in">
+                <div className="space-y-3 mt-4 ">
                   <label className="text-xs font-black uppercase text-slate-500 block">Relato do Atendimento</label>
                   <textarea
                     value={registroRapidoRelato}
                     onChange={(e) => setRegistroRapidoRelato(e.target.value)}
-                    placeholder="Descreva o que foi conversado..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[100px]"
+                    placeholder="Descreva o que foi conversado..."} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[100px]"
                   />
                   <div className="flex justify-end gap-2 pt-2">
-                    <button
-                      onClick={() => setRegistroRapidoAtendeu(null)}
-                      className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition"
+                    <button onClick={() => setRegistroRapidoAtendeu(null)} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition"
                     >
                       Voltar
                     </button>
-                    <button
-                      onClick={() => handleRegistroRapidoSubmit(true, registroRapidoRelato)}
-                      className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-500 transition"
+                    <button onClick={() => handleRegistroRapidoSubmit(true, registroRapidoRelato)} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-500 transition"
                     >
                       Salvar Relato
                     </button>

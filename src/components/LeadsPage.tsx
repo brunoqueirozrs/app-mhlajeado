@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { motion } from "motion/react";
 import { 
   Wifi, Search, Plus, MapPin, Phone, MessageSquare, Edit3, Trash2, Calendar, 
   RotateCw, AlertTriangle, Sparkles, Filter, ChevronRight, UserCheck
@@ -29,8 +28,7 @@ export function getStatusBadgeClass(status: string) {
       return "bg-sky-50 text-sky-800 border border-sky-250 font-bold";
     default:
       return "bg-slate-50 text-slate-600 border border-slate-200";
-  }
-}
+  
 
 export function getDaysWithoutUpdate(lead: Lead): number | null {
   const statusPerda = ["Sem Interesse", "Sem interesse"];
@@ -52,8 +50,7 @@ export function getDaysWithoutUpdate(lead: Lead): number | null {
     return Math.floor(diff / (1000 * 60 * 60 * 24));
   } catch (e) {
     return null;
-  }
-}
+  
 
 interface LeadsPageProps {
   leads: Lead[];
@@ -105,8 +102,7 @@ export default function LeadsPage({
   useEffect(() => {
     if (initialSellerFilter) {
       setSelectedSellerFilter(initialSellerFilter);
-    }
-  }, [initialSellerFilter]);
+    , [initialSellerFilter]);
 
   // Helper for case-and-accent-insensitive seller matchmaking
   const matchSeller = (leadSeller: string, user: string) => {
@@ -202,20 +198,17 @@ export default function LeadsPage({
       if (res.ok) {
         if (typeof window !== "undefined") {
            window.location.reload();
-        }
-      } else {
+         else {
         const errorData = await res.json();
         alert("Erro ao mover lead para Leads Frios: " + (errorData.message || "Erro desconhecido"));
         setIsMoving(false);
         setIsConfirmMoveOpen(false);
-      }
-    } catch (error) {
+       catch (error) {
       console.error("Erro ao mover para leads frios", error);
       alert("Erro ao mover lead para Leads Frios.");
       setIsMoving(false);
       setIsConfirmMoveOpen(false);
-    }
-  };
+    ;
 
   const confirmDeleteAction = async () => {
     if (!selectedLead?._linha) return;
@@ -268,13 +261,12 @@ export default function LeadsPage({
         editingLead={editingLead}
         onSaveLead={handleFormSave}
         onCancel={() => setViewMode("list")}
-        onGenerateAIObs={onGenerateAIObs}
-      />
+        onGenerateAIObs={onGenerateAIObs} />
     );
   }
 
   return (
-    <div id="leads-viewport" className="space-y-4">
+    <div id="leads-viewport"} className="space-y-4">
       
       {/* Header and Add button */}
       <div className="flex justify-between items-center select-none">
@@ -285,10 +277,8 @@ export default function LeadsPage({
           </h2>
           <p className="text-xs text-slate-400 mt-1 uppercase font-bold pl-0.5">Gestão de contatos e propostas</p>
         </div>
-        <button
-          id="btn-new-lead"
-          onClick={handleOpenNew}
-          className="p-2.5 px-3.5 bg-sky-900 border border-sky-950 text-white font-extrabold text-xs rounded-xl flex items-center gap-1 cursor-pointer active:scale-95 shadow"
+        <button id="btn-new-lead"
+          onClick={handleOpenNew} className="p-2.5 px-3.5 bg-sky-900 border border-sky-950 text-white font-extrabold text-xs rounded-xl flex items-center gap-1 cursor-pointer active:scale-95 shadow"
         >
           <Plus className="w-4 h-4 text-white" /> Novo Lead
         </button>
@@ -296,21 +286,18 @@ export default function LeadsPage({
 
       {/* Sheet Sync Row */}
       {onSyncLeads && (
-        <div className="bg-gradient-to-r from-teal-900 via-sky-900 to-sky-950 text-white rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-sans select-none animate-fade-in">
+        <div className="bg-gradient-to-r from-teal-900 via-sky-900 to-sky-950 text-white rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-sans select-none ">
           <div>
             <div className="text-[10px] font-black uppercase tracking-wider text-sky-200">Sincronização de Dados</div>
             <h4 className="text-sm font-black tracking-tight mt-0.5">Painel Geral de Prospecção (Acompanhamento de Lead | Abordagens)</h4>
             <p className="text-[10.5px] text-sky-100/80 leading-snug font-semibold mt-0.5">Consolide os contatos frios e quentes diretamente da planilha administrativa no Google Sheets.</p>
           </div>
-          <button
-            onClick={async () => {
+          <button onClick={async () => {
               try {
                 await onSyncLeads();
               } catch (e: any) {
                 alert("Erro ao sincronizar base: " + e.message);
-              }
-            }}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 card-modern hover:bg-sky-50 text-sky-950 text-xs font-black rounded-xl shadow cursor-pointer transition active:scale-95 shrink-0 self-start sm:self-auto"
+               className="flex items-center justify-center gap-1.5 px-4 py-2.5 card-modern hover:bg-sky-50 text-sky-950 text-xs font-black rounded-xl shadow cursor-pointer transition active:scale-95 shrink-0 self-start sm:self-auto"
           >
             <RotateCw className="w-3.5 h-3.5" />
             <span>Sincronizar Planilha</span>
@@ -324,12 +311,10 @@ export default function LeadsPage({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <input
             id="leads-search-input"
-            type="text"
-            className="w-full bg-slate-50 border border-slate-205 rounded-xl py-2 pl-9 pr-4 text-xs font-semibold text-slate-850 placeholder-slate-400 focus:bg-white"
+            type="text"} className="w-full bg-slate-50 border border-slate-205 rounded-xl py-2 pl-9 pr-4 text-xs font-semibold text-slate-850 placeholder-slate-400 focus:bg-white"
             placeholder="Buscar por nome, bairro, telefone..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
+            onChange={e => setSearchTerm(e.target.value)/>
         </div>
 
         {/* Admin-only seller filter dropdown */}
@@ -340,14 +325,13 @@ export default function LeadsPage({
             </label>
             <select
               value={selectedSellerFilter}
-              onChange={e => setSelectedSellerFilter(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700"
+              onChange={e => setSelectedSellerFilter(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700"
             >
               <option value="Todos">Exibir Todos os Vendedores (Total de {leads.length} leads)</option>
               {uniqueSellers.map(seller => {
                 const count = leads.filter(l => l.vendedor === seller).length;
                 return (
-                  <option key={seller} value={seller}>
+                  <option key={seller} value={seller>
                     {seller} ({count} {count === 1 ? 'contato' : 'contatos'})
                   </option>
                 );
@@ -362,14 +346,9 @@ export default function LeadsPage({
           </div>
           <div className="flex gap-1 overflow-x-auto scrollbar-none flex-1 font-sans justify-end">
             {["Todos", "Novo", "Agendado", "Negociação"].map(f => (
-              <button
-                key={f}
-                id={`btn-filter-${f.replace(" ", "-").toLowerCase()}`}
-                onClick={() => setStatusFilter(f)}
-                className={`px-2 py-1.2 rounded-lg text-[10px] font-extrabold transition whitespace-nowrap cursor-pointer ${
+              <button key={f id={`btn-filter-${f.replace(" ", "-").toLowerCase()}` onClick={() => setStatusFilter(f)} className={`px-2 py-1.2 rounded-lg text-[10px] font-extrabold transition whitespace-nowrap cursor-pointer ${
                   statusFilter === f ? "bg-sky-900 text-white" : "bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200"
-                }`}
-              >
+                }`}>
                 {f}
               </button>
             ))}
@@ -382,8 +361,7 @@ export default function LeadsPage({
               id="critical-leads-toggle"
               type="checkbox"
               checked={isOnlyCritical}
-              onChange={e => setIsOnlyCritical(e.target.checked)}
-              className="rounded text-sky-90 font-bold focus:ring-0"
+              onChange={e => setIsOnlyCritical(e.target.checked)} className="rounded text-sky-90 font-bold focus:ring-0"
             />
             ⚠️ Exibir apenas leads precisando de atenção
           </label>
@@ -396,29 +374,24 @@ export default function LeadsPage({
       </p>
 
                   {/* Leads Grid Cards (Unified for Desktop and Mobile) */}
-      <div id="leads-list-container" className="flex flex-col space-y-3 pb-10 select-none">
-        {filteredList.length > 0 ? (
+      <div id="leads-list-container"} className="flex flex-col space-y-3 pb-10 select-none">
+        {filteredList.length> 0 ? (
           filteredList.map(lead => {
             const isLoss = lead.status === "Sem Interesse";
             const daysNoRep = getDaysWithoutUpdate(lead);
-            const isCritical = daysNoRep !== null && daysNoRep >= 3 && lead.status !== "Venda Fechada" && !isLoss;
+            const isCritical = daysNoRep !== null && daysNoRep>= 3 && lead.status !== "Venda Fechada" && !isLoss;
             return (
-              <motion.div
-                key={lead._linha}
-                id={`lead-row-${lead._linha}`}
-                onClick={() => handleOpenDetail(lead)}
-                whileTap={{ scale: 0.98 }}
+              <div key={lead._linha id={`lead-row-${lead._linha}` onClick={() => handleOpenDetail(lead)}
                 className={`card-modern border rounded-2xl p-4 md:p-5 cursor-pointer shadow-sm hover:shadow-md hover:border-sky-300 transition-colors duration-200 relative overflow-hidden flex flex-col gap-4 ${
                   isCritical ? "ring-2 ring-amber-200 border-amber-350 bg-amber-50/5" : "border-slate-200"
-                }`}
-              >
+                }`}>
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div className="flex flex-col gap-2 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-sm font-black text-slate-900 leading-tight truncate max-w-full">{lead.nomeLead}</h3>
                     <span className="flex items-center gap-1.5 font-bold text-slate-700 text-[11px] bg-slate-100 px-2 py-0.5 rounded-md">📞 {lead.telefone || "Não informado"}</span>
                   </div>
-                  <p className="text-[10px] md:text-xs text-slate-500 font-extrabold uppercase flex items-center gap-1 truncate" title={lead.endereco ? `${lead.endereco}${lead.numero ? ', ' + lead.numero : ''} - ${lead.bairro}` : lead.bairro}>
+                  <p className="text-[10px] md:text-xs text-slate-500 font-extrabold uppercase flex items-center gap-1 truncate" title={lead.endereco ? `${lead.endereco}${lead.numero ? ', ' + lead.numero : ''} - ${lead.bairro}` : lead.bairro>
                     <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" /> {lead.endereco ? `${lead.endereco}${lead.numero ? ', ' + lead.numero : ''} - ` : ''}{lead.bairro || "—"} · {lead.cidade || "Lajeado"}
                   </p>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -469,7 +442,7 @@ export default function LeadsPage({
                     )}
                   </div>
                 )}
-              </motion.div>
+              </div>
             );
           })
         ) : (
@@ -487,7 +460,7 @@ export default function LeadsPage({
         onClose={() => {
           setIsModalOpen(false);
           setSelectedLead(null);
-        }}
+        
         onSaveEditions={handleModalSaveData}
         onEditLeadClick={() => handleOpenEdit(selectedLead!)}
         onDeleteLead={handleDelete}
@@ -495,8 +468,7 @@ export default function LeadsPage({
         onMarkVendaFechada={handleVendaFechada}
         onCombatObjectionWithIA={onCombatObjectionWithIA}
         onNavigateToTasks={onNavigateToTasks}
-        isAdmin={isAdmin}
-      />
+        isAdmin={isAdmin} />
 
       <ConfirmModal
         isOpen={isConfirmDeleteOpen}
@@ -504,8 +476,7 @@ export default function LeadsPage({
         message={`Você tem certeza que deseja excluir permanentemente o lead "${selectedLead?.nomeLead}"?`}
         confirmText="Excluir"
         onConfirm={confirmDeleteAction}
-        onCancel={() => setIsConfirmDeleteOpen(false)}
-      />
+        onCancel={() => setIsConfirmDeleteOpen(false)/>
 
       <ConfirmModal
         isOpen={isConfirmVendaOpen}
@@ -513,8 +484,7 @@ export default function LeadsPage({
         message={`Deseja confirmar a venda fechada para "${selectedLead?.nomeLead}"?`}
         confirmText="Confirmar"
         onConfirm={confirmVendaAction}
-        onCancel={() => setIsConfirmVendaOpen(false)}
-      />
+        onCancel={() => setIsConfirmVendaOpen(false)/>
 
       <ConfirmModal
         isOpen={isConfirmMoveOpen}
@@ -522,8 +492,7 @@ export default function LeadsPage({
         message={`Você tem certeza que deseja mover "${selectedLead?.nomeLead}" para a base de Leads Frios? Esta ação irá retirá-lo da sua lista de acompanhamento.`}
         confirmText="Mover para Frios"
         onConfirm={confirmMoveAction}
-        onCancel={() => setIsConfirmMoveOpen(false)}
-      />
+        onCancel={() => setIsConfirmMoveOpen(false)/>
       
       {isMoving && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center animate-in fade-in duration-300">

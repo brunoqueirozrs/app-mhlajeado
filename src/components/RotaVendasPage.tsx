@@ -193,7 +193,7 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-[1400px] mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8 animate-fade-in">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8 ">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center shadow-sm">
@@ -309,8 +309,8 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
 
       {/* Edit Slot Modal */}
       {editingSlot && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="card-modern rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-slide-up border border-slate-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm ">
+          <div className="card-modern rounded-3xl w-full max-w-md shadow-2xl overflow-hidden  border border-slate-200">
             <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
               <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                 <Edit3 className="w-4 h-4 text-sky-500" />

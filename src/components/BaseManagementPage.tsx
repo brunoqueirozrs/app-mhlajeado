@@ -1002,7 +1002,7 @@ export default function BaseManagementPage({
 
       {/* SUBTAB: MANUTENCAO */}
       {activeSubTab === "manutencao" && (
-        <div className="space-y-4 animate-fade-in font-sans">
+        <div className="space-y-4  font-sans">
           <div className="bg-gradient-to-r from-sky-900 via-sky-850 to-sky-950 text-white rounded-2xl p-6 shadow-sm">
             <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
               <UploadCloud className="w-5 h-5 text-sky-400" />
@@ -1061,7 +1061,7 @@ export default function BaseManagementPage({
 
       {/* SUBTAB: DASHBOARD GERAL */}
       {activeSubTab === "dashboard_geral" && (
-        <div className="space-y-4 animate-fade-in font-sans">
+        <div className="space-y-4  font-sans">
           
           <div className="bg-gradient-to-r from-sky-900 via-sky-850 to-sky-950 text-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -1394,7 +1394,7 @@ export default function BaseManagementPage({
 
       {/* SUBTAB: CLIENTS BASE LISTING */}
       {activeSubTab === "clientes" && (
-        <div className="space-y-4 animate-fade-in">
+        <div className="space-y-4 ">
           {/* Sheet Sync Row */}
           <div className="bg-gradient-to-r from-sky-900 via-sky-850 to-sky-950 text-white rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-sans">
             <div>
@@ -1832,7 +1832,7 @@ export default function BaseManagementPage({
 
       {/* SUBTAB: ACTION LOGS HISTORY LOGS */}
       {activeSubTab === "historico" && (
-        <div className="space-y-3 animate-fade-in pb-10">
+        <div className="space-y-3  pb-10">
           <h3 className="text-xs font-black uppercase text-slate-450 leading-none">Logs de Contato Recentes</h3>
           {actions.length > 0 ? (
             [...actions]
@@ -1887,7 +1887,7 @@ export default function BaseManagementPage({
 
       {/* SUBTAB: SALESPERSON PERFORMANCE METRICS TAB */}
       {activeSubTab === "dashboard" && (
-        <div className="space-y-4 animate-fade-in pb-10">
+        <div className="space-y-4  pb-10">
           <div className="flex justify-between items-end">
             <div>
               <h3 className="text-xs font-black uppercase text-slate-400 leading-none">Rendimento e Volume da Equipe</h3>
@@ -2150,7 +2150,7 @@ export default function BaseManagementPage({
 
               {/* Data de Retorno if status is AGENDOU */}
               {registerStatus === "AGENDOU" && (
-                <div className="space-y-1 animate-fade-in">
+                <div className="space-y-1 ">
                   <label className="text-[10px] font-extrabold uppercase text-slate-400">DATA DE RETORNO / RECONTATO</label>
                   <input
                     type="date"
@@ -2544,7 +2544,7 @@ export default function BaseManagementPage({
                 <p>Analisando contrato e redigindo pitch regional...</p>
               </div>
             ) : (
-              <div className="space-y-3 font-sans animate-fade-in">
+              <div className="space-y-3 font-sans ">
                 <div className="relative">
                   <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 text-sky-950 font-medium font-sans text-xs p-3.5 rounded-xl whitespace-pre-wrap leading-relaxed max-h-56 overflow-y-auto">
                     {aiResponseText}
@@ -2623,7 +2623,7 @@ export default function BaseManagementPage({
 
       {/* Bulk Transfer Modal */}
       {isBulkTransferOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center  p-4">
           <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">

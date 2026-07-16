@@ -365,7 +365,7 @@ export function LeadsFriosTab({ isAdmin, vendors = [], loggedUser = "Usuário" }
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-6 animate-fade-in pb-24 relative">
+    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-6  pb-24 relative">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -532,7 +532,7 @@ export function LeadsFriosTab({ isAdmin, vendors = [], loggedUser = "Usuário" }
 
       {/* Modal de Detalhes do Lead */}
       {selectedLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm ">
           <div className="card-modern rounded-[24px] shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col relative animate-scale-up">
             <button 
               onClick={() => {

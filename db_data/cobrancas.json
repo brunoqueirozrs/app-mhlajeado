@@ -741,7 +741,35 @@
     "status": "Vencido",
     "consultor": "COM - LJO - JOAO PAULO DA SILVA SANTOS",
     "canal": "PAP",
-    "historicoContatos": []
+    "historicoContatos": [
+      {
+        "dataLog": "16/07/2026 14:36",
+        "operador": "BRUNO GARCIA QUEIROZ",
+        "tipo": "Telefone",
+        "descricao": "Chamada atendida: fICOU DE VER COM A ESPOSA",
+        "contatoEfetivo": true,
+        "acordoFirmado": false,
+        "motivoInadimplencia": ""
+      },
+      {
+        "dataLog": "16/07/2026 14:36",
+        "operador": "BRUNO GARCIA QUEIROZ",
+        "tipo": "Telefone",
+        "descricao": "Tentativa de chamada sem sucesso",
+        "contatoEfetivo": false,
+        "acordoFirmado": false,
+        "motivoInadimplencia": ""
+      },
+      {
+        "dataLog": "16/07/2026 14:36",
+        "operador": "BRUNO GARCIA QUEIROZ",
+        "tipo": "Telefone",
+        "descricao": "Tentativa de chamada sem sucesso",
+        "contatoEfetivo": false,
+        "acordoFirmado": false,
+        "motivoInadimplencia": ""
+      }
+    ]
   },
   {
     "idContrato": "781797",

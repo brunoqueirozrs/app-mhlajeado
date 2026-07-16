@@ -45,7 +45,10 @@ const checklistsDefault = {
   canaisAtendimento: null,
   contatoSalvo: null,
   foiIndicacao: null,
-  foiIndicacaoNome: ""
+  foiIndicacaoNome: "",
+  cobrancaMes1: null,
+  cobrancaMes2: null,
+  cobrancaMes3: null
 };
 
 const atenuacaoMessage = (val: string) => {
@@ -69,7 +72,7 @@ const formatBRDate = (val: string) => {
 };
 
 export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: string, isAdmin?: boolean }) {
-  const [activeTab, setActiveTab] = useState<"pendentes" | "base_ativa" | "n8n">("pendentes");
+  const [activeTab, setActiveTab] = useState<"pendentes" | "base_ativa" | "financeiro">("pendentes");
   const [months, setMonths] = useState<{ value: string, label: string }[]>([]);
   const [selectedMes, setSelectedMes] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -286,45 +289,33 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
   );
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 pb-24 md:pb-8 animate-fade-in">
-      <ConfirmModal
-        isOpen={confirmState.isOpen}
-        title={confirmState.title}
-        message={confirmState.message}
-        onConfirm={() => {
-          setConfirmState(prev => ({ ...prev, isOpen: false }));
-          confirmState.onConfirm();
-        }}
-        onCancel={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
-      />
+    <div className="space-y-6 font-sans pb-20">
       {!selectedClient && (
         <>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                <UserCheck className="w-6 h-6 text-sky-600" />
-                Pós-Vendas
+              <h1 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+                <UserCheck className="w-7 h-7 text-sky-600" /> Pós-Vendas
               </h1>
-              <p className="text-sm text-slate-500">Módulo de Retenção & Checklists de Instalação</p>
+              <p className="text-slate-500 text-sm mt-1">Módulo de Retenção & Checklists de Instalação</p>
             </div>
             
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              {isAdmin && (
-                <select 
-                  value={vendedoraFilter}
-                  onChange={(e) => setVendedoraFilter(e.target.value)}
-                  className="card-modern border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 outline-none focus:border-sky-500 shadow-sm"
-                >
-                  <option value="Todas">Todas Vendedoras</option>
-                  {uniqueVendedoras.map(v => (
-                    <option key={v} value={v}>{v}</option>
-                  ))}
-                </select>
-              )}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
               <select 
+                className="bg-white border border-slate-200 rounded-xl px-4 py-2 outline-none font-bold text-slate-600 shadow-sm min-w-[200px]"
+                value={vendedoraFilter}
+                onChange={(e) => setVendedoraFilter(e.target.value)}
+              >
+                <option value="Todas">Todas Vendedoras</option>
+                {uniqueVendedoras.map((v: any) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+
+              <select 
+                className="bg-white border border-slate-200 rounded-xl px-4 py-2 outline-none font-bold text-slate-600 shadow-sm min-w-[200px]"
                 value={selectedMes}
                 onChange={(e) => setSelectedMes(e.target.value)}
-                className="card-modern border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 outline-none focus:border-sky-500 shadow-sm"
               >
                 {months.map(m => (
                   <option key={m.value} value={m.value}>{m.label}</option>
@@ -347,12 +338,13 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
               Base Ativa
             </button>
             <button 
-              onClick={() => setActiveTab("n8n")}
-              className={`px-4 py-2 text-sm font-bold rounded-xl whitespace-nowrap transition-colors ${activeTab === 'n8n' ? 'bg-sky-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+              onClick={() => setActiveTab("financeiro")}
+              className={`px-4 py-2 text-sm font-bold rounded-xl whitespace-nowrap transition-colors ${activeTab === 'financeiro' ? 'bg-sky-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
             >
-              Automações N8N
+              Financeiro (3 Meses)
             </button>
           </div>
+
 
           {activeTab === "pendentes" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -396,7 +388,7 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
       )}
 
       {selectedClient && (
-        <div className="card-modern rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-fade-in w-full">
+        <div className="card-modern rounded-2xl border border-slate-200 shadow-xl overflow-hidden  w-full">
           <div className="bg-gradient-to-r from-sky-900 to-sky-700 p-5 md:p-8 text-white flex justify-between items-center">
             <div>
               <button onClick={() => setSelectedClient(null)} className="flex items-center gap-2 text-sky-200 hover:text-white transition-colors mb-4 text-sm font-bold">
@@ -648,38 +640,70 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
          </div>
       )}
 
-      {activeTab === "n8n" && (
-        <div className="bg-slate-900 text-slate-300 rounded-3xl p-6 md:p-10 shadow-xl overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/10 blur-3xl rounded-full"></div>
-          <div className="relative z-10 max-w-3xl">
-            <h2 className="text-2xl font-black text-white flex items-center gap-2 mb-2">
-              <RefreshCw className="w-6 h-6 text-sky-400" /> Fluxos N8N
-            </h2>
-            <p className="mb-8">Automações sugeridas para reduzir o churn usando N8N e Evolution API (WhatsApp).</p>
-
-            <div className="space-y-6">
-              <div className="bg-slate-800/50 border border-slate-700 p-5 rounded-2xl">
-                <h3 className="font-bold text-sky-300 text-lg mb-2">1. Gatilho Google Sheets (Criação de Card)</h3>
-                <p className="text-sm leading-relaxed text-slate-400">
-                  <strong>Trigger:</strong> Novo cliente na aba "Fechamento [Mês]".<br/>
-                  <strong>Ação:</strong> O N8N captura a linha e notifica o gestor via Telegram/WhatsApp, informando que há novos pós-vendas pendentes no aplicativo.
-                </p>
-              </div>
-              <div className="bg-slate-800/50 border border-slate-700 p-5 rounded-2xl">
-                <h3 className="font-bold text-sky-300 text-lg mb-2">2. Lembrete Diário (Vendedoras)</h3>
-                <p className="text-sm leading-relaxed text-slate-400">
-                  <strong>Trigger:</strong> Cronograma diário (08:00h).<br/>
-                  <strong>Ação:</strong> O N8N lê a planilha e filtra quem não tem "PÓS VENDA = OK". Envia uma mensagem no WhatsApp da vendedora responsável: <em>"Bom dia! Você tem X clientes pendentes de pós-venda..."</em>
-                </p>
-              </div>
-              <div className="bg-slate-800/50 border border-slate-700 p-5 rounded-2xl">
-                <h3 className="font-bold text-sky-300 text-lg mb-2">3. Alerta de Atraso (+5 dias)</h3>
-                <p className="text-sm leading-relaxed text-slate-400">
-                  <strong>Trigger:</strong> Cronograma diário.<br/>
-                  <strong>Condição:</strong> Data Atual - Data de Instalação &gt; 5 dias.<br/>
-                  <strong>Ação:</strong> Dispara WhatsApp para o Gestor e Vendedora com alerta de atraso crítico no contato.
-                </p>
-              </div>
+      
+      {activeTab === "financeiro" && !selectedClient && (
+        <div className="space-y-6">
+          <div className="card-modern rounded-3xl p-6 border border-slate-200 shadow-sm bg-white overflow-hidden">
+            <h2 className="text-xl font-black text-slate-800 mb-6">Acompanhamento Financeiro (Primeiros 3 Meses)</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Telefone</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">1º Mês</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">2º Mês</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">3º Mês</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredClientes.map(c => (
+                    <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3">
+                        <div className="font-bold text-slate-800 text-sm">{c.nome}</div>
+                        <div className="text-[10px] text-slate-500 font-medium">{c.plano}</div>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium whitespace-nowrap">
+                          <Phone className="w-3.5 h-3.5 text-slate-400" />
+                          <a href={`https://wa.me/${c.telefone?.replace(/\\D/g, '')}`} target="_blank" rel="noreferrer" className="hover:text-sky-600 transition-colors">
+                            {c.telefone || "-"}
+                          </a>
+                        </div>
+                      </td>
+                      {[1, 2, 3].map(mes => (
+                        <td key={mes} className="p-3">
+                          <select
+                            className={`text-xs font-bold rounded-lg px-2 py-1.5 border outline-none cursor-pointer ${
+                              c.checklist?.[['cobrancaMes1','cobrancaMes2','cobrancaMes3'][mes-1]] === 'Pago' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              c.checklist?.[['cobrancaMes1','cobrancaMes2','cobrancaMes3'][mes-1]] === 'Em Atraso' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                              c.checklist?.[['cobrancaMes1','cobrancaMes2','cobrancaMes3'][mes-1]] === 'Enviado' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-slate-50 text-slate-500 border-slate-200'
+                            }`}
+                            value={c.checklist?.[['cobrancaMes1','cobrancaMes2','cobrancaMes3'][mes-1]] || ''}
+                            onChange={(e) => {
+                              const newCheck = { ...c.checklist, [['cobrancaMes1','cobrancaMes2','cobrancaMes3'][mes-1]]: e.target.value };
+                              setClientes(prev => prev.map(cl => cl.id === c.id ? { ...cl, checklist: newCheck } : cl));
+                              
+                              // Trigger update to API (optimistic)
+                              fetch('/api/pos-vendas/' + encodeURIComponent(c.id), {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ checklist: newCheck })
+                              }).catch(() => console.error("Falha ao salvar financeiro"));
+                            }}
+                          >
+                            <option value="">-</option>
+                            <option value="Pago">Pago</option>
+                            <option value="Em Atraso">Atraso</option>
+                            <option value="Enviado">Enviado</option>
+                          </select>
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
