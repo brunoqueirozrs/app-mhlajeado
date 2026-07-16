@@ -1,0 +1,10 @@
+{
+  "name": "MHNET Gestor de Vendas",
+  "description": "Sistema de Gestão de Vendas Externas, Controle de Rota, FTTA e Gestão de Base de Clientes para equipes MHNET.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

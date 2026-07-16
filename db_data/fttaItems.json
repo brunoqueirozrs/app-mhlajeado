@@ -1,0 +1,2854 @@
+[
+  {
+    "_linha": "2",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 01 - FTTA | GC4205",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-016",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "3",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 02 - FTTA | GC4206",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-015",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "4",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 03 - FTTA | GC4207",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-014",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "5",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 04 - FTTA | GC4208",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-013",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "6",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 05 - FTTA | GC4209",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-012",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "7",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 06 - FTTA | GC4210",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-011",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "8",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 07 - FTTA | GC4211",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-010",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "9",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 08 - FTTA | GC4212",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-009",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "10",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 09 - FTTA | GC4213",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-008",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "11",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 10 - FTTA | GC4214",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-007",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "12",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 11 - FTTA | GC4215",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-006",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "13",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 12 - FTTA | GC4216",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-005",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "14",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 13 - FTTA | GC4217",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-004",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "15",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 14 - FTTA | GC4218",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-003",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "16",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 15 - FTTA | GC4219",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-002",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "17",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 16 - FTTA | GC4220",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-001",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "18",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 17 - FTTA | GC4221",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-000",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "19",
+    "nomeBloco": "COND. NOVO TEMPO, BLOCO 18 - FTTA | GC4222",
+    "endereco": "R. Arnoldo Uhry - Santo Antonio, Lajeado - RS, 95900-000",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "20",
+    "nomeBloco": "COND. PARTENON, 174 - FTTA | GC5832",
+    "endereco": "R. Carlos Fett Filho, 174 - Americano, Lajeado - RS, 95900-518",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "21",
+    "nomeBloco": "CONDOMINIO LADYDI, 860 - FTTB",
+    "endereco": "R. Gen. Flores da Cunha, 49 - Florestal, Lajeado - RS, 95900-000",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "22",
+    "nomeBloco": "ED CASTELLANI - FTTB",
+    "endereco": "Rua Oswaldo Mathias Ely, 1658",
+    "bairro": "Montanha",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "23",
+    "nomeBloco": "ED DOM CASMURRO - FTTB",
+    "endereco": "Rua Tiradentes, 171",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "24",
+    "nomeBloco": "ED FREDERICO ALTHAUS - FTTB",
+    "endereco": "Avenida Senador Alberto Pasqualini, 2020",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "25",
+    "nomeBloco": "ED MOZELI - FTTB",
+    "endereco": "Rua Leonardo Theobaldo Hauschild, 478",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "26",
+    "nomeBloco": "ED PEIXES - R. JOSE SCHMATZ, 888 | GC4143",
+    "endereco": "R. José Schmatz, 888 - SALA 102C - Moinhos, Lajeado - RS, 95900-852",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "27",
+    "nomeBloco": "ED PÁDOVA - FTTB",
+    "endereco": "Rua Oswaldo Mathias Ely, 1036",
+    "bairro": "Montanha",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "28",
+    "nomeBloco": "ED R. JOSE SCHMATZ - FTTB, 79 | GC4127",
+    "endereco": "R. José Schmatz, 79 - Florestal, Lajeado - RS, 95900-710",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "29",
+    "nomeBloco": "ED R. NATALICIO HEINECK, 98 | GC4128",
+    "endereco": "Rua Natalício Heineck, 98 - Florestal, Lajeado - RS, 95900-624",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "30",
+    "nomeBloco": "ED VIVACE - FTTB",
+    "endereco": "Rua Irmão Emílio Conrado, 139",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "31",
+    "nomeBloco": "ED- WILLIBALDO MAHN - FTTB",
+    "endereco": "Rua João Boll, 162",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "32",
+    "nomeBloco": "ED. 25 DE JULHO, 609 - FTTA | GC7289",
+    "endereco": "Rua 25 de Julho 609",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "33",
+    "nomeBloco": "ED. ALTOS DO UNIVERSITÁRIO, BLOCO A - FTTA",
+    "endereco": "Rua Pará, nº 550",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "34",
+    "nomeBloco": "ED. ALTOS DO UNIVERSITÁRIO, BLOCO B - FTTB",
+    "endereco": "R. Pará, 550 - Universitário, Lajeado - RS, 95914-188",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "35",
+    "nomeBloco": "ED. ALTOS DO UNIVERSITÁRIO, BLOCO C - FTTB",
+    "endereco": "R. Pará, 550 - Universitário, Lajeado - RS, 95914-188",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "36",
+    "nomeBloco": "ED. ARAXÁ, 600 - FTTA | GC5793",
+    "endereco": "Rua Cristiano Grun, 600, Centro,  95.900-010",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "37",
+    "nomeBloco": "ED. ARBORETO - FTTA",
+    "endereco": "Rua Pedro Albino Muller, 706",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "38",
+    "nomeBloco": "ED. AV. ALBERTO MULLER, 1511 - FTTA",
+    "endereco": "AV. ALBERTO MULLER, 1511",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "39",
+    "nomeBloco": "ED. AV. AVELINO TALINI, 220 - FTTA | GC6752",
+    "endereco": "Av. Avelino Talini, 220 - Universitário, Lajeado - RS, 95914-014",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "40",
+    "nomeBloco": "ED. AV. AVELINO TALINI, 268 - FTTA | GC6710",
+    "endereco": "Av. Avelino Talini, 268 - Universitário, Lajeado - RS, 95914-014",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "41",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 1010 - FTTA | GC4808",
+    "endereco": "Av. Benjamin Constant, 1010 - Centro, Lajeado - RS, 95900-104",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "42",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 1126 - FTTA",
+    "endereco": "Av. Benjamin Constant, 1126 - Centro, Lajeado - RS, 95900-104",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "43",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 1194 - FTTA | GC4454",
+    "endereco": "Av. Benjamin Constant, 1194 - Centro, Lajeado - RS, 95900-056",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "44",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 1419 - FTTA | GC5320",
+    "endereco": "Av. Benjamin Constant, 1419 - Centro, Lajeado - RS, 95900-054",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "45",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 1645 - FTTA",
+    "endereco": "Av. Benjamin Constant, 1645 - Centro, Lajeado - RS, 95900-054",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "46",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 2281 - FTTA | GC5733",
+    "endereco": "Av. Benjamin Constant, 2281 - Florestal, Lajeado - RS, 95900-000",
+    "bairro": "Florestaal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "47",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 2676 - FTTB",
+    "endereco": "Av. Benjamin Constant, 2676 - Florestal, Lajeado - RS, 95900-702",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "48",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 2849 - FTTA | GC5231",
+    "endereco": "Av. Benjamin Constant, 2849 - Florestal, Lajeado - RS, 95900-700",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "49",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 3001 - FTTA",
+    "endereco": "Avenida Benjamin Constant, 3001",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "50",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 3356 - FTTA | GC6993",
+    "endereco": "Av. Benjamin Constant, 3356 - Montanha, Lajeado - RS, 95900-080",
+    "bairro": "Montanha",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "51",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 3362 - FTTA",
+    "endereco": "Av. Benjamin Constant, 3362",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "52",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 5555 - FTTA | GC6465",
+    "endereco": "Av. Benjamin Constant, 5555 - Bom Pastor, Lajeado - RS, 95905-770",
+    "bairro": "Bom Pastor",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "53",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 576 - FTTA | GC5722",
+    "endereco": "Av. Benjamin Constant, 576 - Bom Pastor, Lajeado - RS, 95900-106",
+    "bairro": "Bom Pastor",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "54",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 670 - FTTA | GC4358",
+    "endereco": "Av. Benjamin Constant, 670 - Centro, Lajeado - RS, 95900-106",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "55",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 671 - FTTA",
+    "endereco": "Avenida Benjamin Constant, 671",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "56",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 730 - FTTA | GC5918",
+    "endereco": "Av. Benjamin Constant, 730 - Centro, Lajeado - RS, 95900-106",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "57",
+    "nomeBloco": "ED. AV. BENJAMIN CONSTANT, 872 - FTTA",
+    "endereco": "Avenida Benjamin Constant, 872",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "58",
+    "nomeBloco": "ED. AV. PRESIDENTE CASTELO BRANCO, 1441 - FTTA | GC4163",
+    "endereco": "Av. Pres. Castelo Branco, 1441 - Moinhos, Lajeado - RS, 95901-050",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "59",
+    "nomeBloco": "ED. AV. SEN. ALBERTO PASQUALINI, 1174 - FTTA | GC6992",
+    "endereco": "Av. Senador Alberto Pasqualini, 1174 - São Cristóvão, Lajeado - RS, 95913-160",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "60",
+    "nomeBloco": "ED. AV. SEN. ALBERTO PASQUALINI, 151 - FTTA | GC7497",
+    "endereco": "Av. Senador Alberto Pasqualini, 151 - Centro, Lajeado - RS, 95900-000",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "61",
+    "nomeBloco": "ED. AV. SENADOR ALBERTO PASQUALINI, 1669 - FTTA | GC5673",
+    "endereco": "Av. Senador Alberto Pasqualini, 1669 - São Cristóvão, Lajeado - RS, 95900-000",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "62",
+    "nomeBloco": "ED. AV. SENADOR ALBERTO PASQUALINI, 1691 - FTTA | GC7425",
+    "endereco": "Av. Senador Alberto Pasqualini, 1691 - São Cristóvão, Lajeado - RS, 95900-000",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "63",
+    "nomeBloco": "ED. AV. SENADOR ALBERTO PASQUALINI, 388 - FTTA | GC6753",
+    "endereco": "Av. Senador Alberto Pasqualini, 388 - Americano, Lajeado - RS, 95900-562",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "64",
+    "nomeBloco": "ED. AV. SENADOR ALBERTO PASQUALINI, 624 - FTTA | GC6608",
+    "endereco": "Av. Senador Alberto Pasqualini, 624 - Americano, Lajeado - RS, 95900-562",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "65",
+    "nomeBloco": "ED. AV. SENADOR ALBERTO PASQUALINI, 862 - FTTA | GC6712",
+    "endereco": "Av. Senador Alberto Pasqualini, 862 - Americano, Lajeado - RS, 95900-562",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "66",
+    "nomeBloco": "ED. AV. SETE DE SETEMBRO, 102 - FTTA | GC5566",
+    "endereco": "Av. 7 de Setembro, 102 - Moinhos, Lajeado - RS, 95900-000",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "67",
+    "nomeBloco": "ED. AV. SETE DE SETEMBRO, 1289 - FTTA | GC4307",
+    "endereco": "Av. 7 de Setembro, 1289 - Moinhos, Lajeado - RS, 95900-000",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "68",
+    "nomeBloco": "ED. AV. SETE DE SETEMBRO, 1355 - FTTA | GC4305",
+    "endereco": "Av. 7 de Setembro, 1355 - Moinhos, Lajeado - RS, 95900-000",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "69",
+    "nomeBloco": "ED. AV. SETE DE SETEMBRO, 666 - FTTA",
+    "endereco": "Av. 7 de Setembro, 666 - Moinhos, Lajeado - RS, 95900-000",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "70",
+    "nomeBloco": "ED. AV. SETE DE SETEMBRO, 702 - FTTA | GC6890",
+    "endereco": "Av. 7 de Setembro, 702 - Moinhos, Lajeado - RS, 95900-000",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "71",
+    "nomeBloco": "ED. AV. SETE DE SETEMBRO, 726 - FTTA | GC4679",
+    "endereco": "Av. 7 de Setembro, 726 - Moinhos, Lajeado - RS, 95900-000",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "72",
+    "nomeBloco": "ED. AV. SETE DE SETEMBRO, 854 - FTTA",
+    "endereco": "Avenida Sete de Setembro , 854",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "73",
+    "nomeBloco": "ED. AVENIDA DOS QUINZE, 746 - FTTA",
+    "endereco": "ED. AVENIDA DOS QUINZE, 746 - FTTA",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "74",
+    "nomeBloco": "ED. BALDUINO - FTTB",
+    "endereco": "Rodovia ERS-413, 3757",
+    "bairro": "São Bento",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "75",
+    "nomeBloco": "ED. BARCELOS 395 - FTTB",
+    "endereco": "Avenida Sete de Setembro, 407 -",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "76",
+    "nomeBloco": "ED. BR-386, 52 - FTTA | GC6478",
+    "endereco": "Local exato momento - BR-386, 52 - São Cristóvão, Lajeado - RS, 92420-040",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "77",
+    "nomeBloco": "ED. CENTER PARK - FTTA | GC6907",
+    "endereco": "RUA ERVINO HEEMANN 113  · CEP. 95900-216 ·",
+    "bairro": "Bairro. Hidraulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "78",
+    "nomeBloco": "ED. COMERCIAL E RESIDENCIAL PLATANOS - FTTA",
+    "endereco": "RUA ERVINO HEEMANN 113  · CEP. 95900-216 ·",
+    "bairro": "R. José Schmatz, 79",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "79",
+    "nomeBloco": "ED. COND. FLORES DA MONTANHA II - FTTA | GC5653",
+    "endereco": "Rua João Sebastiany, 1405",
+    "bairro": "Montanha",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "80",
+    "nomeBloco": "ED. COND. FLORES DA MONTANHA II - FTTA | GC5654",
+    "endereco": "Rua João Sebastiany, 1406",
+    "bairro": "Montanha",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "81",
+    "nomeBloco": "ED. COND. FLORES DA MONTANHA II - FTTA | GC5651",
+    "endereco": "Rua João Sebastiany, 1407",
+    "bairro": "Montanha",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "82",
+    "nomeBloco": "ED. COND. FLORES DA MONTANHA II - FTTA | GC5652",
+    "endereco": "Rua João Sebastiany, 1408",
+    "bairro": "Montanha",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "83",
+    "nomeBloco": "ED. ETERNITY, 10 - FTTB",
+    "endereco": "Rua Ervino Arthur Thomas",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "84",
+    "nomeBloco": "ED. FENIX, 66 - FTTB",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "85",
+    "nomeBloco": "ED. FLORESTAL, BLOCO A - FTTA| GC4900",
+    "endereco": "Rua 15 de Novembro, 550",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "86",
+    "nomeBloco": "ED. FLORESTAL, BLOCO B - FTTA | GC4901",
+    "endereco": "Rua 15 de Novembro, 551",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "87",
+    "nomeBloco": "ED. FLORESTAL, BLOCO C - FTTA | GC4902",
+    "endereco": "Rua 15 de Novembro, 552",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "88",
+    "nomeBloco": "ED. FLORESTAL, BLOCO D - FTTA | GC4903",
+    "endereco": "Rua 15 de Novembro, 553",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "89",
+    "nomeBloco": "ED. FLORESTAL, BLOCO E - FTTA | GC4904",
+    "endereco": "Rua 15 de Novembro, 554",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "90",
+    "nomeBloco": "ED. GREEN PARK IV",
+    "endereco": "AV. SETE DE SETEMBRO, 700",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "91",
+    "nomeBloco": "ED. LA UNIVERSITE",
+    "endereco": "Avenida Senador Alberto Pasqualini 2322",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "92",
+    "nomeBloco": "ED. MALIBU, 25- FTTB",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "93",
+    "nomeBloco": "ED. MARBELLA, BLOCO A - FTTA",
+    "endereco": "Rua Nossa Senhora De Lourdes, 31",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "94",
+    "nomeBloco": "ED. MARBELLA, BLOCO B - FTTA",
+    "endereco": "Rua Nossa Senhora De Lourdes, 32",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "95",
+    "nomeBloco": "ED. MARBELLA, BLOCO C - FTTA",
+    "endereco": "Rua Nossa Senhora De Lourdes, 33",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "96",
+    "nomeBloco": "ED. MARBELLA, BLOCO D - FTTA",
+    "endereco": "Rua Nossa Senhora De Lourdes, 34",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "97",
+    "nomeBloco": "ED. MARBELLA, BLOCO E - FTTA",
+    "endereco": "Rua Nossa Senhora De Lourdes, 35",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "98",
+    "nomeBloco": "ED. MARBELLA, BLOCO F - FTTA",
+    "endereco": "Rua Nossa Senhora De Lourdes, 36",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "99",
+    "nomeBloco": "ED. MARBELLA, BLOCO G - FTTA",
+    "endereco": "Rua Nossa Senhora De Lourdes, 37",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "100",
+    "nomeBloco": "ED. MARCELO - FTTA",
+    "endereco": "R. CAPITAO LEOPOLDO HEINECK",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "101",
+    "nomeBloco": "ED. MONTANHA - FTTA | GC5168",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "102",
+    "nomeBloco": "ED. OLGA - FTTB",
+    "endereco": "Rua 25 de julho",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "103",
+    "nomeBloco": "ED. OURO PRETO - FTTA",
+    "endereco": "Rua João Pessoa, 147",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "104",
+    "nomeBloco": "ED. PORTES DU SOLEL,380 - FTTA",
+    "endereco": "Rua Dona Theresa Christina / Nº: 368",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "105",
+    "nomeBloco": "ED. R 1º DE MAIO, 70 - FTTA | GC7002",
+    "endereco": "R. 1º de Maio, 70 - Moinhos d'Água, Lajeado - RS, 95903-230",
+    "bairro": "Mopinhos d´Água",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "106",
+    "nomeBloco": "ED. R .PINHEIRO MACHADO, 531 - FTTA | GC5184",
+    "endereco": "R. Pinheiro Machado, 531 - Centro, Lajeado - RS, 95900-078",
+    "bairro": "Cqentro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "107",
+    "nomeBloco": "ED. R. 15 DE NOVEMBRO, 501 - FTTB",
+    "endereco": "R. Quinze de Novembro, 501 - Centro, Lajeado - RS, 95900-000",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "108",
+    "nomeBloco": "ED. R. 25 DE JULHO, 159 - FTTA | GC5671",
+    "endereco": "R. Vinte e Cinco de Julho, 159 - Americano, Lajeado - RS, 95900-000",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "109",
+    "nomeBloco": "ED. R. 25 DE JULHO, 550 - FTTA",
+    "endereco": "Rua 25 de Julho 155",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "110",
+    "nomeBloco": "ED. R. ALAGOAS, 181 - FTTA | GC6235",
+    "endereco": "R. Alagoas, 181 - São Cristóvão, Lajeado - RS, 95913-214",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "111",
+    "nomeBloco": "ED. R. ALBANUS LENHARDT, 665, BLOCO B - FTTA | GC4926",
+    "endereco": "R. Albanus Lenhardt 55",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "112",
+    "nomeBloco": "ED. R. ALBERTO TORRES, 151 - FTTA",
+    "endereco": "Rua Alberto Torres , 151",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "113",
+    "nomeBloco": "ED. R. ALBERTO TORRES, 158 - FTTA | GC5590",
+    "endereco": "R. Alberto Torres, 158 - Hidráulica, Lajeado - RS, 95900-000",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "114",
+    "nomeBloco": "ED. R. ALBERTO TORRES, 517 - FTTA | GC5528",
+    "endereco": "R. Alberto Torres, 517 - Centro, Lajeado - RS, 95900-000",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "115",
+    "nomeBloco": "ED. R. ALBERTO TORRES, 526 - FTTA | GC5460",
+    "endereco": "R. Alberto Torres, 526 - Centro, Lajeado - RS, 95900-000",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "116",
+    "nomeBloco": "ED. R. ALBERTO TORRES, 628 - FTTA",
+    "endereco": "Rua Alberto Torres , 628",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "117",
+    "nomeBloco": "ED. R. ALFONSO HAAS, 86 - FTTA | GC6669",
+    "endereco": "R. Alfonso Haas, 86 - Carneiros, Lajeado - RS, 95913-518",
+    "bairro": "Carneiros",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "118",
+    "nomeBloco": "ED. R. ALMIRANTE BARROSO 395 - FTTA | GC4673",
+    "endereco": "R. Alm. Barroso, 395 - Americano, Lajeado - RS, 95900-000",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "119",
+    "nomeBloco": "ED. R. ALMIRANTE BARROSO, 440 - FTTA | GC7248",
+    "endereco": "R. Alm. Barroso, 440 - Americano, Lajeado - RS, 95900-574",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "120",
+    "nomeBloco": "ED. R. ANTÔNIO DE SOUZA NETO, 744 - FTTA | GC6817",
+    "endereco": "R. Antônio de Souza Neto, 744 - Carneiros, Lajeado - RS, 95913-452",
+    "bairro": "Carneiros",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "121",
+    "nomeBloco": "ED. R. ARNO DAHMER",
+    "endereco": "Moinhos, Lajeado - RS, 95901-116",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "122",
+    "nomeBloco": "ED. R. ARNO DAHMER, 72 - BLOCO A - FTTA | GC4170",
+    "endereco": "Rua Arno Dahmer, Lajeado - RS - CEP 95901116",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "123",
+    "nomeBloco": "ED. R. ARNO DAHMER, 72 - BLOCO B - FTTA | GC4171",
+    "endereco": "Rua Arno Dahmer, Lajeado - RS - CEP 95901117",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "124",
+    "nomeBloco": "ED. R. ARNO DAHMER, 72 - BLOCO C - FTTA | GC4172",
+    "endereco": "Rua Arno Dahmer, Lajeado - RS - CEP 95901118",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "125",
+    "nomeBloco": "ED. R. ARNO DAHMER, 72 - BLOCO D - FTTA | GC4173",
+    "endereco": "Rua Arno Dahmer, Lajeado - RS - CEP 95901119",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "126",
+    "nomeBloco": "ED. R. ARNO DAHMER, 72 - BLOCO E - FTTA | GC4174",
+    "endereco": "Rua Arno Dahmer, Lajeado - RS - CEP 95901120",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "127",
+    "nomeBloco": "ED. R. ARNO DAHMER, 72 - BLOCO F - FTTA | GC4175",
+    "endereco": "Rua Arno Dahmer, Lajeado - RS - CEP 95901121",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "128",
+    "nomeBloco": "ED. R. ARTHUR BERNARDES, 201 - FTTA | GC6042",
+    "endereco": "R. Arthur Bernardes, 201 - São Cristóvão, Lajeado - RS, 95913-200",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "129",
+    "nomeBloco": "ED. R. ARTHUR BERNARDES, 336 - FTTA | GC7498",
+    "endereco": "R. Arthur Bernardes, 336 - São Cristóvão, Lajeado - RS, 95913-200",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "130",
+    "nomeBloco": "ED. R. ARTHUR BERNARDES, 52 - FTTA",
+    "endereco": "Rua Arthur Bernardes, 52",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "131",
+    "nomeBloco": "ED. R. ARTHUR BERNARDES, 653 - FTTA | GC5707",
+    "endereco": "R. Arthur Bernardes, 653 - Alto do Parque, Lajeado - RS, 95913-286",
+    "bairro": "Alto do Parque",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "132",
+    "nomeBloco": "ED. R. AVENIDA SETE DE SETEMBRO, 496, FTTA | GC4634",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "133",
+    "nomeBloco": "ED. R. BAHIA, 186 - FTTA | GC5054",
+    "endereco": "R. Bahia, 186 - São Cristóvão, Lajeado - RS, 95913-198",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "134",
+    "nomeBloco": "ED. R. BAHIA, 377 - FTTA",
+    "endereco": "Rua Bahia , 377",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "135",
+    "nomeBloco": "ED. R. BARAO DO CERRO LARGO, 143 - FTTA | GC4255",
+    "endereco": "R. Barão do Cerro Largo, 143 - Florestal, Lajeado - RS, 95900-672",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "136",
+    "nomeBloco": "ED. R. BARÃO DO TRIUNFO, 231 - FTTA | GC5318",
+    "endereco": "R. Barão do Cerro Largo, 143 - Florestal, Lajeado - RS, 95900-672",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "137",
+    "nomeBloco": "ED. R. BENTO GONÇALVES, 1016 - FTTA | GC7071",
+    "endereco": "R. Bento Gonçalves, 1016 - Centro, Lajeado - RS, 95900-026",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "138",
+    "nomeBloco": "ED. R. BENTO GONÇALVES, 1284 - FTTA | GC4906",
+    "endereco": "R. Bento Gonçalves, 1284 - Centro, Lajeado - RS, 95900-026",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "139",
+    "nomeBloco": "ED. R. BENTO GONÇALVES, 1354 - FTTA | GC5379",
+    "endereco": "R. Bento Gonçalves, 1354 - Centro, Lajeado - RS, 95900-026",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "140",
+    "nomeBloco": "ED. R. BENTO GONÇALVES, 1379 - FTTA | GC6374",
+    "endereco": "R. Bento Gonçalves, 1379 - Centro, Lajeado - RS, 95900-026",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "141",
+    "nomeBloco": "ED. R. BENTO GONÇALVES, 444 - FTTA | GC6671",
+    "endereco": "R. Bento Gonçalves, 444 - Centro, Lajeado - RS, 95900-174",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "142",
+    "nomeBloco": "ED. R. BENTO GONÇALVES, 561, BLOCO 01 - FTTA | GC5376",
+    "endereco": "R. Bento Gonçalves, 444 - Centro, Lajeado - RS, 95900-000",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "143",
+    "nomeBloco": "ED. R. BENTO GONÇALVES, 561, BLOCO 02 - FTTA | GC5377",
+    "endereco": "R. Bento Gonçalves, 444 - Centro, Lajeado - RS, 95900-001",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "144",
+    "nomeBloco": "ED. R. BENTO GONÇALVES, 581 - FTTA | GC6694",
+    "endereco": "R. Bento Gonçalves, 581 - Centro, Lajeado - RS, 95900-000",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "145",
+    "nomeBloco": "ED. R. BENTO GONÇALVES, 801 - FTTA | GC6236",
+    "endereco": "R. Bento Gonçalves, 801 - Centro, Lajeado - RS, 95900-174",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "146",
+    "nomeBloco": "ED. R. BENTO GONÇALVES, 967 - FTTB",
+    "endereco": "R. Bento Gonçalves, 967 - Centro, Lajeado - RS, 95900-026",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "147",
+    "nomeBloco": "ED. R. BORGES DE MEDEIROS, 147 - FTTA | GC6846",
+    "endereco": "R. Borges de Medeiros, 147 - Centro, Lajeado - RS, 95900-176",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "148",
+    "nomeBloco": "ED. R. BORGES DE MEDEIROS, 512 - FTTA",
+    "endereco": "R. Borges de Medeiros, 512 - Centro, Lajeado - RS, 95900-120",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "149",
+    "nomeBloco": "ED. R. CACHOEIRA DO SUL 63 - FTTB | GC6611",
+    "endereco": "R. Cachoeira do Sul, 63 - Planalto, Lajeado - RS, 95910-322",
+    "bairro": "Planalto",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "150",
+    "nomeBloco": "ED. R. CAPITÃO CARLOS STOLL, 63 - FTTA | GC6091",
+    "endereco": "R. Cap. Carlos Stoll, 63 - Florestal, Lajeado - RS, 95900-680",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "151",
+    "nomeBloco": "ED. R. CAPITÃO LEOPOLDO HEINECJ, 617 - FTTA | GC5374",
+    "endereco": "R. Cap. Leopoldo Heineck, 617 - Centro, Lajeado - RS, 95900-016",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "152",
+    "nomeBloco": "ED. R. CAPITÃO LEOPOLDO HEINECK, 650 - FTTA | GC5708",
+    "endereco": "R. Cap. Leopoldo Heineck, 650 - Centro, Lajeado - RS, 95900-000",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "153",
+    "nomeBloco": "ED. R. CARLOS FETT FILHO, 185 - FTTA | GC6311",
+    "endereco": "R. Carlos Fett Filho, 185 - Centro, Lajeado - RS, 95900-518",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "154",
+    "nomeBloco": "ED. R. CARLOS FETT FILHO, 22 - FTTA | GC6919",
+    "endereco": "R. Carlos Fett Filho, 22 - Centro, Lajeado - RS, 95900-038",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "155",
+    "nomeBloco": "ED. R. CARLOS FETT FILHO, 301 - FTTA | GC6882",
+    "endereco": "R. Carlos Fett Filho, 301 - Americano, Lajeado - RS, 95900-518",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "156",
+    "nomeBloco": "ED. R. CARLOS FETT FILHO, 334 - FTTA | GC5919",
+    "endereco": "R. Carlos Fett Filho, 334 - Americano, Lajeado - RS, 95900-518",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "157",
+    "nomeBloco": "ED. R. CARLOS FETT FILHO, 475 - FTTA",
+    "endereco": "Rua Carlos Fett Filho, 475",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "158",
+    "nomeBloco": "ED. R. CARLOS JACOB KIELING, 230 - FTTA | GC6157",
+    "endereco": "Rua Carlos Jacob Kieling, Lajeado - RS - CEP 95900712",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "159",
+    "nomeBloco": "ED. R. CARLOS JACOB KIELING, 363 - FTTA | GC4600",
+    "endereco": "Rua Carlos Jacob Kieling, Lajeado - RS - CEP 95900713",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "160",
+    "nomeBloco": "ED. R. CARLOS SPHOR FILHO - FTTB, 2570 | GC5706",
+    "endereco": "R. Carlos Spohr Filho, 1146 - Moinhos, Lajeado - RS, 95901-033",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "161",
+    "nomeBloco": "ED. R. CARLOS SPHOR FILHO, 1146 - FTTB",
+    "endereco": "R. Carlos Spohr Filho, 1146 - Moinhos, Lajeado - RS, 95901-034",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "162",
+    "nomeBloco": "ED. R. CARLOS SPHOR FILHO, 757 - FTTA | GC4927",
+    "endereco": "R. Carlos Spohr Filho, 757 - Moinhos, Lajeado - RS, 95901-034",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "163",
+    "nomeBloco": "ED. R. CARLOS VON KOSERITZ, 191 - FTTA | GC6888",
+    "endereco": "R. Carlos Von Koseritz, 191 - Centro, Lajeado - RS, 95900-000",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "164",
+    "nomeBloco": "ED. R. CARLOS VON KOSERITZ, 462 - FTTA | GC5284",
+    "endereco": "R. Carlos Von Koseritz, 462 - Centro, Lajeado - RS, 95900-012",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "165",
+    "nomeBloco": "ED. R. CARLOS VON KOSERITZ, 79 - FTTA | GC4879",
+    "endereco": "R. Carlos Von Koseritz, 79 - Centro, Lajeado - RS, 95900-012",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "166",
+    "nomeBloco": "ED. R. CEARÁ, 195 - FTTA",
+    "endereco": "R. Carlos Von Koseritz, 79 - Centro, Lajeado - RS, 95900-012",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "167",
+    "nomeBloco": "ED. R. CEL FRANCISCO OSCAR KARNAL, 218 - FTTA | GC7070",
+    "endereco": "R. Francisco Oscar Karnal, 218 - Centro, Lajeado - RS, 95900-180",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "168",
+    "nomeBloco": "ED. R. CEL. FRANCISCO OSCAR KARNAL, 238 - FTTA | GC4435",
+    "endereco": "R. Francisco Oscar Karnal, 238 - Centro, Lajeado - RS, 95900-180",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "169",
+    "nomeBloco": "ED. R. CLÉLIA BETTI, 286 - FTTA | GC7439",
+    "endereco": "R. Clélia Jaeger Betti, 286 - Florestal, Lajeado - RS, 95900-622",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "170",
+    "nomeBloco": "ED. R. CORONEL FRANCISCO OCAR KARNAL, 249 - FTTA | GC5987",
+    "endereco": "R. Francisco Oscar Karnal, 249, Lajeado - RS, 95900-179",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "171",
+    "nomeBloco": "ED. R. CORONEL FRANCISCO OSCAR KARNAL, 205 - FTTA",
+    "endereco": "R. Francisco Oscar Karnal, 205 - Centro, Lajeado - RS, 95900-180",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "172",
+    "nomeBloco": "ED. R. CORONEL FRANCISCO OSCAR KARNAL, 451 - FTTA | GC6950",
+    "endereco": "Rua Coronel - R. Francisco Oscar Karnal, 451 - Centro, Lajeado - RS, 95900-114",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "173",
+    "nomeBloco": "ED. R. CORONEL JOÃO BATISTA DE MELLO, 197 - FTTA | GC4891",
+    "endereco": "Rua Coronel João Batista de Mello, Lajeado - RS - CEP 95900182",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "174",
+    "nomeBloco": "ED. R. CORONEL JOÃO BATISTA DE MELLO, 219 - FTTA | GC5257",
+    "endereco": "Rua Coronel João Batista de Mello, Lajeado - RS - CEP 95900183",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "175",
+    "nomeBloco": "ED. R. CRISTIANO GRUN, 115 - FTTA | GC6549",
+    "endereco": "R. Cristiano Grün, 115 - Florestal, Lajeado - RS, 95900-714",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "176",
+    "nomeBloco": "ED. R. CRISTIANO GRUN, 156 - FTTB",
+    "endereco": "Rua Cristiano Grun, 156",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "177",
+    "nomeBloco": "ED. R. CRISTIANO GRUN, 205 - FTTA",
+    "endereco": "Rua Cristiano Grun, 205",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "178",
+    "nomeBloco": "ED. R. CRISTIANO GRUN, 265 - FTTA | GC5565",
+    "endereco": "R. Cristiano Grün, 265 - Florestal, Lajeado - RS, 95900-714",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "179",
+    "nomeBloco": "ED. R. CRISTIANO GRUN, 839 - FTTA | GC5186",
+    "endereco": "R. Cristiano Grün, 839 - Moinhos, Lajeado - RS, 95900-844",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "180",
+    "nomeBloco": "ED. R. CRISTIANO GRUN, 87 - FTTA",
+    "endereco": "Rua Cristiano Grun",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "181",
+    "nomeBloco": "ED. R. CRISTÓVÃO COLOMBO, 126 - FTTA",
+    "endereco": "Rua Cristovão Colombo / Nº: 126",
+    "bairro": "Campestre",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "182",
+    "nomeBloco": "ED. R. CURITIBA, 201 - FTTA | GC4935",
+    "endereco": "R. Curitiba, 201 - Universitário, Lajeado - RS, 95914-708",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "183",
+    "nomeBloco": "ED. R. DA FELICIDADE, 205, BLOCO 01 - FTTA | GC4817",
+    "endereco": "Rua da Felicidade",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "184",
+    "nomeBloco": "ED. R. DA FELICIDADE, 205, BLOCO 02 - FTTA | GC4818",
+    "endereco": "Rua da Felicidade 205",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "185",
+    "nomeBloco": "ED. R. DA FELICIDADE, 205, BLOCO 03 - FTTA | GC4819",
+    "endereco": "Rua da Felicidade 205",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "186",
+    "nomeBloco": "ED. R. DA FELICIDADE, 205, BLOCO 04 - FTTA | GC4820",
+    "endereco": "Rua da Felicidade 205",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "187",
+    "nomeBloco": "ED. R. DA FELICIDADE, 205, BLOCO 05 - FTTA | GC4821",
+    "endereco": "Rua da Felicidade 205",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "188",
+    "nomeBloco": "ED. R. DA FELICIDADE, 205, BLOCO 06 - FTTA | GC4822",
+    "endereco": "Rua da Felicidade 205",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "189",
+    "nomeBloco": "ED. R. DA FELICIDADE, 205, BLOCO 07 - FTTA | GC4823",
+    "endereco": "Rua da Felicidade 205",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "190",
+    "nomeBloco": "ED. R. DA FELICIDADE, 205, BLOCO 08 - FTTA | GC4824",
+    "endereco": "Rua da Felicidade 205",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "191",
+    "nomeBloco": "ED. R. DA FELICIDADE, 205, BLOCO 09 - FTTA | GC4825",
+    "endereco": "Rua da Felicidade 205",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "192",
+    "nomeBloco": "ED. R. DA FELICIDADE, 205, BLOCO 10 - FTTA | GC4826",
+    "endereco": "Rua da Felicidade 205",
+    "bairro": "Santo Antonio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "193",
+    "nomeBloco": "ED. R. DALTON DE BEM STUMPF, 715 - FTTB",
+    "endereco": "R. Dalton de Bem Stumpf, 715 - Moinhos d'Água, Lajeado - RS, 95904-459",
+    "bairro": "Moinhos d'Água",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "194",
+    "nomeBloco": "ED. R. DAS JABOTICABEIRAS, 15 - FTTA | GC5757",
+    "endereco": "R. das Jaboticabeiras, 15 - Montanha, Lajeado - RS, 95905-010",
+    "bairro": "Montanha",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "195",
+    "nomeBloco": "ED. R. DAS OLIVEIRAS, 356 - FTTB",
+    "endereco": "Rua das Oliveiras, 365",
+    "bairro": "Montanha",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "196",
+    "nomeBloco": "ED. R. DOM PEDRO II 134 - FTTA | GC4632",
+    "endereco": "R. Dom Pedro II, 134 - Americano, Lajeado - RS, 95900-578",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "197",
+    "nomeBloco": "ED. R. DOM PEDRO II, 175 - FTTA | GC4644",
+    "endereco": "R. Dom Pedro II, 175 - Americano, Lajeado - RS, 95900-578",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "198",
+    "nomeBloco": "ED. R. DONA LEOPOLDINA, 369 - FTTA",
+    "endereco": "Rua Dona Leopoldina, 369",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "199",
+    "nomeBloco": "ED. R. DONA LEOPOLDINA, 370 - FTTA | GC5381",
+    "endereco": "R. Dona Leopoldina, 370 - Florestal, Lajeado - RS, 95900-000",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "200",
+    "nomeBloco": "ED. R. DONA LEOPOLDINA, 463 - FTTA",
+    "endereco": "R. Dona Leopoldina, 463 - Florestal, Lajeado - RS, 95900-000",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "201",
+    "nomeBloco": "ED. R. DONA LEOPOLDINA, 470 - FTTA | GC5587",
+    "endereco": "R. Dona Leopoldina, 470 - Florestal, Lajeado - RS, 95900-604",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "202",
+    "nomeBloco": "ED. R. DONA LEOPOLDINA, 55 - FTTA | GC5286",
+    "endereco": "R. Dona Leopoldina, 55 - Florestal, Lajeado - RS, 95900-604",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "203",
+    "nomeBloco": "ED. R. DONA THERESA CHRISTINA, 284 - FTTA | GC5387",
+    "endereco": "R. Dona Theresa Christina, 284 - Florestal, Lajeado - RS, 95900-628",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "204",
+    "nomeBloco": "ED. R. DONA THERESA CHRISTINA, 380 - FTTA | GC4997",
+    "endereco": "R. Dona Theresa Christina, 380 - Florestal, Lajeado - RS, 95900-628",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "205",
+    "nomeBloco": "ED. R. DONA THERESA CHRISTINA, 529 - FTTA | GC5732",
+    "endereco": "R. Dona Theresa Christina, 529 - Florestal, Lajeado - RS, 95900-628",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "206",
+    "nomeBloco": "ED. R. DONA THERESA CRISTINA, 405 - FTTA | GC4417",
+    "endereco": "R. Dona Theresa Christina, 405 - Florestal, Lajeado - RS, 95900-628",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "207",
+    "nomeBloco": "ED. R. DOS PALMITOS, 55 - FTTB",
+    "endereco": "R. dos Palmitos, 55 - Conventos, Lajeado - RS, 95900-000",
+    "bairro": "Conventos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "208",
+    "nomeBloco": "ED. R. DOUTOR GERMANO BERNER, 1027 - FTTA",
+    "endereco": "R. Germano Berner, 112 - Centro, Lajeado - RS, 95900-052",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "209",
+    "nomeBloco": "R. Germano Berner, 112 - Centro, Lajeado - RS, 95900-052",
+    "endereco": "R. Germano Berner, 112 - Centro, Lajeado - RS, 95900-052",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "210",
+    "nomeBloco": "ED. R. DOUTOR GERMANO BERNER, 202 - FTTA | GC6045",
+    "endereco": "R. Germano Berner, 202 - Florestal, Lajeado - RS, 95900-606",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "211",
+    "nomeBloco": "ED. R. DOUTOR GERMANO BERNER, 540 - FTTA | GC6046",
+    "endereco": "R. Germano Berner, 540 - Americano, Lajeado - RS, 95900-606",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "212",
+    "nomeBloco": "ED. R. DUQUE DE CAXIAS, 1059 - FTTA | GC6918",
+    "endereco": "R. Duque de Caxias, 1059 - Florestal, Lajeado - RS, 95900-614",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "213",
+    "nomeBloco": "ED. R. DUQUE DE CAXIAS, 1162 - FTTA | GC6953",
+    "endereco": "R. Duque de Caxias, 1162 - Florestal, Lajeado - RS, 95900-000",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "214",
+    "nomeBloco": "ED. R. DUQUE DE CAXIAS, 632 - FTTA | GC5378",
+    "endereco": "R. Duque de Caxias, 632 - Americano, Lajeado - RS, 95900-474",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "215",
+    "nomeBloco": "ED. R. DUQUE DE CAXIAS, 698 - FTTA",
+    "endereco": "R. Duque de Caxias, 698 - Americano, Lajeado - RS, 95900-474",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "216",
+    "nomeBloco": "ED. R. DUQUE DE CAXIAS, 752 - FTTA | GC5758",
+    "endereco": "R. Duque de Caxias, 752 - Americano, Lajeado - RS, 95900-000",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "217",
+    "nomeBloco": "ED. R. DUQUE DE CAXIAS, 816 - FTTA",
+    "endereco": "Rua Duque de Caxias, 816",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "218",
+    "nomeBloco": "ED. R. EDVINO HENRIQUE BECKER, 194 - FTTA | GC7465",
+    "endereco": "R. Edwino Henrique Becker, 194 - Universitário, Lajeado - RS, 95914-702",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "219",
+    "nomeBloco": "ED. R. EDVINO HENRIQUE BECKER, 260 - FTTA | GC7069",
+    "endereco": "R. Edvino Henrique Becker, 260 - Universitário, Lajeado - RS, 95900-000",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "220",
+    "nomeBloco": "ED. R. ELSA MARIA BERNER DE SOUZA, 25 - FTTA | GC4416",
+    "sindico": "Dona Maria",
+    "endereco": "R. Elsa Maria Berner de Souza, 25 - Florestal, Lajeado - RS, 95900-678",
+    "bairro": "Florestal",
+    "cidade": "Lajeado",
+    "ultimaVisita": "10/01/2025"
+  },
+  {
+    "_linha": "221",
+    "nomeBloco": "ED. R. ERWINO HEEMANN, 113 - FTTA | GC5043",
+    "endereco": "R. Erwino Heemann, 113 - Centro, Lajeado - RS, 95900-216",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "222",
+    "nomeBloco": "ED. R. ERWINO HEEMANN, 59 - FTTA | GC6488",
+    "endereco": "R. Erwino Heemann, 59 - Hidráulica, Lajeado - RS, 95900-216",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "223",
+    "nomeBloco": "ED. R. EXPEDICIONÁRIOS DO BRASIL, 418 - FTTA | GC7427",
+    "endereco": "R. Expedicionários do Brasil, 418 - Americano, Lajeado - RS, 95900-508",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "224",
+    "nomeBloco": "ED. R. EXPEDICIONÁRIOS DO BRASIL, 498 - FTTA | GC6679",
+    "endereco": "R. Expedicionários do Brasil, 498 - Americano, Lajeado - RS, 95900-508",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "225",
+    "nomeBloco": "ED. R. FIALHO DE VARGAS, 195 - FTTA",
+    "endereco": "Rua Fialho de Vargas , 195",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "226",
+    "nomeBloco": "ED. R. FIALHO DE VARGAS, 220 - FTTA | GC5672",
+    "endereco": "R. Fialho de Vargas, 220 - Centro, Lajeado - RS, 95900-016",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "227",
+    "nomeBloco": "ED. R. FLORIANÓPOLIS, 199 - FTTA",
+    "endereco": "R. Florianópolis, 199 - Universitário, Lajeado - RS, 95914-706",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "228",
+    "nomeBloco": "ED. R. FLORIANÓPOLIS, 225 - FTTA | GC6808",
+    "endereco": "R. Florianópolis, 225 - Universitário, Lajeado - RS, 95914-706",
+    "bairro": "Universitário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "229",
+    "nomeBloco": "ED. R. FRANCISCO OSCAR KARNAL, 479 - FTTA | GC6198",
+    "endereco": "Rua Coronel - R. Francisco Oscar Karnal, 479 - Centro, Lajeado - RS, 95900-114",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "230",
+    "nomeBloco": "ED. R. FREDERICO BERTHOLDO SCHNEIDER, 375 - FTTB",
+    "endereco": "Rua Frederico Bertholdo Schneider , 375",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "231",
+    "nomeBloco": "ED. R. FREDERICO HENRIQUE JAEGER - 942 - FTTA | GC6631",
+    "endereco": "R. Frederico Henrique Jaeger, 942 - Moinhos, Lajeado - RS, 95900-860",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "232",
+    "nomeBloco": "ED. R. GENERAL FLORES DA CUNHA, 108 - FTTA | GC4802",
+    "endereco": "R. Gen. Flores da Cunha, 108 - Florestal, Lajeado - RS, 95900-000",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "233",
+    "nomeBloco": "ED. R. GENERAL FLORES DA CUNHA, 21 - FTTA | GC4713",
+    "endereco": "R. Gen. Flores da Cunha, 21 - Florestal, Lajeado - RS, 95900-626",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "234",
+    "nomeBloco": "ED. R. GENERAL FLORES DA CUNHA, 470 - FTTA | GC4905",
+    "endereco": "R. Gen. Flores da Cunha, 470 - Florestal, Lajeado - RS, 95900-626",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "235",
+    "nomeBloco": "ED. R. GENERAL FLORES DA CUNHA, 49 - FTTA | GC5554",
+    "endereco": "R. Gen. Flores da Cunha, 49 - Florestal, Lajeado - RS, 95900-626",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "236",
+    "nomeBloco": "ED. R. GENERAL FLORES DA CUNHA, 496 - FTTA | GC5971",
+    "endereco": "R. Gen. Flores da Cunha, 496 - Florestal, Lajeado - RS, 95900-626",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "237",
+    "nomeBloco": "ED. R. GENERAL FLORES DA CUNHA, 571 - FTTA | GC4257",
+    "endereco": "R. Gen. Flores da Cunha, 571 - Florestal, Lajeado - RS, 95900-626",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "238",
+    "nomeBloco": "ED. R. GERMANO BERNER, 240 - FTTA | GC4601",
+    "endereco": "R. Germano Berner, 240 - Centro, Lajeado - RS, 95900-052",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "239",
+    "nomeBloco": "ED. R. GERMANO BERNER, 710 - FTTA | GC6493",
+    "endereco": "R. Germano Berner, 710 - Florestal, Lajeado - RS, 95900-606",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "240",
+    "nomeBloco": "ED. R. GERMANO BERNER, 998 - FTTA | GC4308",
+    "endereco": "R. Germano Berner, 998 - Florestal, Lajeado - RS, 95900-606",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "241",
+    "nomeBloco": "ED. R. GERMANO NOLL, 54 - FTTA",
+    "endereco": "R. Germano Noll, 54 - Florestal, Lajeado - RS, 95900-730",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "242",
+    "nomeBloco": "ED. R. GILBERTO SERAFINI, 99 - FTTA | GC4805",
+    "endereco": "R. Gilberto Serafini, 99 - São Cristóvão, Lajeado - RS, 95913-116",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "243",
+    "nomeBloco": "ED. R. HELLMUTH CARLOS GLUFKE, 11 - FTTA | GC5616",
+    "endereco": "R. Hellmuth Carlos Glufke, 11 - Universitário, Lajeado - RS, 95900-000",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "244",
+    "nomeBloco": "ED. R. HELMUTH CARLOS GLUFKE, 131 - FTTA",
+    "endereco": "Rua Helmuth Carlos Glufke, 131",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "245",
+    "nomeBloco": "ED. R. HELMUTH CARLOS GLUFKE, 92, BLOCO 01 - FTTA | GC6023",
+    "endereco": "Rua Helmuth Carlos Glufke, 92",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "246",
+    "nomeBloco": "ED. R. HELMUTH CARLOS GLUFKE, 92, BLOCO 02 - FTTA | GC6022",
+    "endereco": "Rua Helmuth Carlos Glufke, 92",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "247",
+    "nomeBloco": "ED. R. HELMUTH CARLOS GLUFKE, 92, BLOCO 03 - FTTA | GC6021",
+    "endereco": "Rua Helmuth Carlos Glufke, 92",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "248",
+    "nomeBloco": "ED. R. IRMÃO EMÍLIO CONRADO, 315 - FTTA | GC6889",
+    "endereco": "R. Irmão Emílio Conrado, 315 - Moinhos, Lajeado - RS, 95900-858",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "249",
+    "nomeBloco": "ED. R. IRMÃO EMÍLIO CONRADO, 316 - FTTA",
+    "endereco": "Rua Irmão Emílio Conrado, 316",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "250",
+    "nomeBloco": "ED. R. JOSE DO PATROCÍNIO, 95 - FTTA | GC4663",
+    "endereco": "R. José do Patrocínio, 95 - Hidráulica, Lajeado - RS, 95900-204",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "251",
+    "nomeBloco": "ED. R. JOSÉ FRANZ, 433 - FTTB",
+    "endereco": "R. José Franz, 433 - Conventos, Lajeado - RS, 95906-384",
+    "bairro": "Conventos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "252",
+    "nomeBloco": "ED. R. JOSÉ SCHMATZ, 386 - FTTA | GC7216",
+    "endereco": "ED. R. JOSÉ SCHMATZ, 386 - FTTA | GC7216",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "253",
+    "nomeBloco": "ED. R. JOSÉ SCHMATZ, 47 - FTTA | GC5461",
+    "endereco": "R. José Schmatz, 47 - Florestal, Lajeado - RS, 95900-710",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "254",
+    "nomeBloco": "ED. R. JOSÉ SCHMATZ, 541 - FTTA | GC4934",
+    "endereco": "R. José Schmatz, 541 - Moinhos, Lajeado - RS, 95900-852",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "255",
+    "nomeBloco": "ED. R. JOSÉ SCHMATZ, 642 - FTTA | GC5674",
+    "endereco": "R. José Schmatz, 642 - Moinhos, Lajeado - RS, 95900-852",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "256",
+    "nomeBloco": "ED. R. JOSÉ SCHMATZ, 850 - FTTA | GC5753",
+    "endereco": "R. José Schmatz, 850 - Moinhos, Lajeado - RS, 95900-000",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "257",
+    "nomeBloco": "ED. R. JOSÉ SCHMATZ, 930 - FTTA",
+    "endereco": "Rua José Schmatz , 930",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "258",
+    "nomeBloco": "ED. R. JOSÉ SCHMATZ, 941 - FTTA | GC6204",
+    "endereco": "R. José Schmatz, 941 - Moinhos, Lajeado - RS, 95900-840",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "259",
+    "nomeBloco": "ED. R. JOÃO ABOTT, 1135 - FTTA | GC6819",
+    "endereco": "R. João Abott, 1135 - Centro, Lajeado - RS, 95900-080",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "260",
+    "nomeBloco": "ED. R. JOÃO ABOTT, 1213 - FTTA | GC5267",
+    "endereco": "R. João Abott, 1213 - Centro, Lajeado - RS, 95900-080",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "261",
+    "nomeBloco": "ED. R. JOÃO ABOTT, 962 - FTTA",
+    "endereco": "R. João Abott, 962 - Centro, Lajeado - RS, 95900-080",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "262",
+    "nomeBloco": "ED. R. JOÃO AUGUSTO HEXSEL, 767 - FTTA | GC5020",
+    "endereco": "R. João A. Hexsel, 767 - Florestal, Lajeado - RS, 95900-618",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "263",
+    "nomeBloco": "ED. R. JOÃO FERNANDO SCHNEIDER, 278 - FTTB",
+    "endereco": "R. João Fernando Schneider, 278 - Jardim do Cedro, Lajeado - RS, 95901-374",
+    "bairro": "Jardim do Cedro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "264",
+    "nomeBloco": "ED. R. JOÃO MATTE SOBRINHO, 114 - FTTA | GC7029",
+    "endereco": "R. João Matte Sobrinho, 114 - Americano, Lajeado - RS, 95900-520",
+    "bairro": "Anericano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "265",
+    "nomeBloco": "ED. R. JOÃO PESSOA, 144 - FTTA",
+    "endereco": "R. João Pessoa, 144 - Hidráulica, Lajeado - RS, 95900-206",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "266",
+    "nomeBloco": "ED. R. JOÃO PESSOA, 180 - FTTA | GC5778",
+    "endereco": "R. João Pessoa, 180 - Hidráulica, Lajeado - RS, 95900-206",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "267",
+    "nomeBloco": "ED. R. JOÃO PESSOA, 193 - FTTA | GC5003",
+    "endereco": "R. João Pessoa, 193 - Hidráulica, Lajeado - RS, 95900-206",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "268",
+    "nomeBloco": "ED. R. JÚLIO DE CASTILHOS, 1001 - FTTA | GC5529",
+    "endereco": "R. Júlio de Castilhos, 1001 - Centro, Lajeado - RS, 95900-022",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "269",
+    "nomeBloco": "ED. R. JÚLIO DE CASTILHOS, 1089 - FTTA | GC6282",
+    "endereco": "R. Júlio de Castilhos, 1089 - Centro, Lajeado - RS, 95900-022",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "270",
+    "nomeBloco": "ED. R. JÚLIO DE CASTILHOS, 1153 - FTTA | GC6782",
+    "endereco": "R. Júlio de Castilhos, 1153 - Centro, Lajeado - RS, 95900-022",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "271",
+    "nomeBloco": "ED. R. JÚLIO DE CASTILHOS, 619 - FTTB",
+    "endereco": "R. Júlio de Castilhos, 619 - Centro, Lajeado - RS, 95900-170",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "272",
+    "nomeBloco": "ED. R. JÚLIO DE EWALD HUVE, 170, BLOCO A - FTTA | GC7352",
+    "endereco": "Rua Júlio Ewald Huwe, Lajeado - RS - CEP 95904862",
+    "bairro": "Moinhos D'Água",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "273",
+    "nomeBloco": "ED. R. JÚLIO DE EWALD HUVE, 170, BLOCO B - FTTA | GC7353",
+    "endereco": "Rua Júlio Ewald Huwe, Lajeado - RS - CEP 95904863",
+    "bairro": "Moinhos D'Água",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "274",
+    "nomeBloco": "ED. R. JÚLIO DE EWALD HUVE, 170, BLOCO C - FTTA | GC7354",
+    "endereco": "Rua Júlio Ewald Huwe, Lajeado - RS - CEP 95904864",
+    "bairro": "Moinhos D'Água",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "275",
+    "nomeBloco": "ED. R. JÚLIO DE EWALD HUVE, 170, BLOCO E - FTTA | GC7356",
+    "endereco": "Rua Júlio Ewald Huwe, Lajeado - RS - CEP 95904865",
+    "bairro": "Moinhos D'Água",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "276",
+    "nomeBloco": "ED. R. JÚLIO DE EWALD HUVE, 170, BLOCO E - FTTA | GC7356",
+    "endereco": "Rua Júlio Ewald Huwe, Lajeado - RS - CEP 95904866",
+    "bairro": "Moinhos D'Água",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "277",
+    "nomeBloco": "ED. R. JÚLIO FRANCISCO BORN, 155 - FTTA | GC5028",
+    "endereco": "R. Júlio Francisco Born, 155 - Moinhos, Lajeado - RS, 95900-000",
+    "bairro": "Moinhos D'Água",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "278",
+    "nomeBloco": "ED. R. JÚLIO FRANCISCO BORN, 218 - FTTA | GC5600",
+    "endereco": "R. Júlio Francisco Born, 218 - Moinhos, Lajeado - RS, 95900-000",
+    "bairro": "Moimhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "279",
+    "nomeBloco": "ED. R. LIBERATO SALZANO VIEIRA DA CUNHA, 255 - FTTB",
+    "endereco": "R. Liberato Salzano Vieira da Cunha, 255 - Americano, Lajeado - RS, 95900-470",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "280",
+    "nomeBloco": "ED. R. LOTHAR FELIPE CHRIST, 376 - FTTA | GC5555",
+    "endereco": "R. Lothar Felipe Christ, 376 - Hidráulica, Lajeado - RS, 95900-208",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "281",
+    "nomeBloco": "ED. R. MACHADO DE ASSIS, 116 - FTTA | GC7288",
+    "endereco": "R. Machado de Assis, 116 - Americano, Lajeado - RS, 95900-524",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "282",
+    "nomeBloco": "ED. R. MACHADO DE ASSIS, 38 - FTTA | GC5734",
+    "endereco": "R. Machado de Assis, 38 - Americano, Lajeado - RS, 95900-524",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "283",
+    "nomeBloco": "ED. R. MARIA TEREZA MALLMANN, 404 - FTTA | GC4892",
+    "endereco": "R. Maria Tereza Mallmann - Moinhos",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "284",
+    "nomeBloco": "ED. R. MARIA TEREZA MALLMANN, 77, BLOCO 01 - FTTA | GC5002",
+    "endereco": "Rua Maria Tereza Mallmann, Lajeado - RS - CEP 95900830",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "285",
+    "nomeBloco": "ED. R. MARIA TEREZA MALLMANN, 77, BLOCO 02 - FTTA | GC5001",
+    "endereco": "Rua Maria Tereza Mallmann, Lajeado - RS - CEP 95900831",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "286",
+    "nomeBloco": "ED. R. MARIA TEREZA MALLMANN, 77, BLOCO 03 - FTTA | GC5000",
+    "endereco": "Rua Maria Tereza Mallmann, Lajeado - RS - CEP 95900832",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "287",
+    "nomeBloco": "ED. R. MARIA TEREZA MALLMANN, 77, BLOCO 04 - FTTA | GC4999",
+    "endereco": "Rua Maria Tereza Mallmann, Lajeado - RS - CEP 95900833",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "288",
+    "nomeBloco": "ED. R. MARIA TEREZA MALLMANN, 77, BLOCO 05 - FTTA | GC4998",
+    "endereco": "Rua Maria Tereza Mallmann, Lajeado - RS - CEP 95900834",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "289",
+    "nomeBloco": "ED. R. MARINO MARIO SUDBRACK, 52 - FTTA | GC5322",
+    "endereco": "R. Marino Mario Sudbrack, 52 - Moinhos, Lajeado - RS, 95900-818",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "290",
+    "nomeBloco": "ED. R. MARIO CATTOI, 31 - FTTA | GC5463",
+    "endereco": "R. Mário Cattoi, 31 - Centro, Lajeado - RS, 95900-060",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "291",
+    "nomeBloco": "ED. R. MARTIN LUTHER, 137 - FTTA | GC6903",
+    "endereco": "R. Martin Luther, 137 - Florestal, Lajeado - RS, 95900-632",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "292",
+    "nomeBloco": "ED. R. MAURÍCIO CARDOSO, 1264 - FTTB",
+    "endereco": "Rua Mauricio Cardoso, 1264 - Santo Andre, Lajeado - RS, 95.900-010.",
+    "bairro": "Santo Andre",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "293",
+    "nomeBloco": "ED. R. MIGUEL TOSTES, 171 - FTTB",
+    "endereco": "R. Miguel Tostes, 171 - São Cristóvão, Lajeado - RS, 95913-192",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "294",
+    "nomeBloco": "ED. R. NATALICIO HEINECK, 148 - FTTA | GC4765",
+    "endereco": "Rua Natalício Heineck, 148 - Florestal, Lajeado - RS, 95900-624",
+    "bairro": "Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "295",
+    "nomeBloco": "ED. R. NATALICIO HEINECK, 167 - FTTA | GC6079",
+    "endereco": "Rua Natalício Heineck, 167 - Florestal, Lajeado - RS, 95900-624",
+    "bairro": "Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "296",
+    "nomeBloco": "ED. R. NATALÍCIO HEINECK, 222 - FTTA | GC7290",
+    "endereco": "Rua Natalício Heineck, 222 - Florestal, Lajeado - RS, 95900-624",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "297",
+    "nomeBloco": "ED. R. NORBERTO DOMENICO SCHMATZ, 127, BLOCO 01 - FTTA | GC4834",
+    "endereco": "R. Norberto Domenico Schmatz, 127  Lajeado - RS, 95900-893",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "298",
+    "nomeBloco": "ED. R. NORBERTO DOMENICO SCHMATZ, 127, BLOCO 02 - FTTA | GC4835",
+    "endereco": "R. Norberto Domenico Schmatz, 127  Lajeado - RS, 95900-894",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "299",
+    "nomeBloco": "ED. R. NORBERTO DOMENICO SCHMATZ, 127, BLOCO 03 - FTTA | GC4837",
+    "endereco": "R. Norberto Domenico Schmatz, 127  Lajeado - RS, 95900-895",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "300",
+    "nomeBloco": "ED. R. NORBERTO DOMENICO SCHMATZ, 127, BLOCO 04 - FTTA | GC4836",
+    "endereco": "R. Norberto Domenico Schmatz, 127  Lajeado - RS, 95900-896",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "301",
+    "nomeBloco": "ED. R. OLAVO BILAC, 294 - FTTA | GC4869",
+    "endereco": "R. Olavo Bilac, 294 - Florestal, Lajeado - RS, 95900-610",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "302",
+    "nomeBloco": "ED. R. OLAVO BILAC, 498 - FTTA | GC7496",
+    "endereco": "R. Olavo Bilac, 498 - Florestal, Lajeado - RS, 95900-610",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "303",
+    "nomeBloco": "ED. R. OLAVO BILAC, 531 - FTTA | GC5582",
+    "endereco": "R. Olavo Bilac, 531 - Florestal, Lajeado - RS, 95900-610",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "304",
+    "nomeBloco": "ED. R. ONZE DE JUNHO, 270 - FTTA | GC6249",
+    "endereco": "R. 11 de Junho, 270 - São Cristóvão, Lajeado - RS, 95913-144",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "305",
+    "nomeBloco": "ED. R. ONZE DE JUNHO, 290 | GC5145",
+    "endereco": "R. 11 de Junho, 290 - São Cristóvão, Lajeado - RS, 95913-144",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "306",
+    "nomeBloco": "ED. R. OSVALDO CRUZ, 46 - FTTA | GC4472",
+    "endereco": "R. Osvaldo Cruz, 46 - Americano, Lajeado - RS, 95900-528",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "307",
+    "nomeBloco": "ED. R. PADRE ROBERTO LANDELL DE MOURA, 133 - FTTA | GC4727",
+    "endereco": "R. Padre Roberto Landell de Moura, 133 - Montanha, Lajeado - RS, 95900-000",
+    "bairro": "Montanha",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "308",
+    "nomeBloco": "ED. R. PADRE THEODORO AMSTAD, 177 - FTTB",
+    "endereco": "R. Padre Theodoro Amstad, 177 - Moinhos, Lajeado - RS, 95900-864",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "309",
+    "nomeBloco": "ED. R. PADRE THEODORO AMSTAD, 197 - FTTA",
+    "endereco": "R. Padre Theodoro Amstad, 197 - Florestal, Lajeado - RS, 95900-864",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "310",
+    "nomeBloco": "ED. R. PADRE THEODORO AMSTAD, 403 - FTTA | GC4491",
+    "endereco": "R. Padre Theodoro Amstad, 403 - Centro, Lajeado - RS, 95900-000",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "311",
+    "nomeBloco": "ED. R. PADRE THEODORO AMSTAD, 536 - FTTA",
+    "endereco": "R. Padre Theodoro Amstad, 536 - Centro, Lajeado - RS, 95900-068",
+    "bairro": "Lajeado RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "312",
+    "nomeBloco": "ED. R. PADRE THEODORO AMSTAD, 718 - FTTA | GC5164",
+    "endereco": "R. Padre Theodoro Amstad, 718 - Moinhos, Lajeado - RS, 95900-872",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "313",
+    "nomeBloco": "ED. R. PARANÁ, 323 - FTTA | GC6158",
+    "endereco": "R. Paraná, 323 - São Cristóvão, Lajeado - RS, 95913-134",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "314",
+    "nomeBloco": "ED. R. PARANÁ, 381 - FTTA",
+    "endereco": "R. Paraná, 381 - São Cristóvão, Lajeado - RS, 95913-134",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "315",
+    "nomeBloco": "ED. R. PAULO EMÍLIO THIESEN, 1198, BLOCO A - FTTA | GC6688",
+    "endereco": "Rua Paulo Emílio Thiesen em Lajeado/RS ; 95910-226",
+    "bairro": "Olarias",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "316",
+    "nomeBloco": "ED. R. PAULO EMÍLIO THIESEN, 1198, BLOCO B - FTTA | GC6689",
+    "endereco": "Rua Paulo Emílio Thiesen em Lajeado/RS ; 95910-227",
+    "bairro": "Olarias",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "317",
+    "nomeBloco": "ED. R. PAULO EMÍLIO THIESEN, 1198, BLOCO D - FTTA | GC6691",
+    "endereco": "Rua Paulo Emílio Thiesen em Lajeado/RS ; 95910-228",
+    "bairro": "Olarias",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "318",
+    "nomeBloco": "ED. R. PAULO EMÍLIO THIESEN, 1198, BLOCO D - FTTA | GC6691",
+    "endereco": "Rua Paulo Emílio Thiesen em Lajeado/RS ; 95910-229",
+    "bairro": "Olarias",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "319",
+    "nomeBloco": "ED. R. PAULO JOSÉ SCHLABITZ, 436 - FTTA | GC6672",
+    "bairro": "Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "320",
+    "nomeBloco": "ED. R. PEDRO ALBINO MULLER, 413 - FTTA",
+    "endereco": "R. Pedro Albino Müller, 413 - Americano, Lajeado - RS, 95900-566",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "321",
+    "nomeBloco": "ED. R. PEDRO ALBINO MULLER, 876 - FTTA | GC4633",
+    "endereco": "R. Pedro Albino Müller, 876 - Florestal, Lajeado - RS, 95900-612",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "322",
+    "nomeBloco": "ED. R. PEDRO AMÉRICO, 307 - FTTA",
+    "endereco": "R. Pedro Américo, 307 - Centenário, Lajeado - RS, 95910-820",
+    "bairro": "Centenário",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "323",
+    "nomeBloco": "ED. R. PERNAMBUCO, 109 - FTTA | GC6906",
+    "endereco": "R. Pernambuco, 109 - São Cristóvão, Lajeado - RS, 95913-212",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "324",
+    "nomeBloco": "ED. R. PERNAMBUCO, 140 - FTTA | GC5083",
+    "endereco": "R. Pernambuco, 140 - São Cristóvão, Lajeado - RS, 95913-212",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "325",
+    "nomeBloco": "ED. R. PERNAMBUCO, 415 - FTTA | GC6713",
+    "endereco": "R. Vinte e Cinco de Julho, 289 - Florestal, Lajeado - RS, 95900-608",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "326",
+    "nomeBloco": "AED. R. PIAUÍ, 564 - FTT",
+    "endereco": "R. Piauí, 564, Lajeado - RS, 95900-000",
+    "bairro": "Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "327",
+    "nomeBloco": "ED. R. PINHEIRO MACHADO, 531 - FTTA | GC6052",
+    "endereco": "R. Pinheiro Machado, 531 - Centro, Lajeado - RS, 95900-078",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "328",
+    "nomeBloco": "ED. R. PINHEIRO MACHADO, 573 - FTTA | GC4764",
+    "endereco": "R. Pinheiro Machado, 573 - Centro, Lajeado - RS, 95900-078",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "329",
+    "nomeBloco": "ED. R. PINHEIRO MACHADO, 730 - FTTA | GC5782",
+    "endereco": "R. Pinheiro Machado, 730 - Centro, Lajeado - RS, 95900-078",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "330",
+    "nomeBloco": "ED. R. PROFESSOR THEOBALDO DICK, BLOCO 01 - FTTA | GC5661",
+    "endereco": "R. Prof. Theobaldo Dick, 1 - Jardim do Cedro, Lajeado - RS, 95901-398",
+    "bairro": "Jardim do Cedro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "331",
+    "nomeBloco": "ED. R. PROFESSOR THEOBALDO DICK, BLOCO 02 - FTTA | GC5662",
+    "endereco": "R. Prof. Theobaldo Dick, 2 - Jardim do Cedro, Lajeado - RS, 95901-398",
+    "bairro": "Jardim do Cedro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "332",
+    "nomeBloco": "ED. R. PROFESSOR THEOBALDO DICK, BLOCO 03 - FTTA | GC5663",
+    "bairro": "Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "333",
+    "nomeBloco": "ED. R. PROFESSOR THEOBALDO DICK, BLOCO 04 - FTTA | GC5664",
+    "endereco": "R. Prof. Theobaldo Dick, 4 - Jardim do Cedro, Lajeado - RS, 95901-398",
+    "bairro": "Jardim do Cedro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "334",
+    "nomeBloco": "ED. R. PROFESSOR THEOBALDO DICK, BLOCO 05 - FTTA | GC5665",
+    "endereco": "R. Prof. Theobaldo Dick, 5 - Jardim do Cedro, Lajeado - RS, 95901-398",
+    "bairro": "Jardim do Cedro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "335",
+    "nomeBloco": "ED. R. PROFESSOR THEOBALDO DICK, BLOCO 06 - FTTA | GC5666",
+    "endereco": "R. Prof. Theobaldo Dick, 6 - Jardim do Cedro, Lajeado - RS, 95901-398",
+    "bairro": "Jardim do Cedro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "336",
+    "nomeBloco": "ED. R. PRUDENTE DE MORAES, 2066 - FTTA | GC6621",
+    "endereco": "R. Prudente de Moraes - São Cristóvão",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "337",
+    "nomeBloco": "ED. R. REINOLDO ALBERTO HEXSEL, 45 - FTTA | GC6905",
+    "endereco": "R. Reinoldo Alberto Hexsel, 45 - São Cristóvão, Lajeado - RS, 95913-036",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "338",
+    "nomeBloco": "ED. R. SANTOS DUMONT, 65 - FTTA | GEDC4912",
+    "endereco": "R. Santos Dumont, 65 - Centro, Lajeado - RS, 95900-072",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "339",
+    "nomeBloco": "ED. RED. RODOLFO GERMANO HEXEL, 119 - FTTA | GC6784",
+    "endereco": "R. Rodolfo Germano Hexsel, 119 - Hidráulica, Lajeado - RS, 95900-212",
+    "bairro": "Hidráulica",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "340",
+    "nomeBloco": "ED. R. RUI BARBOSA, 51 - FTTA | GC6870",
+    "endereco": "R. Rui Barbosa, 51 - Americano, Lajeado - RS, 95900-514",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "341",
+    "nomeBloco": "ED. R. SÃO PEDRO, E406 - FTTA | GC7441",
+    "bairro": "Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "342",
+    "nomeBloco": "ED. R. SALDANHA MARINHO, 69 - FTTA | GC5484",
+    "endereco": "R. Saldanha Marinho, 69 - Centro, Lajeado - RS, 95900-207",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "343",
+    "nomeBloco": "ED. R. SALDANHA MARINHO, 694 - FTTA | GC6883",
+    "endereco": "R. Saldanha Marinho, 694 - Centro, Lajeado - RS, 95900-207",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "344",
+    "nomeBloco": "ED. R. SANTOS DUMONT, 65 - FTTA | GC4912",
+    "endereco": "R. Santos Dumont, 65 - Centro, Lajeado - RS, 95900-072",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "345",
+    "nomeBloco": "ED. R. SANTOS FILHO, 100 - FTTB",
+    "endereco": "ED. R. SANTOS FILHO, 100 - FTTB",
+    "bairro": "Rua Santos Filho, 100",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "346",
+    "nomeBloco": "ED. R. SANTOS FILHO, 77 - FTTA | GC6630",
+    "endereco": "R. Santos Filho, 77 - Centro, Lajeado - RS, 95900-186",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "347",
+    "nomeBloco": "ED. R. SERGIPE, 52 - FTTA | GC6700",
+    "endereco": "R. Sergipe, 52 - São Cristóvão, Lajeado - RS, 95914-018",
+    "bairro": "São Cristóvão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "348",
+    "nomeBloco": "ED. R. SETE DE SETEMBRO, 350 - FTTA | GC6939",
+    "endereco": "R. Sete de Setembro, 350 - Florestal, Lajeado - RS, 95900-676",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "349",
+    "nomeBloco": "ED. R. SETE DE SETEMBRO, 374 - FTTA | GC6937",
+    "endereco": "R. Sete de Setembro, 350 - Florestal, Lajeado - RS, 95900-677",
+    "bairro": "Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "350",
+    "nomeBloco": "ED. R. SETE DE SETEMBRO, 375 - FTTA",
+    "endereco": "Rua Sete de Setembro , 375",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "351",
+    "nomeBloco": "ED. R. SÃO PAULO, 216 - FTTA | GC6210",
+    "endereco": "R. São Paulo, 216 - São Cristóvão, Lajeado - RS, 95913-126",
+    "bairro": "Moinhos D`ÁGUA",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "352",
+    "nomeBloco": "ED. R. SÃO PEDRO, 365 - FTTA | GC5319",
+    "endereco": "R. São Pedro, 365 - Moinhos, Lajeado - RS, 95900-856",
+    "bairro": "Moinhos",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "353",
+    "nomeBloco": "D. R. SÃO PEDRO, E406 - FTTA | GC7441",
+    "bairro": "Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "354",
+    "nomeBloco": "ED. R. SÃO PEDRO, 72 - FTTA | GC6145",
+    "endereco": "R. São Pedro, 72 - Florestal, Lajeado - RS, 95900-000",
+    "bairro": "Flotestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "355",
+    "nomeBloco": "ED. R. TIRADENTES, 121 - FTTA | GC5569",
+    "endereco": "R. Tiradentes, 121 - Americano, Lajeado - RS, 95900-028",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "356",
+    "nomeBloco": "ED. R. TIRADENTES, 215 - FTTA | GC4800",
+    "endereco": "R. Tiradentes, 215 - Centro, Lajeado - RS, 95900-028",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "357",
+    "nomeBloco": "ED. R. TIRADENTES, 265 - FTTA | GC7368",
+    "endereco": "R. Tiradentes, 265 - Centro, Lajeado - RS, 95900-028",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "358",
+    "nomeBloco": "ED. R. TIRADENTEDES, 848 - FTTA | GC6629",
+    "endereco": "R. Tiradentes, 848 - Centro, Lajeado - RS, 95900-076",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "359",
+    "nomeBloco": "ED. R. VISCONDE DE TAMANDARÉ, 301 - FTTA | GC6494",
+    "endereco": "R. Visc. de Tamandaré, 301 - São Cristóvão, Lajeado - RS, 95900-000",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "360",
+    "nomeBloco": "ED. R. VISCONDE DO TAMANDARÉ, 625 - FTTA | GC4642",
+    "endereco": "R. Visc. de Tamandaré, 625 - Americano, Lajeado - RS, 95900-600",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "361",
+    "nomeBloco": ". R. WASHINGTON LUIZ, ED184 - FTTA | GC6948",
+    "endereco": "Rua Zélia Maria D.Abichequer, 246 - Florestal",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "362",
+    "nomeBloco": "ED. R. ZELIA MARIA DUTRA ABICHEQUER, 370 - FTTA | GC7325",
+    "endereco": "Rua Zélia Maria D.Abichequer, 370 - Florestal, Lajeado - RS, 95900-000",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "363",
+    "nomeBloco": "ED. R. ZENO SCHMATZ, 1061 - FTTA | GC5608",
+    "endereco": "R. Zeno Schmatz, 1061 - Moinhos d'Água",
+    "bairro": "Moinhos D`ÁGUA",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "364",
+    "nomeBloco": "ED. R. ZÉLIA MARIA DUTRA ABICHEQUER, 36 - FTTA",
+    "endereco": "Rua Zélia Maria D.Abichequer, 36 - Florestal, Lajeado - RS, 95900-708",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "366",
+    "nomeBloco": "ED. R. ÉRICO VERÍSSIMO, 34 - FTTA | GC5380",
+    "endereco": "R. Érico Veríssimo, 34 - Campestre, Lajeado",
+    "bairro": "Campestres",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "367",
+    "nomeBloco": "ED. R.. FIALHO DE VARGAS, 49 - FTTA | GC5980",
+    "endereco": "R. Fialho de Vargas, 49 - Centro, Lajeado",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "369",
+    "nomeBloco": "ED. RUA 25 DE JULHO, 566 - FTTA | GC5967",
+    "endereco": "R. Vinte e Cinco de Julho, 566",
+    "bairro": "Florestal RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "370",
+    "nomeBloco": "ED. RUA DOUTOR GERMANO BERNER, 539 - FTTA | GC5969",
+    "endereco": "Rua Doutor - R. Germano Berner, 539",
+    "bairro": "Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "371",
+    "nomeBloco": "ED. RUA GENERAL FLORES DA CUNHA, 544 - FTTA | GC6653",
+    "endereco": "R. Gen. Flores da Cunha, 544 - Florestal",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "372",
+    "nomeBloco": "ED. RUA SALDANHA MARINHO, 33 - FTTA | GC6427",
+    "endereco": "R. Saldanha Marinho, 33 - Americano",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "373",
+    "nomeBloco": "ED. TOM JOBIEDM - FTTA",
+    "endereco": "Rua Julio F. Born, 111 - Centro, Lajeado - RS, 95.900-010",
+    "bairro": "Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "374",
+    "nomeBloco": "ED. SAN CARLO - FTTB",
+    "endereco": "Rua Duque de Caxias, 903 - Americano / Lajeado",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "375",
+    "nomeBloco": "ED. SANTA CLARA - FTTA",
+    "endereco": "Av. Benjamin Constant 1057",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "376",
+    "nomeBloco": "ED. TOM JOBIM - FTTA",
+    "endereco": "Rua Júlio Francisco Born / Nº: 111",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "377",
+    "nomeBloco": "ED. TRAVESSA FRANCISCO REINOLDO SULZBACH, 30 - FTTA | GC4803",
+    "endereco": "Rua Oscar Chaves Garcia, 109",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "378",
+    "nomeBloco": "ED. TRAVESSA OSCAR CHAVES GARCIA, 109 - FTTA | GC6238",
+    "endereco": "Rua Oscar Chaves Garcia, 109",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "379",
+    "nomeBloco": "ED. TRAVESSA OSCAR CHAVES GARCIA, 109 - FTTA | GC6238",
+    "endereco": "Rua Oscar Chaves Garcia, 109",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "380",
+    "nomeBloco": "ED. TV. FRANCISCO REINOLDO SULZBACK, 115 - FTTA",
+    "endereco": "R. Francisco Reinoldo Sulzbach, 115 - Americano, Lajeado - RS, 95900-000",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "381",
+    "nomeBloco": "ED. VERT CLUBE, BLOCO A - FTTA",
+    "endereco": "R. Sen. Alberto Pasqualini, 3111",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "382",
+    "nomeBloco": "ED. VERT CLUBE, BLOCO B - FTTA",
+    "endereco": "R. Sen. Alberto Pasqualini, 3111",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "383",
+    "nomeBloco": "ED. VERT CLUBE, BLOCO C - FTTA",
+    "endereco": "R. Sen. Alberto Pasqualini, 3111",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "384",
+    "nomeBloco": "ED. VERT CLUBE, BLOCO D - FTTA",
+    "endereco": "R. Sen. Alberto Pasqualini, 3111",
+    "bairro": "Universitario",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "385",
+    "nomeBloco": "ED. VILA NARDELA, BLOCO A - FTTA | GC5165",
+    "endereco": "Rua Duque de Caxias, 540. CEP 95.900-474",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "386",
+    "nomeBloco": "ED. VILA NARDELA, BLOCO B - FTTA | GC5166",
+    "endereco": "Rua Duque de Caxias, 540. CEP 95.900-475",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "387",
+    "nomeBloco": "ED. VILA NARDELA, BLOCO C - FTTA | GC5167",
+    "endereco": "Rua Duque de Caxias, 540. CEP 95.900-476",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "388",
+    "nomeBloco": "ED. VIVENDA - FTTA | GC4204",
+    "endereco": "Rua Saldanha Marinho, 37 - Centro, Lajeado - RS, 95.900-020",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "389",
+    "nomeBloco": "EDF AMERICANO, 162 - FTTA | GC5950",
+    "endereco": "R. Leopoldo Sulzbach, 162 - Americano, Lajeado - RS, 95900-000",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "390",
+    "nomeBloco": "EDF FLORESTAL, 148 - FTTA | GC5947",
+    "endereco": "rua general flores da cunha, 148",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "391",
+    "nomeBloco": "Residencial e Comercial São Cristóvão",
+    "endereco": "R. Visc. de Tamandaré, 155 - São Cristóvão, Lajeado - RS, 95913-138",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "392",
+    "nomeBloco": "EDIFICIO ASTÚRIAS - FTTB",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "393",
+    "nomeBloco": "EDIFÍCIO AMERICANO, 66 - FTTA | GC5897",
+    "endereco": "R. Augusto Lange, 66 - Americano, Lajeado - RS, 95900-000",
+    "bairro": "- Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "394",
+    "nomeBloco": "Ed. 4 horizotes",
+    "endereco": "R. Oscar Lottermann, 174",
+    "bairro": "Moinhos d'Água",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "395",
+    "nomeBloco": "Edifício Esmeralda",
+    "endereco": "R. Pinheiro Machado, 550 - Centro, Lajeado - RS, 95900-000",
+    "bairro": "Centro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "396",
+    "nomeBloco": "Edifício Novo Tempo",
+    "endereco": "R. Arnoldo Uhry, 2155 - Santo Antonio, Lajeado - RS, 95900-000",
+    "bairro": "Santo Antônio",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "397",
+    "nomeBloco": "R. JOSÉ ALFREDO SPHOR- FTTB",
+    "endereco": "R. José Alfredo Spohr - Alto do Parque",
+    "bairro": "Alto do Parque",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "398",
+    "nomeBloco": "RESIDENCIAL CRISTAL, 250 - FTTA",
+    "endereco": "R. Expedicionários do Brasil, 250 - Americano, Lajeado - RS, 95900-000",
+    "bairro": "Americano",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "399",
+    "nomeBloco": "RESIDENCIAL LERMEN JAEGER, 433 - FTTA | GC6643",
+    "endereco": "Rua General Flores da Cunha, 433 - Centro, Lajeado - RS, 95.900-010",
+    "bairro": "- Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "400",
+    "nomeBloco": "RESIDENCIAL MONT SERRA, 175 - FTTA | GC6061",
+    "endereco": "Rua Júlio Born, 175 - Florestal, Lajeado - RS | 95900-716.",
+    "bairro": "- Lajeado, RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "401",
+    "nomeBloco": "RESIDENCIAL SETE - FTTB",
+    "endereco": "R. Santos Dumont, 65 - Centro, Lajeado - RS, 95900-072",
+    "bairro": "Lajeado RS",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "402",
+    "nomeBloco": "RESIDENCIAL SÃOBRÁS BLOCO A - FTTB",
+    "endereco": "RESIDENCIAL SÃOBRÁS BLOCO A - FTTB",
+    "bairro": "Jardim do Cedro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "403",
+    "nomeBloco": "ua MRartin Luther, 261 - FTTA",
+    "endereco": "R. Martin Luther, 261",
+    "bairro": "Florestal",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "404",
+    "nomeBloco": "Rua Professor Helmuth Martin Rother, 63 - FTTA",
+    "endereco": "Rua Professor Helmuth Martin Rother 63",
+    "bairro": "Jardim Cedro",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "405",
+    "nomeBloco": "SHOPPING LAJEADO - FTTA | GC4933",
+    "endereco": "BR-386, Km 346 - São Cristóvão, Lajeado - RS, 95900-000",
+    "bairro": "São Cristovão",
+    "cidade": "Lajeado"
+  },
+  {
+    "_linha": "2",
+    "nomeBloco": "ED. R. 15 DE NOVEMBRO, 163 - FTTA | GC7440",
+    "endereco": "- Estrela, RS",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "3",
+    "nomeBloco": "ED. R. CORONEL MUSSNICH , 04 - FTTB",
+    "endereco": "RUA CORONEL MUSSNICH , 04 - CENTRO - ESTRELA RS",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "4",
+    "nomeBloco": "ED. STERN - FTTB",
+    "endereco": "Rua Arnaldo José Diel, 140 Centro",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "5",
+    "nomeBloco": "EDIFÍCIO FRITZ, 154 - FTTB",
+    "endereco": "Fernando abott, 154 - centro / Estrela",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "6",
+    "nomeBloco": "ED. R. DR TOSTES - FTTB",
+    "endereco": "Estrela - RS R. Dr. Tostes, 33",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "7",
+    "nomeBloco": "EDF DONA LILIA - FTTB",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "8",
+    "nomeBloco": "Rua Chá Chá Pereira, 141 - FTTB",
+    "endereco": "Estrela - RS Rua Chá Chá Pereira, 141",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "9",
+    "nomeBloco": "R. José Leopoldo Keler, 1012",
+    "endereco": "R. José Leopoldo Keler, 1012",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "10",
+    "nomeBloco": "R. Cel. Flôres, 188 - FTTB",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "11",
+    "nomeBloco": "ED. CORONEL MÜSSNICH - FTTA",
+    "endereco": "Rua Coronel Müssnich, 127",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "12",
+    "nomeBloco": "ED. SOLAR DO PORTO - FTTA",
+    "endereco": "Rua Leopoldo Edgar Sulzbach, 86",
+    "cidade": "Estrela"
+  },
+  {
+    "_linha": "13",
+    "nomeBloco": "ED. COLISEU - FTTA",
+    "endereco": "Rua Coronel Mussnich 04",
+    "cidade": "Estrela"
+  }
+]

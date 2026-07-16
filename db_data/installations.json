@@ -1,0 +1,53 @@
+[
+  {
+    "id": "inst_1782998769360",
+    "nomeCliente": "teste",
+    "telefone": "555184487818",
+    "endereco": "teste",
+    "cidade": "Lajeado",
+    "vendedorResponsavel": "BRUNO GARCIA QUEIROZ",
+    "gerenteResponsavel": "Bruno Garcia Queiroz",
+    "planoEscolhido": "Ativação / Instalação Expresso",
+    "dataAgendamento": "2026-07-02",
+    "horario": "08:30 às 10:30",
+    "status": "Confirmada",
+    "observacao": "Protocolo: Pendente",
+    "equipeLoja": "",
+    "dataCriacao": "02/07/2026, 13:26:09",
+    "slotIndex": 1
+  },
+  {
+    "id": "inst_1783427880354",
+    "nomeCliente": "Keila Beatriz de Almeida",
+    "telefone": "555191642948",
+    "endereco": "rua Arnoldo Uhry 2201, santo Antônio bloco 14 ap 401",
+    "cidade": "Lajeado",
+    "vendedorResponsavel": "VITORIA LUISA WEBLER ZIECK",
+    "gerenteResponsavel": "Bruno Garcia Queiroz",
+    "planoEscolhido": "Ativação / Instalação Expresso",
+    "dataAgendamento": "2026-07-09",
+    "horario": "08:30 às 10:30",
+    "status": "Confirmada",
+    "observacao": "Protocolo: 15655582",
+    "equipeLoja": "",
+    "dataCriacao": "07/07/2026, 12:38:00",
+    "slotIndex": 1
+  },
+  {
+    "id": "inst_1783602816719",
+    "nomeCliente": "teste",
+    "telefone": "555184487818",
+    "endereco": "aaaaaaaaaaaaaaaa",
+    "cidade": "Lajeado",
+    "vendedorResponsavel": "BRUNO GARCIA QUEIROZ",
+    "gerenteResponsavel": "Bruno Garcia Queiroz",
+    "planoEscolhido": "Ativação / Instalação Expresso",
+    "dataAgendamento": "2026-07-10",
+    "horario": "08:30 às 10:30",
+    "status": "Confirmada",
+    "observacao": "Protocolo: Pendente",
+    "equipeLoja": "",
+    "dataCriacao": "09/07/2026, 13:13:36",
+    "slotIndex": 1
+  }
+]

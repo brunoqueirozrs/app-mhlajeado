@@ -1,0 +1,11 @@
+[
+  {
+    "id": "2",
+    "vendedor": "Ana Paula Rodrigues",
+    "descricao": "Retornar contato do Restaurante Gaúcho",
+    "status": "PENDENTE",
+    "dataLimite": "2026-06-09",
+    "n8nNotified": true,
+    "n8nNotified2h": true
+  }
+]

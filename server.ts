@@ -1,0 +1,5275 @@
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+import { GoogleGenAI } from "@google/genai";
+import dotenv from "dotenv";
+import fs from "fs";
+import nodemailer from "nodemailer";
+
+dotenv.config();
+
+// Global fetch override for PAUSE_ALL_N8N_WEBHOOKS
+const originalFetch = global.fetch;
+global.fetch = async (url: any, options?: any) => {
+  const urlStr = url.toString();
+  
+  if (urlStr.includes('webhook') || urlStr.includes('n8n') || urlStr.includes('ngrok')) {
+    if (process.env.PAUSE_ALL_N8N_WEBHOOKS === 'true') {
+      console.log(`[n8n] Operação bloqueada globalmente (PAUSE_ALL_N8N_WEBHOOKS=true):`, urlStr);
+      return new Response(JSON.stringify({ success: true, message: "Paused" }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (process.env.PAUSE_AGENDAMENTO_JOB === 'true' && urlStr.includes('novo-agendamento')) {
+      console.log(`[n8n] Operação bloqueada (PAUSE_AGENDAMENTO_JOB=true):`, urlStr);
+      return new Response(JSON.stringify({ success: true, message: "Paused" }), { status: 200 });
+    }
+    
+    if (process.env.PAUSE_NEW_TASK_JOB === 'true' && (urlStr.includes('nova-tarefa') || urlStr.includes('new-task'))) {
+      console.log(`[n8n] Operação bloqueada (PAUSE_NEW_TASK_JOB=true):`, urlStr);
+      return new Response(JSON.stringify({ success: true, message: "Paused" }), { status: 200 });
+    }
+    
+    if (process.env.PAUSE_UPGRADE_BASE_JOB === 'true' && urlStr.includes('upgrade')) {
+      console.log(`[n8n] Operação bloqueada (PAUSE_UPGRADE_BASE_JOB=true):`, urlStr);
+      return new Response(JSON.stringify({ success: true, message: "Paused" }), { status: 200 });
+    }
+    
+    if (process.env.PAUSE_POS_VENDA_JOB === 'true' && (urlStr.includes('pos-venda') || urlStr.includes('posvenda'))) {
+      console.log(`[n8n] Operação bloqueada (PAUSE_POS_VENDA_JOB=true):`, urlStr);
+      return new Response(JSON.stringify({ success: true, message: "Paused" }), { status: 200 });
+    }
+    
+    // We already handled overdue tasks and lead inactivity with their own interval checks, but we can double check here
+    if (process.env.PAUSE_OVERDUE_TASKS_JOB === 'true' && (urlStr.includes('tarefa-atrasada') || urlStr.includes('overdue'))) {
+      console.log(`[n8n] Operação bloqueada (PAUSE_OVERDUE_TASKS_JOB=true):`, urlStr);
+      return new Response(JSON.stringify({ success: true, message: "Paused" }), { status: 200 });
+    }
+  }
+  
+  return originalFetch(url, options);
+};
+
+const app = express();
+const PORT = 3000;
+
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+let isGeminiKeyLeaked = false;
+let geminiErrorMessage = "";
+
+function checkAndMarkLeakedKey(error: any) {
+  const errMsg = error?.message || (typeof error === "string" ? error : JSON.stringify(error) || "");
+  const hasExpired = errMsg.includes("expired") || errMsg.includes("renew") || errMsg.includes("INVALID_ARGUMENT") || errMsg.includes("key expired");
+  const hasDepleted = errMsg.includes("depleted") || errMsg.includes("429");
+  const hasCredentialIssue = 
+    errMsg.includes("leaked") || 
+    errMsg.includes("leak") || 
+    errMsg.includes("403") || 
+    errMsg.includes("PERMISSION_DENIED") || 
+    errMsg.includes("API key");
+
+  if (hasExpired) {
+    isGeminiKeyLeaked = true;
+    geminiErrorMessage = "Sua chave de API do Gemini expirou ou é inválida. Por favor, atualize a variável GEMINI_API_KEY.";
+  } else if (hasDepleted) {
+    isGeminiKeyLeaked = true;
+    geminiErrorMessage = "Seus créditos da API do Gemini acabaram (Erro 429). Por favor, adicione fundos na sua conta do Google Cloud ou gere uma nova chave.";
+  } else if (hasCredentialIssue) {
+    isGeminiKeyLeaked = true;
+    geminiErrorMessage = "Sua chave de API do Gemini apresenta problemas (vazamento ou permissão negada).";
+  }
+}
+
+function logGeminiFallback(action: string, error: any) {
+  checkAndMarkLeakedKey(error);
+  const rawMsg = error?.message || "";
+  let cleanMsg = typeof rawMsg === "string" ? rawMsg : "Erro de comunicação";
+
+  if (cleanMsg.includes("API key expired") || cleanMsg.includes("expired") || cleanMsg.includes("renew")) {
+    cleanMsg = "Chave de API Gemini Expirada (Renovar nas Configurações)";
+  } else if (cleanMsg.includes("leak") || cleanMsg.includes("leaked")) {
+    cleanMsg = "Chave de API Gemini Suspensa/Vazada";
+  } else if (cleanMsg.includes("depleted") || cleanMsg.includes("429")) {
+    cleanMsg = "Créditos da Chave de API Gemini Esgotados";
+  } else {
+    if (cleanMsg.startsWith("{") && cleanMsg.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(cleanMsg);
+        cleanMsg = parsed.error?.message || parsed.message || "Erro de API formatado";
+      } catch (e) {
+        cleanMsg = cleanMsg.substring(0, 80) + "...";
+      }
+    }
+  }
+  console.log(`[Gemini Fallback - ${action}]: ${cleanMsg}`);
+}
+
+// Universal AI content generator with Fallbacks (Gemini -> Groq -> OpenRouter)
+async function safeGenerateContent(options: any): Promise<{ text: string }> {
+  const contents = options.contents;
+  const systemInstruction = options.config?.systemInstruction;
+  const responseMimeType = options.config?.responseMimeType;
+
+  // Try Gemini
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents,
+      config: {
+        systemInstruction,
+        responseMimeType,
+      }
+    });
+    return { text: response.text || "" };
+  } catch (err: any) {
+    console.log("[IA] Alternando para modelos de fallback devido a limites de cota/rede.");
+    
+    // Prepare OpenAI-compatible messages array
+    let messages: any[] = [];
+    if (systemInstruction) {
+      messages.push({ role: "system", content: systemInstruction });
+    }
+    
+    if (typeof contents === "string") {
+      messages.push({ role: "user", content: contents });
+    } else if (Array.isArray(contents)) {
+      messages.push(...contents.map(c => {
+         let role = c.role === "model" ? "assistant" : "user";
+         let content = Array.isArray(c.parts) ? c.parts.map((p:any) => p.text).join("\n") : (c.text || "");
+         return { role, content };
+      }));
+    }
+
+    if (responseMimeType === "application/json") {
+      // Groq and OpenRouter need the word "json" in the prompt
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg && lastMsg.role === "user") {
+        lastMsg.content += "\n\n(IMPORTANT: You MUST output strictly in valid JSON format).";
+      } else {
+        messages.push({ role: "user", content: "Please output strictly in valid JSON format." });
+      }
+    }
+
+    // Try Deepseek First
+    const deepseekKey = "sk-29c455d1e84d43b99fff66ee0ceea19b";
+    try {
+      console.log(`[IA] Tentando fallback com Deepseek...`);
+      const dsRes = await fetch("https://api.deepseek.com/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${deepseekKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages,
+          response_format: responseMimeType === "application/json" ? { type: "json_object" } : undefined
+        })
+      });
+      if (dsRes.ok) {
+        const json = await dsRes.json();
+        return { text: json.choices[0]?.message?.content || "" };
+      } else {
+        const errText = await dsRes.text().catch(()=>"");
+        if (dsRes.status !== 429 && dsRes.status !== 402) { console.warn(`[IA] Deepseek falhou com status`, dsRes.status, errText.substring(0, 100)); }
+      }
+    } catch (e: any) {
+      console.warn("[IA] Erro no Deepseek:", e.message);
+    }
+
+    // Try OpenRouter as secondary fallback
+    const openRouterKey = "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";
+    try {
+      const orModels = [
+        "openrouter/free",
+        "google/gemma-4-31b-it:free",
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "google/gemma-4-26b-a4b-it:free"
+      ];
+      for (const orModel of orModels) {
+        console.log(`[IA] Tentando fallback com OpenRouter (${orModel})...`);
+        const orRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${openRouterKey}`,
+            "HTTP-Referer": process.env.APP_URL || "http://localhost:3000",
+            "X-Title": "MHNET App",
+            "Content-Type": "application/json", "ngrok-skip-browser-warning": "true", 
+          },
+          body: JSON.stringify({
+            model: orModel,
+            messages
+          })
+        });
+        if (orRes.ok) {
+          const json = await orRes.json();
+          return { text: json.choices[0]?.message?.content || "" };
+        } else {
+          const errText = await orRes.text().catch(()=>"");
+          if (orRes.status !== 429 && orRes.status !== 402) { console.warn(`[IA] OpenRouter (${orModel}) falhou com status`, orRes.status, errText.substring(0, 100)); }
+        }
+      }
+    } catch (e: any) {
+      console.warn("[IA] Erro no OpenRouter:", e.message);
+    }
+
+    // Try Groq as secondary fallback
+    const groqKey = process.env.GROQ_API_KEY && !process.env.GROQ_API_KEY.includes("gsk_...") 
+      ? process.env.GROQ_API_KEY 
+      : "gsk_SvUd9Ju08wr5xkXDAOz1WGdyb3FYpcCZE7p5uL25VaagXv96";
+
+    if (groqKey) {
+      try {
+        const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"];
+        for (const model of groqModels) {
+          console.log(`[IA] Tentando fallback com Groq (${model})...`);
+          const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${groqKey}`,
+              "Content-Type": "application/json", "ngrok-skip-browser-warning": "true", 
+            },
+            body: JSON.stringify({
+              model: model, 
+              messages,
+              response_format: responseMimeType === "application/json" ? { type: "json_object" } : undefined
+            })
+          });
+          if (groqRes.ok) {
+            const json = await groqRes.json();
+            return { text: json.choices[0]?.message?.content || "" };
+          } else {
+            const errorText = await groqRes.text().catch(()=>"");
+            if (groqRes.status !== 429 && groqRes.status !== 402) { console.warn(`[IA] Groq (${model}) falhou com status`, groqRes.status, errorText); }
+            
+            if (groqRes.status === 429) {
+              // Rate limits are often per-model, so we can try the next model immediately, but add a small delay to avoid RPM spikes
+              await new Promise(r => setTimeout(r, 2000));
+              continue; 
+            }
+
+            if (responseMimeType === "application/json" && errorText.includes("json")) {
+               const groqResRetry = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+                body: JSON.stringify({ model: model, messages })
+              });
+              if (groqResRetry.ok) {
+                const jsonRetry = await groqResRetry.json();
+                return { text: jsonRetry.choices[0]?.message?.content || "" };
+              }
+            }
+            // Instead of break, let's try the next model just in case it's a model specific error
+            continue; 
+          }
+        }
+      } catch (e: any) {
+        console.warn("[IA] Erro no Groq:", e.message);
+      }
+    }
+
+    throw new Error("Todas as IAs falharam (Gemini, Groq e OpenRouter). Erro original: " + err.message);
+  }
+}
+
+async function probeGeminiKey() {
+  isGeminiKeyLeaked = false;
+  geminiErrorMessage = "";
+  console.log("Usando API Groq em vez do Gemini. Verificação de chave concluída.");
+  return;
+}
+probeGeminiKey();
+
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbyYIgJvqqrqB5E-lhDdhPh5-zad0oD1m2gInnlpVnDVVaIWBRzzRrnb0S7UrHdSUUoN/exec";
+
+function getCurrentDateTimeFormatted(): string {
+  const d = new Date();
+  const dSp = new Date(d.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const dd = String(dSp.getDate()).padStart(2, '0');
+  const mm = String(dSp.getMonth() + 1).padStart(2, '0');
+  const yyyy = dSp.getFullYear();
+  const hh = String(dSp.getHours()).padStart(2, '0');
+  const min = String(dSp.getMinutes()).padStart(2, '0');
+  return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+}
+
+function formatWhatsAppNumber(phone: string, includeSuffix: boolean = true): string {
+  if (!phone) return "";
+  let cleaned = phone.replace(/\D/g, "");
+  if (cleaned.length === 10 || cleaned.length === 11) {
+    cleaned = "55" + cleaned;
+  }
+  
+  // Remove the 9th digit for Brazilian mobile numbers to avoid WAHA delivery issues
+  if (cleaned.length === 13 && cleaned.startsWith("55") && cleaned[4] === "9") {
+    cleaned = cleaned.substring(0, 4) + cleaned.substring(5);
+  }
+
+  if (includeSuffix && !cleaned.endsWith("@c.us")) {
+    cleaned = cleaned + "@c.us";
+  }
+  return cleaned;
+}
+
+function resolveN8nWebhookUrl(
+  specificUrl: string | undefined, 
+  defaultUrl: string | undefined, 
+  expectedPath: string,
+  testUrl?: string | undefined,
+  useTestMode?: string | undefined
+): string {
+  // If test mode is enabled and a test URL is provided, we use the test URL
+  let url = (useTestMode === "true" && testUrl) ? testUrl : (specificUrl || defaultUrl || "");
+  
+  if (url.includes("->")) {
+    url = url.split("->")[0].trim();
+  }
+
+  // Se a URL específica foi configurada como localhost, vamos tentar pegar o domínio do ngrok da defaultUrl
+  if ((url.includes("localhost:5678") || url.includes("127.0.0.1:5678")) && defaultUrl) {
+    let ngrokUrl = defaultUrl;
+    if (ngrokUrl.includes("->")) {
+       ngrokUrl = ngrokUrl.split("->")[0].trim();
+    }
+    if (!ngrokUrl.includes("localhost") && !ngrokUrl.includes("127.0.0.1") && !ngrokUrl.includes("sua-url-ngrok")) {
+      try {
+        const parsedNgrok = new URL(ngrokUrl);
+        const parsedLocal = new URL(url);
+        parsedLocal.protocol = parsedNgrok.protocol;
+        parsedLocal.host = parsedNgrok.host;
+        url = parsedLocal.toString();
+        console.log(`[n8n] Auto-corrigido localhost para o domínio ngrok: ${url}`);
+      } catch(e) {}
+    }
+  }
+
+  // Auto-ajuste de rotas
+  if (url.includes("novo-agendamento")) url = url.replace("novo-agendamento", expectedPath);
+  if (url.includes("agenda-tarefas")) url = url.replace("agenda-tarefas", expectedPath);
+  if (url.includes("tarefa-atrasada")) url = url.replace("tarefa-atrasada", expectedPath);
+  if (url.includes("lead-inativo")) url = url.replace("lead-inativo", expectedPath);
+  if (url.includes("aviso-lead")) url = url.replace("aviso-lead", expectedPath);
+
+  // Fallback fallback: se ligou o testMode mas não configurou a TEST_URL, podemos pelo menos substituir "/webhook/" por "/webhook-test/"
+  if (useTestMode === "true" && !url.includes("webhook-test")) {
+    url = url.replace("/webhook/", "/webhook-test/");
+  }
+
+  return url;
+}
+
+// Context for sales AI
+const MHNET_CONTEXT = `
+Você é o assistente de vendas da MHNET, empresa de internet fibra óptica (FTTA) em Lajeado e Estrela/RS, Vale do Taquari.
+Planos: 100Mbps a 1Gbps. Diferenciais: atendimento local humanizado, técnico no mesmo dia, sem fidelidade longa.
+Serviços: MHPlay (streaming), câmeras de segurança, telefone celular móvel, telefone fixo, IP fixo.
+Responda de forma direta, persuasiva, com excelente linguagem de vendas, objetiva e útil para colaboradores. Máximo 6 linhas. Use emojis regionais gaúchos ou de vendas de forma equilibrada.
+`;
+
+// Persistent Storage setup (JSON files database)
+const DB_DIR = path.join(process.cwd(), "db_data");
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR);
+}
+
+function readJSONDb(filename: string, fallback: any) {
+  const filePath = path.join(DB_DIR, filename);
+  if (fs.existsSync(filePath)) {
+    try {
+      return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    } catch (e) {
+      console.error(`Erro ao ler ${filename}:`, e);
+    }
+  }
+  return fallback;
+}
+
+function writeJSONDb(filename: string, data: any) {
+  const filePath = path.join(DB_DIR, filename);
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+  } catch (e) {
+    console.error(`Erro ao gravar ${filename}:`, e);
+  }
+}
+
+// RFC-compliant CSV Parser to handle commas inside quotes and escaped quotes
+function parseCSV(csvText: string): string[][] {
+  const lines: string[][] = [];
+  let row: string[] = [];
+  let inQuotes = false;
+  let currentToken = "";
+
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+    const nextChar = csvText[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        currentToken += '"';
+        i++; // skip next quote
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      row.push(currentToken.trim());
+      currentToken = "";
+    } else if ((char === '\r' || char === '\n') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') {
+        i++; // skip \n
+      }
+      row.push(currentToken.trim());
+      lines.push(row);
+      row = [];
+      currentToken = "";
+    } else {
+      currentToken += char;
+    }
+  }
+  if (currentToken || row.length > 0) {
+    row.push(currentToken.trim());
+    lines.push(row);
+  }
+  return lines;
+}
+
+// Format "DD/MM/YYYY" -> "YYYY-MM-DD"
+function parseDateToISO(dateStr: string): string | undefined {
+  if (!dateStr) return undefined;
+  const parts = dateStr.split("/");
+  if (parts.length === 3) {
+    const day = parts[0].padStart(2, '0');
+    const month = parts[1].padStart(2, '0');
+    const year = parts[2];
+    // verify valid year format
+    if (year.length === 4) {
+      return `${year}-${month}-${day}`;
+    }
+  }
+  return dateStr;
+}
+
+// Extractor of Speed in Mb from raw plan string
+function extractMbFromPlano(planoStr: string): number {
+  if (!planoStr) return 400; // default fallback
+  const match = planoStr.match(/(\d+)\s*(Mbps|Mb|M)/i);
+  if (match) {
+    let speed = parseInt(match[1]);
+    if (planoStr.toLowerCase().includes("gb")) {
+      speed = speed * 1000;
+    }
+    return speed;
+  }
+  if (planoStr.toLowerCase().includes("1gb") || planoStr.toLowerCase().includes("1 gb")) {
+    return 1000;
+  }
+  return 400; // default fallback
+}
+
+// Seed / Initial Data Fallbacks
+const INITIAL_LEADS = [
+  { _linha: "2", nomeLead: "Supermercado Lajeado S/A", vendedor: "Bruno Garcia Queiroz", telefone: "(51) 99888-7711", endereco: "Av. Benjamin Constant, 1200", bairro: "Centro", cidade: "Lajeado", status: "Novo", interesse: "Alto", observacao: "Interessado no plano corporativo empresarial", dataCadastro: "08/06/2026" },
+  { _linha: "3", nomeLead: "Restaurante Gaúcho", vendedor: "Ana Paula Rodrigues", telefone: "(51) 99333-4455", endereco: "Rua Julio de Castilhos, 450", bairro: "Centro", cidade: "Estrela", status: "Negociação", interesse: "Médio", observacao: "Pediu retorno para falar com sócio", dataCadastro: "07/06/2026" }
+];
+
+const INITIAL_TASKS = [
+  { id: "1", vendedor: "Bruno Garcia Queiroz", descricao: "Ligar para Supermercado Lajeado", status: "PENDENTE", dataLimite: "2026-06-10" },
+  { id: "2", vendedor: "Ana Paula Rodrigues", descricao: "Retornar contato do Restaurante Gaúcho", status: "PENDENTE", dataLimite: "2026-06-09" }
+];
+
+const INITIAL_ABSENCES = [
+  { vendedor: "Bruno Garcia Queiroz", dataFalta: "2026-06-15", motivo: "Consulta de rotina", status: "Aprovado" }
+];
+
+const INITIAL_FTTA_ITEMS = [
+  { _linha: "2", nomeBloco: "Residencial Vale Verde", sindico: "Síndico Roberto", contato: "(51) 98765-4321", endereco: "Rua das Palmeiras, 120", bairro: "Americano", cidade: "Lajeado" }
+];
+
+const INITIAL_FTTA_PROSPS = [
+  { _linha: "2", nome: "Edifício Estrela da Manhã", construtora: "Dall'Agnol", sindico: "Carlos", contato: "(51) 99991-2222", endereco: "Rua Arnaldo Balve, 340", bairro: "Centro", cidade: "Estrela", consultor: "Bruno Garcia Queiroz", dataEntrega: "12/06/2026" }
+];
+
+const INITIAL_BASE_CLIENTS = [
+  { idContrato: "MHN10001", nome: "Clara Maria Schmitt", plano: "MHNET Fibra 400Mbps", velocidadeMb: 400, valor: 99.90, dataAtivacao: "2024-03-10", cidade: "Lajeado", status: "Ativo", consultorOrigem: "Bruno Garcia Queiroz", CPF: "123.456.789-00", telefoneExterno: "(51) 99823-1122" },
+  { idContrato: "MHN10002", nome: "Guilherme de Souza", plano: "MHNET Fibra 800Mbps", velocidadeMb: 800, valor: 149.90, dataAtivacao: "2023-08-15", cidade: "Estrela", status: "Ativo", consultorOrigem: "Ana Paula Rodrigues", CPF: "234.567.890-11", telefoneExterno: "(51) 99121-5566" },
+  { idContrato: "MHN10003", nome: "Mariana Kerber", plano: "MHNET Fibra 300Mbps", velocidadeMb: 300, valor: 89.90, dataAtivacao: "2024-01-05", cidade: "Lajeado", status: "Ativo", consultorOrigem: "João Vithor Sader", CPF: "345.678.901-22", telefoneExterno: "(51) 99555-4433" },
+  { idContrato: "MHN10004", nome: "Adelar de Freitas", plano: "MHNET Fibra 1Gbps", velocidadeMb: 1000, valor: 199.90, dataAtivacao: "2022-11-20", cidade: "Lajeado", status: "Ativo", consultorOrigem: "Vendedor Teste", CPF: "456.789-012-33", telefoneExterno: "(51) 98118-2299" },
+  { idContrato: "MHN10005", nome: "Mikael Born", plano: "MHNET Fibra 300Mbps", velocidadeMb: 300, valor: 89.90, dataAtivacao: "2024-05-12", cidade: "Teutônia", status: "Ativo", consultorOrigem: "Claudia Maria Semmler", CPF: "567.890.123-44", telefoneExterno: "(51) 99344-9900" }
+];
+
+const INITIAL_BASE_ACTIONS = [
+  { id: "act_1", idContrato: "MHN10001", consultor: "Bruno Garcia Queiroz", statusContato: "Atendido", resultado: "ATUACAO", planoAnterior: "MHNET Fibra 300M", planoNovo: "MHNET Fibra 400M", valorAnterior: 89.90, valorNovo: 99.90, deltaValor: 10.00, observacao: "Fez upgrade oferecendo mais velocidade para home office", dataContato: "2026-06-08" }
+];
+
+const INITIAL_COBRANCAS = [
+  {
+    idContrato: "MHN10001",
+    nomeCliente: "Clara Maria Schmitt",
+    telefone: "(51) 99823-1122",
+    valor: 99.90,
+    dataVencimento: "10/05/2026",
+    status: "Vencido",
+    diasAtraso: 29,
+    cidade: "Lajeado",
+    plano: "MHNET Fibra 400Mbps",
+    observacao: "Cliente alega que não recebeu o boleto no e-mail",
+    historicoContatos: [
+      { dataLog: "12/05/2026 10:00", operador: "Bruno Garcia Queiroz", tipo: "WhatsApp", descricao: "Envio de lembrete automático de atraso." }
+    ]
+  },
+  {
+    idContrato: "MHN10003",
+    nomeCliente: "Mariana Kerber",
+    telefone: "(51) 99555-4433",
+    valor: 89.90,
+    dataVencimento: "05/06/2026",
+    status: "Vencido",
+    diasAtraso: 3,
+    cidade: "Lajeado",
+    plano: "MHNET Fibra 300Mbps",
+    observacao: "Cliente promete pagar até amanhã de manhã",
+    historicoContatos: [
+      { dataLog: "07/06/2026 14:15", operador: "João Vithor Sader", tipo: "Telefone", descricao: "Cliente atendeu e informou que pagará via PIX." }
+    ]
+  },
+  {
+    idContrato: "MHN10004",
+    nomeCliente: "Adelar de Freitas",
+    telefone: "(51) 98118-2299",
+    valor: 199.90,
+    dataVencimento: "20/04/2026",
+    status: "Negociando",
+    diasAtraso: 49,
+    cidade: "Lajeado",
+    plano: "MHNET Fibra 1Gbps",
+    observacao: "Parcelamento acordado em duas prestações",
+    historicoContatos: [
+      { dataLog: "25/04/2026 09:30", operador: "Vendedor Teste", tipo: "WhatsApp", descricao: "Solicitou desconto de juros para quitação de boleto." }
+    ]
+  },
+  {
+    idContrato: "MHN10005",
+    nomeCliente: "Mikael Born",
+    telefone: "(51) 99344-9900",
+    valor: 89.90,
+    dataVencimento: "15/06/2026",
+    status: "Pendente",
+    diasAtraso: 0,
+    cidade: "Teutônia",
+    plano: "MHNET Fibra 300Mbps",
+    historicoContatos: []
+  },
+  {
+    idContrato: "MHN10002",
+    nomeCliente: "Guilherme de Souza",
+    telefone: "(51) 99121-5566",
+    valor: 149.90,
+    dataVencimento: "05/05/2026",
+    dataPagamento: "10/05/2026",
+    status: "Pago",
+    diasAtraso: 0,
+    cidade: "Estrela",
+    plano: "MHNET Fibra 800Mbps",
+    observacao: "Pago via Pix QR code",
+    historicoContatos: [
+      { dataLog: "10/05/2026 16:00", operador: "Ana Paula Rodrigues", tipo: "Sistema", descricao: "Recebimento confirmado via PIX." }
+    ]
+  }
+];
+
+// Initialize datasets from Local JSON Database
+let leads = readJSONDb("leads.json", INITIAL_LEADS);
+let tasks = readJSONDb("tasks.json", INITIAL_TASKS);
+let absences = readJSONDb("absences.json", INITIAL_ABSENCES);
+let fttaItems = readJSONDb("fttaItems.json", INITIAL_FTTA_ITEMS);
+let fttaProsps = readJSONDb("fttaProsps.json", INITIAL_FTTA_PROSPS);
+let baseClients = readJSONDb("baseClients.json", INITIAL_BASE_CLIENTS);
+let baseActions = readJSONDb("baseActions.json", INITIAL_BASE_ACTIONS);
+let baseOverrides = readJSONDb("baseOverrides.json", {});
+let cobrancas = readJSONDb("cobrancas.json", INITIAL_COBRANCAS);
+let installations = readJSONDb("installations.json", []);
+
+const INITIAL_VENDORS_SERVER = [
+  { id: "vend_1", nome: "Bruno Garcia Queiroz", meta: 35 },
+  { id: "vend_2", nome: "Ana Paula Rodrigues", meta: 30 },
+  { id: "vend_3", nome: "Vitoria Caroline Baldez Rosales", meta: 30 },
+  { id: "vend_4", nome: "João Vithor Sader", meta: 30 },
+  { id: "vend_5", nome: "João Paulo da Silva Santos", meta: 30 },
+  { id: "vend_6", nome: "Claudia Maria Semmler", meta: 30 },
+  { id: "vend_7", nome: "Diulia Vitoria Machado Borges", meta: 35 },
+  { id: "vend_8", nome: "Elton da Silva Rodrigo Gonçalves", meta: 30 },
+  { id: "vend_9", nome: "Vendedor Teste", meta: 20 }
+];
+let vendors = readJSONDb("vendors.json", INITIAL_VENDORS_SERVER);
+
+const INITIAL_COMPETITORS_SERVER = [
+  {
+    id: "comp_1",
+    _linha: 101,
+    name: "Vero Internet",
+    sigla: "VR",
+    cor: "#1565c0",
+    type: "Fibra Óptica",
+    mhnet: "A MHnet possui atendimento humanizado de verdade com loja física local em Lajeado e Estrela, suporte presencial no mesmo dia e planos sem pegadinhas nem taxas escondidas no final.",
+    pros: ["Marca consolidada na região", "Boa cobertura urbana", "Campanhas publicitárias agressivas"],
+    cons: ["Suporte inicial por ura telefônica demorada", "Fidelidade complexa de cancelar", "Aumento expressivo após o período promocional"]
+  },
+  {
+    id: "comp_2",
+    _linha: 102,
+    name: "Claro",
+    sigla: "CL",
+    cor: "#dc2626",
+    type: "Híbrido / Coaxial",
+    mhnet: "Nossa internet MHNET é 100% fibra óptica direto até dentro da sua casa (FTTH), garantindo maior velocidade de upload para jogos e reuniões, sem oscilações bruscas quando chove ou há sobrecarga.",
+    pros: ["Combos de TV por assinatura tradicionais", "Força no segmento corporativo", "Bons planos de telefonia combinados"],
+    cons: ["Muitos bairros ainda usam rede coaxial antiga", "Sinal de upload muito baixo", "Atendimento robotizado em callcenter nacional"]
+  },
+  {
+    id: "comp_3",
+    _linha: 103,
+    name: "Oi Fibra",
+    sigla: "OI",
+    cor: "#ea580c",
+    type: "Fibra Óptica",
+    mhnet: "Temos suporte técnico no mesmo dia com equipe de instalação própria da região, sem precisar aguardar dias pelo agendamento ou depender de terceirizados de fora.",
+    pros: ["Planos com preços baixos iniciais", "Ganha modems novos em planos altos"],
+    cons: ["Instabilidade crônica na infraestrutura primária", "Inexistência de canais de atendimento físico local em Lajeado", "Altas taxas para reparos fora do horário comercial"]
+  }
+];
+let competitors = readJSONDb("competitors.json", INITIAL_COMPETITORS_SERVER);
+let posVendasData: Record<string, any> = readJSONDb("posVendas.json", {});
+
+// Cache timestamp for Google Sheet Upgrades Tab Sync
+let lastBaseSyncTime = 0;
+const ONE_MINUTE = 60 * 1000;
+
+function cleanConsultorName(name: string): string {
+  if (!name) return "";
+  let cleaned = name.trim();
+  // Strip prefixes like "COM - LJO - ", "DIG - CCO - ", "PAR - PAP - VAA -"
+  cleaned = cleaned.replace(/^[A-Z0-9]{3,5}\s*-\s*[A-Z0-9]{3,5}\s*-\s*(?:[A-Z0-9]{3,5}\s*-\s*)*/gi, "");
+  // Strip "R CONECT - "
+  cleaned = cleaned.replace(/^R\s*CONECT\s*-\s*/gi, "");
+  // Format letter case
+  cleaned = cleaned.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+  return cleaned.trim();
+}
+
+let isSyncingBaseClients = false;
+// Google Sheet Sync function for Base tab Base052026
+async function syncBaseClientsFromGoogleSheet() {
+  const now = Date.now();
+  if (now - lastBaseSyncTime < ONE_MINUTE && baseClients.length > INITIAL_BASE_CLIENTS.length) {
+    console.log("[SYNC] Base de clientes solicitada recentemente. Servindo do cache carregado.");
+    return;
+  }
+
+  if (isSyncingBaseClients) {
+    console.log("[SYNC] Sincronização da base de clientes já em andamento. Ignorando.");
+    return;
+  }
+
+  isSyncingBaseClients = true;
+  console.log("[SYNC] Buscando e analisando dinamicamente a aba Base052026 do Google Sheets...");
+  try {
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Base052026");
+    
+    // Use AbortSignal.timeout which covers the entire request including reading the body
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
+    const sheetsResponse = await fetch(url, { signal });
+
+    if (!sheetsResponse.ok) {
+      throw new Error(`Google Sheets responded with code ${sheetsResponse.status}`);
+    }
+
+    const csvText = await sheetsResponse.text();
+    if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+    const rows = parseCSV(csvText);
+
+    // Look for header row that mentions Consultor and Cliente
+    let headerRowIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (r && r.length > 5 &&
+          String(r[1]).toLowerCase().includes("consultor") &&
+          String(r[2]).toLowerCase().includes("cliente")) {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
+    if (headerRowIndex === -1) {
+      // Fallback: search for "Número do Contrato" anywhere
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i] && rows[i].some(cell => String(cell).toLowerCase().includes("número do contrato"))) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (headerRowIndex === -1) {
+      // Fallback: use first few lines
+      headerRowIndex = 4;
+    }
+
+    const loadedClients = [];
+    for (let i = headerRowIndex + 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length < 13) continue;
+
+      const rawConsultor = (row.length > 22 ? row[22] : "") || row[1] || "";
+      const consultorOrigem = cleanConsultorName(rawConsultor) || "Consultor";
+      const nome = row[2] || "";
+      const status = row[27] || row[3] || ""; // AB = 27 (Situação Atual), fallback to D = 3
+      const motivoCancelamento = row[32] || ""; // AG = 32
+      const telefoneExterno = row[4] || "";
+      const idContrato = row[9] || row[6] || ""; // Número do Contrato / Cód. Cliente
+      const cidadeRaw = row[7] || "";
+      const planoProd = row[11] || row[10] || "MHNET Fibra 400Mbps";
+      const valorRaw = row[12] || "";
+      const dataAtivacaoRaw = row[18] || row[17] || ""; // Data Ativação / Data Adesão
+
+      if (!idContrato || !nome) {
+        continue; // skip empty client rows
+      }
+
+      // Format City: "LAJEADO - RS" -> "Lajeado"
+      let cidade = cidadeRaw.split("-")[0].trim();
+      if (cidade) {
+        cidade = cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+      }
+
+      // Format Price
+      let valor = 99.90;
+      if (valorRaw) {
+        const cleaned = valorRaw.replace(/[^\d,.-]/g, "").replace(",", ".");
+        const parsed = parseFloat(cleaned);
+        if (!isNaN(parsed) && parsed > 0) {
+          valor = parsed;
+        }
+      }
+
+      // Format Date for React calculations
+      const dataAtivacao = parseDateToISO(dataAtivacaoRaw);
+      const velocidadeMb = extractMbFromPlano(planoProd);
+
+      loadedClients.push({
+        idContrato,
+        nome,
+        plano: planoProd,
+        velocidadeMb,
+        valor,
+        dataAtivacao,
+        cidade: cidade || "Lajeado",
+        status: status || "Ativo",
+        motivoCancelamento,
+        consultorOrigem: consultorOrigem || "Consultor",
+        telefoneExterno: telefoneExterno || ""
+      });
+    }
+
+    if (loadedClients.length > 0) {
+      // Retain local pos-vendas clients that aren't synced to the sheet yet
+      const posClients = baseClients.filter(c => c.idContrato && c.idContrato.startsWith("MHN_POS_"));
+      for (const pc of posClients) {
+        if (!loadedClients.some(lc => lc.nome.toLowerCase() === pc.nome.toLowerCase())) {
+          loadedClients.push(pc);
+        }
+      }
+
+      // Apply overrides
+      for (const lc of loadedClients) {
+        if (baseOverrides[lc.idContrato]) {
+          if (baseOverrides[lc.idContrato].consultorOrigem) lc.consultorOrigem = baseOverrides[lc.idContrato].consultorOrigem;
+          if (baseOverrides[lc.idContrato].status) lc.status = baseOverrides[lc.idContrato].status;
+        }
+      }
+
+      baseClients = loadedClients;
+      writeJSONDb("baseClients.json", baseClients);
+      lastBaseSyncTime = now;
+      console.log(`[SYNC] Sucesso! Analisados ${loadedClients.length} clientes da base dinamicamente da planilha Base052026.`);
+    } else {
+      console.log("[SYNC] Aviso: A análise encontrou 0 clientes na planilha. Mantendo o banco de dados atual.");
+    }
+  } catch (error: any) {
+    console.error(`[SYNC] Sincronização da planilha encontrou um erro: ${error.message}. Servindo clientes de base fallback/armazenados.`);
+    // Backoff for 1 minute on error to prevent spamming Google Sheets
+    lastBaseSyncTime = Date.now();
+  } finally {
+    isSyncingBaseClients = false;
+  }
+}
+
+function mapLeadStatus(sheetStatus: string): 'Novo' | 'Agendado' | 'Negociação' | 'Venda Fechada' | 'Sem Interesse' {
+  const s = String(sheetStatus || "").toLowerCase();
+  if (s.includes("venda") || s.includes("fechad") || s.includes("inscrito") || s.includes("inscrição") || s.includes("fechou")) {
+    return 'Venda Fechada';
+  }
+  if (s.includes("agend") || s.includes("retornado")) {
+    return 'Agendado';
+  }
+  if (s.includes("sem interesse") || s.includes("não quis") || s.includes("recus") || s.includes("desist")) {
+    return 'Sem Interesse';
+  }
+  if (s.includes("negoc") || s.includes("andamento") || s.includes("conversando") || s.includes("follow")) {
+    return 'Negociação';
+  }
+  return 'Novo';
+}
+
+let lastLeadsSyncTime = 0;
+let isSyncingLeads = false;
+
+async function syncLeadsFromGoogleSheet() {
+  const now = Date.now();
+  if (now - lastLeadsSyncTime < ONE_MINUTE && leads.length > 5) {
+    console.log("[SYNC] Leads solicitados recentemente. Servindo do cache carregado.");
+    return;
+  }
+
+  if (isSyncingLeads) {
+    console.log("[SYNC] Sincronização de leads já em andamento. Ignorando.");
+    return;
+  }
+
+  isSyncingLeads = true;
+  console.log("[SYNC] Buscando e analisando Planilha de Acompanhamento de Lead | Abordagens...");
+  try {
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Acompanhamento de Lead | Abordagens");
+    
+    // Use AbortSignal.timeout which covers the entire request including reading the body
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
+    const sheetsResponse = await fetch(url, { signal });
+
+    if (!sheetsResponse.ok) {
+      throw new Error(`Google Sheets responded with code ${sheetsResponse.status}`);
+    }
+
+    const csvText = await sheetsResponse.text();
+    if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+    const rows = parseCSV(csvText);
+
+    // Find the header row index
+    let headerRowIndex = -1;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (r && r.length > 3 &&
+          String(r[2]).toLowerCase().includes("vendedor") &&
+          String(r[3]).toLowerCase().includes("lead")) {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
+    if (headerRowIndex === -1) {
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i] && rows[i].some(cell => String(cell).toLowerCase().includes("vendedor") && String(cell).toLowerCase().includes("lead"))) {
+          headerRowIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (headerRowIndex === -1) {
+      headerRowIndex = 0;
+    }
+
+    const loadedLeads = [];
+    for (let i = headerRowIndex + 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length < 4) continue;
+
+      const timestamp = row[0] || "";
+      const tabulacao = row[1] || "";
+      const vendedor = row[2] || "";
+      const nomeLead = row[3] || "";
+      const telefone = row[4] || "";
+      const endereco = row[5] || "";
+      const cidade = row[6] || "";
+      const bairro = row[7] || "";
+      const obsNegocio = row[8] || "";
+      const concorrente = row[9] || "";
+      const valorPlanoRaw = row[10] || "";
+      const obsGerente = row[11] || "";
+      const dataRetorno = row[12] || "";
+      const houveRetorno = row[13] || "";
+      const agendamento = row[14] || "";
+      const numero = row[15] || "";
+      const complemento = row[16] || "";
+      const valorPlanoRaw2 = row[17] || "";
+      const plano = row[18] || "";
+      const dataCadastroRaw = row[19] || "";
+
+      if (!nomeLead) continue;
+
+      // Format Date
+      let dataCadastro = dataCadastroRaw;
+      if (!dataCadastro && timestamp) {
+        dataCadastro = timestamp.split(" ")[0];
+      }
+      if (!dataCadastro) {
+        dataCadastro = new Date().toLocaleDateString("pt-BR");
+      }
+
+      // Build consolidated observation
+      let observacao = obsNegocio;
+      if (obsGerente) {
+        observacao += (observacao ? " | " : "") + `Obs Adm/Gerente: ${obsGerente}`;
+      }
+      if (houveRetorno) {
+        observacao += (observacao ? " | " : "") + `Retorno do cliente: ${houveRetorno}`;
+      }
+      if (dataRetorno) {
+        observacao += (observacao ? " | " : "") + `Retornar em: ${dataRetorno}`;
+      }
+
+      const status = mapLeadStatus(tabulacao);
+      const valorPlanoStr = valorPlanoRaw || valorPlanoRaw2 || "";
+
+      let interesse: 'Alto' | 'Médio' | 'Baixo' = "Médio";
+      if (status === "Venda Fechada") {
+        interesse = "Alto";
+      } else if (status === "Sem Interesse") {
+        interesse = "Baixo";
+      }
+
+      loadedLeads.push({
+        _linha: String(i + 1), // Direct mapping matching original Excel rows
+        nomeLead,
+        vendedor: vendedor || "Consultor",
+        telefone: telefone || "",
+        endereco: endereco || "",
+        numero: numero || "",
+        complemento: complemento || "",
+        bairro: bairro || "",
+        cidade: cidade || "Lajeado",
+        provedor: concorrente || "",
+        valorPlano: valorPlanoStr,
+        planoAtual: plano || "MHNET Fibra 300Mbps",
+        interesse,
+        status,
+        observacao,
+        dataCadastro,
+        agendamento: agendamento || ""
+      });
+    }
+
+    if (loadedLeads.length > 0) {
+      leads = loadedLeads;
+      writeJSONDb("leads.json", leads);
+      lastLeadsSyncTime = now;
+      console.log(`[SYNC] Sucesso! Analisados ${loadedLeads.length} leads dinamicamente.`);
+    } else {
+      console.log("[SYNC] Aviso: A análise encontrou 0 leads na planilha.");
+    }
+  } catch (error: any) {
+    console.error(`[SYNC] Sincronização da planilha de leads encontrou um erro: ${error.message}`);
+    lastLeadsSyncTime = Date.now();
+  } finally {
+    isSyncingLeads = false;
+  }
+}
+
+// FTTA Parsing Helpers
+function parseFttaSites(rows: string[][], defaultCity: string): any[] {
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(h => h.trim().toLowerCase());
+  
+  const getColIdx = (names: string[]) => {
+    return headers.findIndex(h => names.includes(h));
+  };
+
+  const nameIdx = getColIdx(["nome", "nome do condomínio", "nome do condominio"]);
+  const sindicoIdx = getColIdx(["sindico", "sindico/administradora", "síndico"]);
+  const contatoIdx = getColIdx(["contato"]);
+  const enderecoIdx = getColIdx(["endereço", "endereco"]);
+  const bairroIdx = getColIdx(["bairro"]);
+  const cidadeIdx = getColIdx(["cidade"]);
+  const ultimaVisitaIdx = getColIdx(["ultima ação", "ultima acao", "última ação", "ultima visita"]);
+  const proximaVisitaIdx = getColIdx(["proxima ação", "proxima acao", "próxima ação", "proxima visita"]);
+
+  const sitesList: any[] = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || r.length === 0) continue;
+    
+    const nomeBloco = r[nameIdx] || "";
+    if (!nomeBloco || nomeBloco.toLowerCase().startsWith("nome") || nomeBloco.toLowerCase().trim() === "") continue;
+
+    const sindico = (sindicoIdx !== -1 && r[sindicoIdx]) ? r[sindicoIdx] : "";
+    const contato = (contatoIdx !== -1 && r[contatoIdx]) ? r[contatoIdx] : "";
+    const endereco = (enderecoIdx !== -1 && r[enderecoIdx]) ? r[enderecoIdx] : "";
+    const bairro = (bairroIdx !== -1 && r[bairroIdx]) ? r[bairroIdx] : "";
+    
+    let cidade = (cidadeIdx !== -1 && r[cidadeIdx]) ? r[cidadeIdx] : "";
+    if (!cidade) {
+      cidade = defaultCity;
+    } else {
+      cidade = cidade.split("-")[0].trim();
+      const lower = cidade.toLowerCase();
+      if (lower.includes("lajeado") || lower.includes("lajedo")) {
+        cidade = "Lajeado";
+      } else if (lower.includes("estrela")) {
+        cidade = "Estrela";
+      } else {
+        cidade = defaultCity;
+      }
+    }
+
+    const ultimaVisita = (ultimaVisitaIdx !== -1 && r[ultimaVisitaIdx]) ? r[ultimaVisitaIdx] : "";
+    const proximaVisita = (proximaVisitaIdx !== -1 && r[proximaVisitaIdx]) ? r[proximaVisitaIdx] : "";
+
+    sitesList.push({
+      _linha: String(i + 1),
+      nomeBloco,
+      sindico: sindico || undefined,
+      contato: contato || undefined,
+      endereco: endereco || undefined,
+      bairro: bairro || undefined,
+      cidade: cidade || defaultCity,
+      ultimaVisita: ultimaVisita || undefined,
+      proximaVisita: proximaVisita || undefined
+    });
+  }
+  return sitesList;
+}
+
+function parseFttaProspeccoes(rows: string[][]): any[] {
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(h => h.trim().toLowerCase());
+  
+  const getColIdx = (names: string[]) => {
+    return headers.findIndex(h => names.includes(h));
+  };
+
+  const nomeIdx = getColIdx(["nome do condominio", "nome do condomínio", "nome", "nome do condomínio/bloco"]);
+  const construtoraIdx = getColIdx(["construtura", "construtora"]);
+  const dataEntregaIdx = getColIdx(["data de entrega", "data entrega"]);
+  const sindicoIdx = getColIdx(["sindico/administradora", "sindico", "síndico"]);
+  const contatoIdx = getColIdx(["contato"]);
+  const enderecoIdx = getColIdx(["endereço", "endereco"]);
+  const bairroIdx = getColIdx(["bairro"]);
+  const cidadeIdx = getColIdx(["cidade"]);
+  const ultimaAcaoIdx = getColIdx(["ultima ação", "ultima acao", "última ação", "ultima visita"]);
+  const consultorIdx = getColIdx(["consultor responsável", "consultor responsavel", "consultor"]);
+  const proximaAcaoIdx = getColIdx(["proxima ação", "proxima acao", "próxima ação", "proxima visita"]);
+
+  const prospeccoesList: any[] = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || r.length === 0) continue;
+
+    const nome = r[nomeIdx] || "";
+    if (!nome || nome.toLowerCase().startsWith("nome") || nome.toLowerCase().trim() === "") continue;
+
+    const construtora = (construtoraIdx !== -1 && r[construtoraIdx]) ? r[construtoraIdx] : "";
+    const dataEntrega = (dataEntregaIdx !== -1 && r[dataEntregaIdx]) ? r[dataEntregaIdx] : "";
+    const sindico = (sindicoIdx !== -1 && r[sindicoIdx]) ? r[sindicoIdx] : "";
+    const contato = (contatoIdx !== -1 && r[contatoIdx]) ? r[contatoIdx] : "";
+    const endereco = (enderecoIdx !== -1 && r[enderecoIdx]) ? r[enderecoIdx] : "";
+    const bairro = (bairroIdx !== -1 && r[bairroIdx]) ? r[bairroIdx] : "";
+    
+    let cidade = (cidadeIdx !== -1 && r[cidadeIdx]) ? r[cidadeIdx] : "";
+    if (cidade) {
+      cidade = cidade.split("-")[0].trim();
+      const lower = cidade.toLowerCase();
+      if (lower.includes("lajeado") || lower.includes("lajedo")) {
+        cidade = "Lajeado";
+      } else if (lower.includes("estrela")) {
+        cidade = "Estrela";
+      } else {
+        cidade = "Lajeado";
+      }
+    } else {
+      cidade = "Lajeado";
+    }
+
+    const ultimaAcao = (ultimaAcaoIdx !== -1 && r[ultimaAcaoIdx]) ? r[ultimaAcaoIdx] : "";
+    const consultor = (consultorIdx !== -1 && r[consultorIdx]) ? r[consultorIdx] : "";
+    const proximaAcaoCalc = (proximaAcaoIdx !== -1 && r[proximaAcaoIdx]) ? r[proximaAcaoIdx] : "";
+
+    prospeccoesList.push({
+      _linha: String(i + 1),
+      nome,
+      construtora: construtora || undefined,
+      dataEntrega: dataEntrega || undefined,
+      sindico: sindico || undefined,
+      contato: contato || undefined,
+      endereco: endereco || undefined,
+      bairro: bairro || undefined,
+      cidade: cidade || "Lajeado",
+      consultor: consultor || undefined,
+      ultimaAcao: ultimaAcao || undefined,
+      proximaAcaoCalc: proximaAcaoCalc || undefined,
+      adquado: "Verificando"
+    });
+  }
+  return prospeccoesList;
+}
+
+let lastFttaSyncTime = 0;
+let isSyncingFtta = false;
+
+async function syncFttaFromGoogleSheet() {
+  const now = Date.now();
+  if (now - lastFttaSyncTime < ONE_MINUTE && fttaItems.length > INITIAL_FTTA_ITEMS.length) {
+    console.log("[SYNC] FTTA solicitado recentemente. Servindo do cache carregado.");
+    return;
+  }
+
+  if (isSyncingFtta) {
+    console.log("[SYNC] Sincronização de FTTA já em andamento. Ignorando.");
+    return;
+  }
+
+  isSyncingFtta = true;
+  console.log("[SYNC] Buscando e analisando abas FTTA do Google Sheets dinamicamente...");
+  try {
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
+
+    // 1. Fetch FTTA LAJEADO
+    const lajeadoUrl = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("FTTA LAJEADO");
+    const lRes = await fetch(lajeadoUrl, { signal });
+    if (!lRes.ok) throw new Error(`FTTA LAJEADO responded with code ${lRes.status}`);
+    const lCsv = await lRes.text();
+    const lRows = parseCSV(lCsv);
+    const lajeadoSites = parseFttaSites(lRows, "Lajeado");
+
+    // 2. Fetch FTTA ESTRELA
+    const estrelaUrl = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("FTTA ESTRELA");
+    const eRes = await fetch(estrelaUrl, { signal });
+    if (!eRes.ok) throw new Error(`FTTA ESTRELA responded with code ${eRes.status}`);
+    const eCsv = await eRes.text();
+    const eRows = parseCSV(eCsv);
+    const estrelaSites = parseFttaSites(eRows, "Estrela");
+
+    // 3. Fetch FTTA PROSPECÇÃO
+    const prospUrl = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("FTTA PROSPECÇÃO");
+    const pRes = await fetch(prospUrl, { signal });
+    if (!pRes.ok) throw new Error(`FTTA PROSPECÇÃO responded with code ${pRes.status}`);
+    const pCsv = await pRes.text();
+    const pRows = parseCSV(pCsv);
+    const prosps = parseFttaProspeccoes(pRows);
+
+    // Combine Lajeado + Estrela sites
+    const consolidatedSites = [...lajeadoSites, ...estrelaSites];
+    
+    if (consolidatedSites.length > 0) {
+      fttaItems = consolidatedSites;
+      writeJSONDb("fttaItems.json", fttaItems);
+    }
+
+    if (prosps.length > 0) {
+      fttaProsps = prosps;
+      writeJSONDb("fttaProsps.json", fttaProsps);
+    }
+
+    lastFttaSyncTime = now;
+    console.log(`[SYNC] Sucesso na sincronização do FTTA no Google Sheets! Carregados ${consolidatedSites.length} sites e ${prosps.length} prospecções.`);
+
+  } catch (err: any) {
+    console.error(`[SYNC] FTTA spreadsheet sync error: ${err.message}`);
+    lastFttaSyncTime = Date.now();
+  } finally {
+    isSyncingFtta = false;
+  }
+}
+
+// Map Google Sheets rows for Installations to our native objects
+function parseInstallationRows(rows: string[][]): any[] {
+  if (rows.length === 0) return [];
+
+  // Search for the header row index
+  let headerRowIndex = -1;
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    const row = rows[i];
+    if (row && row.some(cell => {
+      const c = String(cell).toLowerCase();
+      return c.includes("vendedor") || c.includes("cliente") || c.includes("agendamento") || c.includes("status");
+    })) {
+      headerRowIndex = i;
+      break;
+    }
+  }
+
+  const headers = (headerRowIndex !== -1 ? rows[headerRowIndex] : []).map(h => String(h || "").trim().toLowerCase());
+
+  const getColIdx = (names: string[], fallback: number) => {
+    if (headerRowIndex === -1) return fallback;
+    const idx = headers.findIndex(h => names.some(name => h.includes(name)));
+    return idx !== -1 ? idx : fallback;
+  };
+
+  const idIdx = getColIdx(["id", "código", "codigo", "chave"], 0);
+  const clienteIdx = getColIdx(["cliente", "nome", "lead"], 1);
+  const telefoneIdx = getColIdx(["telefone", "celular", "contato"], 2);
+  const enderecoIdx = getColIdx(["endereço", "endereco", "rua"], 3);
+  const cidadeIdx = getColIdx(["cidade", "local", "regiao", "região"], 4);
+  const vendedorIdx = getColIdx(["vendedor", "consultor"], 5);
+  const gerenteIdx = getColIdx(["gerente", "supervisor"], 6);
+  const planoIdx = getColIdx(["plano", "combo"], 7);
+  const dataIdx = getColIdx(["data", "agendamento"], 8);
+  const horarioIdx = getColIdx(["horario", "horário", "hora", "turno"], 9);
+  const statusIdx = getColIdx(["status", "situação", "situacao"], 10);
+  const obsIdx = getColIdx(["observacao", "observação", "obs", "protocolo"], 11);
+  const equipeIdx = getColIdx(["equipe", "loja"], 12);
+  const dataCriacaoIdx = getColIdx(["criação", "criacao", "data de criação", "data criacao"], 13);
+  const slotIdx = getColIdx(["slot", "slotindex", "index"], 14);
+
+  const startRow = headerRowIndex !== -1 ? headerRowIndex + 1 : 0;
+  const list: any[] = [];
+
+  for (let i = startRow; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length === 0 || !row.some(cell => cell.trim() !== "")) continue;
+
+    const id = row[idIdx] || `inst_${Date.now()}_${i}`;
+    const nomeCliente = row[clienteIdx] || "";
+    if (!nomeCliente || nomeCliente.toLowerCase().includes("nome do cliente")) continue;
+
+    const telefone = row[telefoneIdx] || "Consulte no Protocolo";
+    const endereco = row[enderecoIdx] || "Endereço no Protocolo";
+    const cidade = row[cidadeIdx] || "Lajeado";
+    const vendedorResponsavel = row[vendedorIdx] || "Não informado";
+    const gerenteResponsavel = row[gerenteIdx] || "Bruno Garcia Queiroz";
+    const planoEscolhido = row[planoIdx] || "Instalação FTTH MHNET";
+    
+    // Parse / keep date string standard
+    const dataAgendamentoRaw = row[dataIdx] || "";
+    let dataAgendamento = dataAgendamentoRaw;
+    if (dataAgendamentoRaw.includes("/")) {
+      const iso = parseDateToISO(dataAgendamentoRaw);
+      if (iso) dataAgendamento = iso;
+    }
+
+    const horario = row[horarioIdx] || "08:30 às 10:30";
+    
+    let statusValue: any = "Pendente";
+    const rawStatus = String(row[statusIdx] || "").trim();
+    if (["Pendente", "Confirmada", "Instalada", "Cancelada", "Reagendada"].includes(rawStatus)) {
+      statusValue = rawStatus;
+    } else {
+      const ls = rawStatus.toLowerCase();
+      if (ls.includes("confirm")) statusValue = "Confirmada";
+      else if (ls.includes("instal")) statusValue = "Instalada";
+      else if (ls.includes("cancel")) statusValue = "Cancelada";
+      else if (ls.includes("reagend") || ls.includes("re-agend")) statusValue = "Reagendada";
+    }
+
+    const observacao = row[obsIdx] || "";
+    const equipeLoja = row[equipeIdx] || "";
+    const dataCriacao = row[dataCriacaoIdx] || new Date().toLocaleString("pt-BR");
+    
+    let slotValue = 1;
+    if (row[slotIdx]) {
+      const idx = parseInt(row[slotIdx]);
+      if (!isNaN(idx) && idx >= 1 && idx <= 4) {
+        slotValue = idx;
+      }
+    } else {
+      const lh = horario.toLowerCase();
+      if (lh.includes("08:30") || lh.includes("slot 1")) slotValue = 1;
+      else if (lh.includes("10:30") || lh.includes("slot 2")) slotValue = 2;
+      else if (lh.includes("13:30") || lh.includes("slot 3")) slotValue = 3;
+      else if (lh.includes("15:30") || lh.includes("slot 4")) slotValue = 4;
+    }
+
+    list.push({
+      id,
+      nomeCliente,
+      telefone,
+      endereco,
+      cidade,
+      vendedorResponsavel,
+      gerenteResponsavel,
+      planoEscolhido,
+      dataAgendamento,
+      horario,
+      status: statusValue,
+      observacao,
+      equipeLoja,
+      dataCriacao,
+      slotIndex: slotValue
+    });
+  }
+
+  return list;
+}
+
+// Google Sheets Sync function for Installations tab "Agenda Instalação"
+let lastInstallationsSyncTime = 0;
+let isSyncingInstallations = false;
+
+// Leads Frios Setup
+let leadsFrios: any[] = [];
+let lastLeadsFriosSyncTime = 0;
+let isSyncingLeadsFrios = false;
+
+try {
+  if (fs.existsSync("leadsFrios.json")) {
+    leadsFrios = JSON.parse(fs.readFileSync("leadsFrios.json", "utf-8"));
+  }
+} catch (e) {}
+
+async function syncLeadsFriosFromGoogleSheet() {
+  const now = Date.now();
+  if (now - lastLeadsFriosSyncTime < ONE_MINUTE && leadsFrios.length > 0) {
+    console.log("[SYNC] Leads Frios solicitados recentemente. Servindo do cache.");
+    return;
+  }
+  if (isSyncingLeadsFrios) {
+    console.log("[SYNC] Sincronização de Leads Frios em andamento. Ignorando.");
+    return;
+  }
+  isSyncingLeadsFrios = true;
+  console.log("[SYNC] Buscando e analisando aba BaseLeadsFrios_Unificada...");
+  try {
+    let allLeads: any[] = [];
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
+    
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("BaseLeadsFrios_Unificada");
+    
+    try {
+      const res = await fetch(url, { signal });
+      if (res.ok) {
+        const csvText = await res.text();
+        if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+    const rows = parseCSV(csvText);
+        
+        if (rows.length >= 2) {
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 3) continue;
+            
+            // Generate a deterministic ID based on row index and data to ensure stability between syncs
+            const rawIdString = `LFU_${i}_${row[5] || ""}_${row[6] || ""}`.replace(/[^a-zA-Z0-9_]/g, '');
+            const id = rawIdString.substring(0, 50) + `_${i}`;
+            
+            let lf: any = {
+              id: id,
+              data: row[0] || "",
+              cidade: row[1] || "",
+              bairro: row[2] || "",
+              endereco: row[3] || "",
+              numero: row[4] || "",
+              nome: row[5] || "",
+              telefone1: row[6] || "",
+              telefone2: row[7] || "",
+              email: row[8] || "",
+              consultor: row[9] || "",
+              origem: row[10] || "",
+              status: row[11] || "",
+              convertido: row[12] || "",
+              motivoNaoConversao: row[13] || "",
+              codigoProposta: row[14] || "",
+              provedorAtual: row[15] || "",
+              observacao: row[16] || "",
+              abaOrigem: row[17] || "BaseLeadsFrios_Unificada"
+            };
+            
+            if (lf.nome || lf.telefone1) {
+              allLeads.push(lf);
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      console.warn(`Falha ao buscar aba BaseLeadsFrios_Unificada: ${e.message}`);
+    }
+    
+    if (allLeads.length > 0) {
+      leadsFrios = allLeads;
+      writeJSONDb("leadsFrios.json", leadsFrios);
+      lastLeadsFriosSyncTime = Date.now();
+      console.log(`[SYNC] Sucesso na sincronização de Leads Frios! Carregados ${leadsFrios.length} leads.`);
+    }
+  } catch (error: any) {
+    console.error(`[SYNC] Sincronização de Leads Frios encontrou um erro: ${error.message}`);
+  } finally {
+    isSyncingLeadsFrios = false;
+  }
+}
+
+let lastCobrancasSyncTime = 0;
+let isSyncingCobrancas = false;
+
+async function syncCobrancasFromGoogleSheet() {
+  const now = Date.now();
+  if (now - lastCobrancasSyncTime < ONE_MINUTE && cobrancas.length > 0) {
+    console.log("[SYNC] Cobranças solicitadas recentemente. Servindo do cache carregado.");
+    return;
+  }
+
+  if (isSyncingCobrancas) {
+    console.log("[SYNC] Sincronização de Cobranças já em andamento. Ignorando.");
+    return;
+  }
+
+  isSyncingCobrancas = true;
+  console.log("[SYNC] Buscando e analisando aba acao_cobranca do Google Sheets dinamicamente...");
+  try {
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("acao_cobranca");
+    const res = await fetch(url, { signal });
+    if (!res.ok) throw new Error(`acao_cobranca responded with code ${res.status}`);
+    
+    const csvText = await res.text();
+    if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+    const rows = parseCSV(csvText);
+
+    if (rows.length < 2) {
+      console.log("[SYNC] Aviso: A análise encontrou 0 cobranças na planilha.");
+      return;
+    }
+
+    const headers = rows[0].map(h => String(h).trim());
+    
+    const getColIdx = (names: string[], fallback: number) => {
+      const lowerHeaders = headers.map(h => h.toLowerCase());
+      let idx = lowerHeaders.findIndex(h => names.some(n => h === n));
+      if (idx === -1) {
+        idx = lowerHeaders.findIndex(h => names.some(n => h.includes(n)));
+      }
+      return idx !== -1 ? idx : fallback;
+    };
+
+    const statusEnvioIdx = getColIdx(["status do envio"], 0);
+    const cpfCnpjIdx = getColIdx(["cpf\\cnpj", "cpf", "cnpj"], 1);
+    const codigoClienteIdx = getColIdx(["código do cliente", "codigo do cliente"], 2);
+    const clienteIdx = getColIdx(["cliente"], 3);
+    const baixouAppIdx = getColIdx(["baixou app"], 4);
+    const telefoneIdx = getColIdx(["telefone"], 7);
+    const celularIdx = getColIdx(["celular"], 8);
+    const cidadeIdx = getColIdx(["cidade"], 9);
+    const bairroIdx = getColIdx(["bairro"], 10);
+    const regionalIdx = getColIdx(["regional"], 12);
+    const vendedorIdx = getColIdx(["vendedor"], 17);
+    const canalIdx = getColIdx(["canal"], 18);
+    const dataAtivacaoIdx = getColIdx(["data da ativação", "data da ativacao"], 19);
+    const situacaoContratoIdx = getColIdx(["situação do contrato", "situacao do contrato"], 22);
+    const estagioContratoIdx = getColIdx(["estágio atual do contrato", "estagio atual do contrato"], 23);
+    const valorIdx = getColIdx(["valor de saldo", "valor de emissão"], 27);
+    const dataVencimentoIdx = getColIdx(["data vencimento original"], 28);
+    const diasAtrasoIdx = getColIdx(["dias intervalo hoje - vencimento", "dias de atraso", "dias atraso"], 29);
+    const numeroFaturasIdx = getColIdx(["total faturas vencidas por contrato"], 30);
+    const descricaoProdutoIdx = getColIdx(["descrição produto contrato", "descricao produto contrato"], 40);
+
+    const loadedCobrancas: any[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0 || !row.some(cell => String(cell).trim() !== "")) continue;
+
+      const idContrato = row[codigoClienteIdx] || `cob_${Date.now()}_${i}`;
+      const nomeCliente = row[clienteIdx] || "";
+      
+      // Preserve existing logs if any
+      const existingCob = cobrancas.find(c => c.idContrato === idContrato);
+      const historicoContatos = existingCob?.historicoContatos || [];
+
+      // Retro-compatibility status
+      const diasAtraso = parseInt(row[diasAtrasoIdx] || "0", 10);
+      let legacyStatus = "Pendente";
+      if (diasAtraso > 0) legacyStatus = "Vencido";
+      else legacyStatus = "Pendente"; // Over-simplified fallback
+
+      loadedCobrancas.push({
+        idContrato,
+        statusEnvio: row[statusEnvioIdx] || "Pendente",
+        nomeCliente,
+        cpfCnpj: row[cpfCnpjIdx] || "",
+        telefone: row[telefoneIdx] || "",
+        celular: row[celularIdx] || "",
+        dataAtivacao: row[dataAtivacaoIdx] || "",
+        numeroFaturas: parseInt(row[numeroFaturasIdx] || "0", 10),
+        baixouApp: row[baixouAppIdx] || "Não",
+        plano: row[descricaoProdutoIdx] || "",
+        situacaoContrato: row[situacaoContratoIdx] || "",
+        estagioContrato: row[estagioContratoIdx] || "",
+        cidade: row[cidadeIdx] || "",
+        bairro: row[bairroIdx] || "",
+        regional: row[regionalIdx] || "",
+        valor: parseFloat(String(row[valorIdx]).replace(",", ".") || "0"),
+        dataVencimento: row[dataVencimentoIdx] || "",
+        diasAtraso,
+        status: legacyStatus,
+        consultor: row[vendedorIdx] || "",
+        canal: row[canalIdx] || "",
+        historicoContatos
+      });
+    }
+
+    cobrancas = loadedCobrancas;
+    writeJSONDb("cobrancas.json", cobrancas);
+    lastCobrancasSyncTime = now;
+    console.log(`[SYNC] Sucesso! Analisadas ${loadedCobrancas.length} cobranças da planilha acao_cobranca.`);
+
+  } catch (error: any) {
+    console.error(`[SYNC] Sincronização de Cobranças encontrou um erro: ${error.message}`);
+    lastCobrancasSyncTime = Date.now();
+  } finally {
+    isSyncingCobrancas = false;
+  }
+}
+
+async function syncInstallationsFromGoogleSheet() {
+  const now = Date.now();
+  if (now - lastInstallationsSyncTime < ONE_MINUTE && installations.length > 0) {
+    console.log("[SYNC] Instalações solicitadas recentemente. Servindo do cache carregado.");
+    return;
+  }
+
+  if (isSyncingInstallations) {
+    console.log("[SYNC] Sincronização de Instalações já em andamento. Ignorando.");
+    return;
+  }
+
+  isSyncingInstallations = true;
+  console.log("[SYNC] Buscando e analisando Google Sheets: aba Agenda Instalação...");
+  try {
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Agenda Instalação");
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
+
+    const sheetsResponse = await fetch(url, { signal });
+
+    if (!sheetsResponse.ok) {
+      throw new Error(`Google Sheets responded with code ${sheetsResponse.status}`);
+    }
+
+    const csvText = await sheetsResponse.text();
+    if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+    const rows = parseCSV(csvText);
+
+    const parsedInstallations = parseInstallationRows(rows);
+
+    if (parsedInstallations.length > 0) {
+      installations = parsedInstallations;
+      writeJSONDb("installations.json", installations);
+      lastInstallationsSyncTime = now;
+      console.log(`[SYNC] Sucesso! Analisadas ${parsedInstallations.length} instalações dinamicamente da planilha.`);
+    } else {
+      console.log("[SYNC] Aviso: A análise encontrou 0 instalações na planilha. Mantendo o banco de dados local atual.");
+    }
+  } catch (error: any) {
+    console.error(`[SYNC] Sincronização de Instalações encontrou um erro: ${error.message}. Servindo banco de dados local armazenado.`);
+    lastInstallationsSyncTime = Date.now();
+  } finally {
+    isSyncingInstallations = false;
+  }
+}
+
+let lastVendorsSyncTime = 0;
+let isSyncingVendors = false;
+
+async function syncVendorsFromGoogleSheet() {
+  const now = Date.now();
+  if (now - lastVendorsSyncTime < ONE_MINUTE && vendors.length > 0) {
+    return;
+  }
+  if (isSyncingVendors) return;
+
+  isSyncingVendors = true;
+  console.log("[SYNC] Buscando e analisando Google Sheets: aba Vendedores...");
+  try {
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Vendedores");
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
+    const sheetsResponse = await fetch(url, { signal });
+
+    if (!sheetsResponse.ok) {
+      throw new Error("Failed to fetch Vendedores tab");
+    }
+    const csvData = await sheetsResponse.text();
+    const rows = parseCSV(csvData);
+    
+    if (rows.length > 1) {
+      const headers = rows[0].map(h => h.trim().toLowerCase());
+      const nomeIdx = headers.findIndex(h => h.includes("nome") || h.includes("vendedor"));
+      const metaIdx = headers.findIndex(h => h.includes("meta"));
+      
+      const idxN = nomeIdx >= 0 ? nomeIdx : 0;
+      
+      let parsedVendors = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || !row[idxN]) continue;
+        const nome = row[idxN].trim();
+        if (!nome) continue;
+        
+        let meta = 0;
+        if (metaIdx >= 0 && row[metaIdx]) {
+          meta = parseInt(row[metaIdx].replace(/\D/g, ""), 10) || 0;
+        }
+
+        let telefone = "";
+        const telefoneIdx = headers.findIndex(h => h.includes("telefone") || h.includes("whatsapp") || h.includes("whstsapp") || h.includes("whats") || h.includes("celular"));
+        if (telefoneIdx >= 0 && row[telefoneIdx] && row[telefoneIdx].trim() !== "") {
+          telefone = row[telefoneIdx].replace(/\D/g, "");
+        } else {
+          // preserve existing local telefone if not found in spreadsheet or if spreadsheet cell is empty
+          const existingVendor = vendors.find(v => v.nome.toLowerCase() === nome.toLowerCase());
+          if (existingVendor && existingVendor.telefone) {
+            telefone = existingVendor.telefone;
+          }
+        }
+        
+        parsedVendors.push({
+          id: `vend_sync_${i}_${nome.replace(/\s+/g, '')}`,
+          nome,
+          meta,
+          telefone
+        });
+      }
+      if (parsedVendors.length > 0) {
+        vendors = parsedVendors;
+        writeJSONDb("vendors.json", vendors);
+      }
+    }
+    lastVendorsSyncTime = Date.now();
+  } catch (e: any) {
+    console.error("[SYNC] Erro ao sincronizar aba Vendedores:", e.message);
+  } finally {
+    isSyncingVendors = false;
+  }
+}
+
+// Background utility to write or update the Google Sheet via GAS (Google Apps Script) proxy or Sheets API endpoint
+async function writeInstallationToGoogleSheet(inst: any, action: "save" | "delete") {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json", "ngrok-skip-browser-warning": "true"
+      },
+      body: JSON.stringify({
+        route: action === "save" ? "saveInstallation" : "deleteInstallation",
+        payload: {
+          sheetName: "Agenda Instalação",
+          item: inst
+        }
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      const text = await response.text();
+      try {
+        let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("Failed to parse JSON from Apps Script. Response was:", text.substring(0, 100));
+        throw new Error("A integração com a Planilha Google retornou uma página de erro ao invés de dados. Verifique a implantação do Apps Script.");
+      }
+        console.log(`[SYNC] Sucesso ao gravar a ação ${action}:`, data);
+      } catch (err) {
+        console.log(`[SYNC] Ação ${action} teve sucesso, Apps Script retornou texto não JSON:`, text.substring(0, 100));
+      }
+    } else {
+      console.warn(`[SYNC] Apps Script retornou status ${response.status} ao gravar instalação.`);
+    }
+  } catch (err: any) {
+    console.warn(`[SYNC] Google Sheet write-back failed: ${err.message}. Changes saved to local JSON cache successfully.`);
+  }
+}
+
+// Background utility to write or update a Lead via GAS proxy
+async function writeLeadToGoogleSheet(lead: any, action: "save" | "delete") {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    const mappedLead = {
+      _linha: lead._linha,
+      "Carimbo de data/hora": lead.dataCadastro || new Date().toLocaleString("pt-BR"),
+      "TABULAÇÃO | INSCRIÇÃO": lead.status || "",
+      "VENDEDOR": lead.vendedor || "",
+      "Lead (Pessoa que demonstra interesse) NOME DO LEAD:": lead.nomeLead || "",
+      "Tel. WhatsApp": lead.telefone || "",
+      "Endereço (Somente Rua e Número/Compl.)": lead.endereco || "",
+      "Cidade": lead.cidade || "",
+      "Bairros Lajeado | Estrela (A partir do n° 28)": lead.bairro || "",
+      "Observação da Negociação | Ou motivo de Desistência": lead.observacao || "",
+      "Concorrente - Operadora Atual": lead.provedor || "",
+      "Valor do Plano": lead.valorPlano || "",
+      "Acomento Vendedor x gerente": "",
+      "Data de Retorno": lead.agendamento || "",
+      "Houve Retorno Do Cliente?": "",
+      "Agendamento": lead.agendamento || "",
+      "Número": lead.numero || "",
+      "Complemento": lead.complemento || "",
+      "Valor do Plano 2": lead.valorPlano || "",
+      "Plano": lead.planoAtual || "",
+      "Data Cadastro": lead.dataCadastro || new Date().toLocaleDateString("pt-BR"),
+      "Column 21": lead.ultimaAtualizacao || "",
+      "Column 22": ""
+    };
+
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json", "ngrok-skip-browser-warning": "true"
+      },
+      body: JSON.stringify({
+        route: action === "save" ? "saveLead" : "deleteLead",
+        payload: {
+          sheetName: "Acompanhamento de Lead | Abordagens",
+          item: action === "save" ? mappedLead : { _linha: lead._linha }
+        }
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    if (response.ok) {
+      console.log(`[SYNC] Sucesso ao gravar Lead via Apps Script para ação ${action}`);
+    }
+  } catch (err: any) {
+    console.warn(`[SYNC] Google Sheet Lead write-back failed: ${err.message}`);
+  }
+}
+
+// Background utility to bulk transfer Leads via GAS proxy
+async function writeBulkTransferToGoogleSheet(fromSeller: string, toSeller: string) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify({
+        route: "transferAllLeads",
+        payload: {
+          from: fromSeller,
+          to: toSeller
+        }
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+  } catch (err: any) {
+    console.warn(`[SYNC] Bulk transfer write-back failed: ${err.message}`);
+  }
+}
+
+// Background utility to write a Base Action via GAS proxy
+async function writeBaseActionToGoogleSheet(actionObj: any) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify({
+        route: "registrarAcaoBase",
+        payload: actionObj
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+  } catch (err: any) {
+    console.warn(`[SYNC] Google Sheet Base Action write-back failed: ${err.message}`);
+  }
+}
+
+// Perform initial dynamic sync on server boot
+syncBaseClientsFromGoogleSheet();
+syncLeadsFromGoogleSheet();
+syncFttaFromGoogleSheet();
+syncInstallationsFromGoogleSheet();
+syncLeadsFriosFromGoogleSheet();
+syncCobrancasFromGoogleSheet();
+
+// Endpoints
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", mode: process.env.NODE_ENV || "development" });
+});
+
+app.get("/api/config/status", (req, res) => {
+  const requiredKeys: string[] = []; // Disabled strict check
+  const missingKeys: string[] = [];
+  const invalidFormatKeys: string[] = [];
+
+  requiredKeys.forEach(key => {
+    const value = process.env[key];
+    if (!value || value.includes(`MY_${key}`)) {
+      missingKeys.push(key);
+      return;
+    }
+
+    if (key === "N8N_WEBHOOK_URL") {
+      try {
+        new URL(value);
+      } catch (e) {
+        invalidFormatKeys.push(key);
+      }
+    }
+    
+    if (key === "SMTP_PORT") {
+      if (isNaN(Number(value))) {
+        invalidFormatKeys.push(key);
+      }
+    }
+
+    if (key === "SMTP_USER" && value.includes("@")) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        invalidFormatKeys.push(key);
+      }
+    }
+  });
+
+  res.json({
+    status: (missingKeys.length === 0 && invalidFormatKeys.length === 0) ? "ok" : "issues",
+    missingKeys,
+    invalidFormatKeys
+  });
+});
+
+app.get("/api/env/n8n", (req, res) => {
+  res.json({
+    N8N_WEBHOOK_URL: process.env.N8N_WEBHOOK_URL || "",
+    N8N_TEST_WEBHOOK_URL: process.env.N8N_TEST_WEBHOOK_URL || "",
+    USE_N8N_TEST_AGENDAMENTO: process.env.USE_N8N_TEST_AGENDAMENTO || "false",
+    PAUSE_AGENDAMENTO_JOB: process.env.PAUSE_AGENDAMENTO_JOB || "false",
+    
+    N8N_NEW_TASK_WEBHOOK_URL: process.env.N8N_NEW_TASK_WEBHOOK_URL || "",
+    N8N_TEST_NEW_TASK_WEBHOOK_URL: process.env.N8N_TEST_NEW_TASK_WEBHOOK_URL || "",
+    USE_N8N_TEST_NEW_TASK: process.env.USE_N8N_TEST_NEW_TASK || "false",
+    PAUSE_NEW_TASK_JOB: process.env.PAUSE_NEW_TASK_JOB || "false",
+    
+    N8N_OVERDUE_TASKS_WEBHOOK_URL: process.env.N8N_OVERDUE_TASKS_WEBHOOK_URL || "",
+    N8N_TEST_OVERDUE_TASKS_WEBHOOK_URL: process.env.N8N_TEST_OVERDUE_TASKS_WEBHOOK_URL || "",
+    USE_N8N_TEST_OVERDUE_TASKS: process.env.USE_N8N_TEST_OVERDUE_TASKS || "false",
+    PAUSE_OVERDUE_TASKS_JOB: process.env.PAUSE_OVERDUE_TASKS_JOB || "false",
+    
+    N8N_LEAD_INACTIVITY_WEBHOOK_URL: process.env.N8N_LEAD_INACTIVITY_WEBHOOK_URL || "",
+    N8N_TEST_LEAD_INACTIVITY_WEBHOOK_URL: process.env.N8N_TEST_LEAD_INACTIVITY_WEBHOOK_URL || "",
+    USE_N8N_TEST_LEAD_INACTIVITY: process.env.USE_N8N_TEST_LEAD_INACTIVITY || "false",
+    PAUSE_LEAD_INACTIVITY_JOB: process.env.PAUSE_LEAD_INACTIVITY_JOB || "false",
+
+    N8N_UPGRADE_BASE_WEBHOOK_URL: process.env.N8N_UPGRADE_BASE_WEBHOOK_URL || "",
+    N8N_TEST_UPGRADE_BASE_WEBHOOK_URL: process.env.N8N_TEST_UPGRADE_BASE_WEBHOOK_URL || "",
+    USE_N8N_TEST_UPGRADE_BASE: process.env.USE_N8N_TEST_UPGRADE_BASE || "false",
+    PAUSE_UPGRADE_BASE_JOB: process.env.PAUSE_UPGRADE_BASE_JOB || "false",
+
+    N8N_POS_VENDA_WEBHOOK_URL: process.env.N8N_POS_VENDA_WEBHOOK_URL || "",
+    N8N_TEST_POS_VENDA_WEBHOOK_URL: process.env.N8N_TEST_POS_VENDA_WEBHOOK_URL || "",
+    USE_N8N_TEST_POS_VENDA: process.env.USE_N8N_TEST_POS_VENDA || "false",
+    PAUSE_POS_VENDA_JOB: process.env.PAUSE_POS_VENDA_JOB || "false",
+
+    N8N_WEBHOOK_URL_COBRANCAS: process.env.N8N_WEBHOOK_URL_COBRANCAS || "",
+    N8N_TEST_WEBHOOK_URL_COBRANCAS: process.env.N8N_TEST_WEBHOOK_URL_COBRANCAS || "",
+    USE_N8N_TEST_COBRANCAS: process.env.USE_N8N_TEST_COBRANCAS || "false",
+    PAUSE_COBRANCAS_JOB: process.env.PAUSE_COBRANCAS_JOB || "false",
+
+    PAUSE_ALL_N8N_WEBHOOKS: process.env.PAUSE_ALL_N8N_WEBHOOKS || "false"
+  });
+});
+
+
+app.post("/api/env/n8n/toggle-all", async (req, res) => {
+  const { isTest } = req.body;
+  const strValue = isTest ? "true" : "false";
+  const keys = ['USE_N8N_TEST_AGENDAMENTO', 'USE_N8N_TEST_NEW_TASK', 'USE_N8N_TEST_OVERDUE_TASKS', 'USE_N8N_TEST_LEAD_INACTIVITY', 'USE_N8N_TEST_UPGRADE_BASE', 'USE_N8N_TEST_POS_VENDA', 'USE_N8N_TEST_COBRANCAS'];
+  
+  keys.forEach(key => {
+    process.env[key] = strValue;
+  });
+
+  const envPath = path.join(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) fs.writeFileSync(envPath, '');
+  if (fs.existsSync(envPath)) {
+    let envContent = fs.readFileSync(envPath, 'utf8');
+    keys.forEach(key => {
+      const regex = new RegExp(`^${key}=.*`, 'm');
+      if (regex.test(envContent)) {
+        envContent = envContent.replace(regex, `${key}="${strValue}"`);
+      } else {
+        envContent += `\n${key}="${strValue}"\n`;
+      }
+    });
+    fs.writeFileSync(envPath, envContent.trim() + '\n');
+  }
+  res.json({ success: true });
+});
+
+app.post("/api/env/n8n/toggle", async (req, res) => {
+  const { key, value } = req.body;
+  
+  if (!key || !['USE_N8N_TEST_AGENDAMENTO', 'USE_N8N_TEST_NEW_TASK', 'USE_N8N_TEST_OVERDUE_TASKS', 'USE_N8N_TEST_LEAD_INACTIVITY', 'PAUSE_LEAD_INACTIVITY_JOB', 'USE_N8N_TEST_UPGRADE_BASE', 'PAUSE_ALL_N8N_WEBHOOKS', 'USE_N8N_TEST_POS_VENDA', 'PAUSE_AGENDAMENTO_JOB', 'PAUSE_NEW_TASK_JOB', 'PAUSE_OVERDUE_TASKS_JOB', 'PAUSE_UPGRADE_BASE_JOB', 'PAUSE_POS_VENDA_JOB', 'USE_N8N_TEST_COBRANCAS', 'PAUSE_COBRANCAS_JOB'].includes(key)) {
+    return res.status(400).json({ error: "Invalid key." });
+  }
+
+  const strValue = value ? "true" : "false";
+  process.env[key] = strValue;
+
+  const keysToUpdate = [key];
+  if (key === 'PAUSE_ALL_N8N_WEBHOOKS') {
+    const pauseKeys = ['PAUSE_AGENDAMENTO_JOB', 'PAUSE_NEW_TASK_JOB', 'PAUSE_OVERDUE_TASKS_JOB', 'PAUSE_LEAD_INACTIVITY_JOB', 'PAUSE_UPGRADE_BASE_JOB', 'PAUSE_POS_VENDA_JOB', 'PAUSE_COBRANCAS_JOB'];
+    pauseKeys.forEach(pk => {
+      process.env[pk] = strValue;
+      keysToUpdate.push(pk);
+    });
+  }
+
+  const envPath = path.join(process.cwd(), '.env');
+  if (fs.existsSync(envPath)) {
+    let envContent = fs.readFileSync(envPath, 'utf8');
+    
+    keysToUpdate.forEach(k => {
+      const regex = new RegExp(`^${k}=.*`, 'm');
+      if (regex.test(envContent)) {
+        envContent = envContent.replace(regex, `${k}="${strValue}"`);
+      } else {
+        envContent += `\n${k}="${strValue}"\n`;
+      }
+    });
+    
+    fs.writeFileSync(envPath, envContent.trim() + '\n');
+  }
+
+  res.json({ success: true, key, value: strValue });
+});
+
+// In-memory array for n8n history
+const n8nHistory: any[] = [];
+const MAX_HISTORY = 50;
+
+app.get("/api/n8n/history", (req, res) => {
+  res.json(n8nHistory);
+});
+
+app.post("/api/n8n-proxy", async (req, res) => {
+  const { webhookUrl, payload } = req.body;
+  
+  console.log("[DEBUG /api/n8n-proxy] Received webhookUrl:", webhookUrl);
+  console.log("[DEBUG /api/n8n-proxy] Received payload:", JSON.stringify(payload));
+
+  if (!webhookUrl) {
+    return res.status(400).json({ error: "No webhookUrl provided." });
+  }
+
+  // Resolve para caso o modo de teste ou auto-corretor esteja ativado
+  // Since expectedPath was "", it stripped the endpoints. We just use webhookUrl directly, 
+  // or pass expectedPath as the tail of the URL.
+  let finalUrl = webhookUrl;
+  if (webhookUrl.includes("localhost:5678") || webhookUrl.includes("127.0.0.1:5678")) {
+     console.warn("[DEBUG /api/n8n-proxy] Warning: webhook URL is localhost. Request will probably fail if n8n is not on the same server.");
+  }
+  console.log("[DEBUG /api/n8n-proxy] finalUrl after resolution:", finalUrl);
+
+  const historyItem: Record<string, any> = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    event: payload?.eventName || 'teste_manual',
+    url: finalUrl,
+    payload: payload,
+    status: 'pending'
+  };
+  n8nHistory.unshift(historyItem);
+  if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
+
+  try {
+    const fetchRes = await fetch(finalUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify(payload)
+    });
+    
+    console.log(`[DEBUG /api/n8n-proxy] Fetch response status: ${fetchRes.status} ${fetchRes.statusText}`);
+    
+    // Some n8n webhooks might return ok with no body or non-JSON body
+    let json = {};
+    try {
+      if (fetchRes.headers.get("content-type")?.includes("application/json")) {
+        json = await fetchRes.json();
+      } else {
+        await fetchRes.text();
+      }
+    } catch(e) {}
+    
+    if (fetchRes.ok) {
+      historyItem.status = 'success';
+      historyItem.response = json;
+      res.json({ success: true, original: json });
+    } else {
+      let extra = "";
+      if (fetchRes.status === 404) {
+        extra = finalUrl.includes("webhook-test") 
+          ? "\nDica: Para URLs webhook-test, certifique-se de clicar em 'Execute Workflow' no n8n primeiro!" 
+          : "\nDica: Para URLs de produção, certifique-se de que o workflow está Ativo no n8n!";
+      }
+      historyItem.status = 'error';
+      historyItem.error = "Status " + fetchRes.status + extra;
+      res.status(fetchRes.status).json({ success: false, error: "N8N Webhook failure (Status " + fetchRes.status + ")" + extra });
+    }
+  } catch (e: any) {
+    historyItem.status = 'error';
+    historyItem.error = e.message;
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Vendors Configuration Endpoints
+app.get("/api/vendors", async (req, res) => {
+  await syncVendorsFromGoogleSheet();
+  
+  res.json({ status: "success", vendors, data: vendors });
+});
+
+app.post("/api/vendors/sync", async (req, res) => {
+  try {
+    lastVendorsSyncTime = 0; // force renew
+    await syncVendorsFromGoogleSheet();
+    res.json({ status: "success", count: vendors.length, vendors });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+app.post("/api/vendors", (req, res) => {
+  const { nome, meta, telefone } = req.body;
+  if (!nome) {
+    return res.status(400).json({ status: "error", message: "Nome do vendedor é obrigatório" });
+  }
+  const newVendor = {
+    id: `vend_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    nome: nome.trim(),
+    meta: Number(meta) || 0,
+    telefone: telefone ? telefone.replace(/\D/g, "") : ""
+  };
+  vendors.push(newVendor);
+  writeJSONDb("vendors.json", vendors);
+  res.json({ status: "success", vendor: newVendor });
+});
+
+app.put("/api/vendors", (req, res) => {
+  const updated = req.body;
+  if (!updated || (!updated.id && !updated.nome)) {
+    return res.status(400).json({ status: "error", message: "ID ou Nome do vendedor é obrigatório para atualização" });
+  }
+  const matchId = updated.id || updated.nome;
+  vendors = vendors.map(v => (v.id === matchId || v.nome === matchId)
+    ? { 
+        ...v, 
+        nome: updated.nome || v.nome, 
+        meta: typeof updated.meta !== 'undefined' ? Number(updated.meta) : v.meta,
+        telefone: typeof updated.telefone !== 'undefined' ? updated.telefone.replace(/\D/g, "") : v.telefone
+      } 
+    : v
+  );
+  writeJSONDb("vendors.json", vendors);
+  res.json({ status: "success" });
+});
+
+app.delete("/api/vendors", (req, res) => {
+  const { id } = req.query;
+  if (!id) {
+    return res.status(400).json({ status: "error", message: "ID ou Nome do vendedor é obrigatório para exclusão" });
+  }
+  vendors = vendors.filter(v => v.id !== id && v.nome !== id);
+  writeJSONDb("vendors.json", vendors);
+  res.json({ status: "success" });
+});
+
+// Leads CRUD Endpoints
+
+app.get("/api/arquivo-morto", (req, res) => {
+  const arquivoMorto = readJSONDb("arquivo_morto.json", []);
+  res.json({ status: "success", data: arquivoMorto });
+});
+
+app.get("/api/leads", async (req, res) => {
+  await syncLeadsFromGoogleSheet();
+  const filteredLeads = leads.filter(l => l.status !== "Venda Fechada" && l.status !== "Frio" && l.status !== "Lead Frio");
+  const uniqVendors = Array.from(new Set(filteredLeads.map(l => l.vendedor).filter(Boolean)));
+  res.json({ status: "success", leads: filteredLeads, data: filteredLeads, vendors: uniqVendors });
+});
+
+app.post("/api/leads", async (req, res) => {
+  const newLead = req.body;
+  newLead._linha = String(leads.length + 2);
+  
+  if (newLead.status === "Venda Fechada") {
+    // Arquivo morto immediately
+    const arquivoMorto = readJSONDb("arquivo_morto.json", []);
+    arquivoMorto.push(newLead);
+    writeJSONDb("arquivo_morto.json", arquivoMorto);
+    res.json({ status: "success", _linha: newLead._linha });
+    return;
+  }
+  
+  leads.push(newLead);
+  writeJSONDb("leads.json", leads);
+  lastLeadsSyncTime = Date.now(); // Prevent immediate overwrite from stale Google Sheets cache
+  writeLeadToGoogleSheet(newLead, "save");
+  res.json({ status: "success", _linha: newLead._linha });
+});
+
+app.put("/api/leads", async (req, res) => {
+  const updated = req.body;
+  let fullUpdatedLead = null;
+  leads = leads.map(l => {
+    if (String(l._linha) === String(updated._linha)) {
+      fullUpdatedLead = { ...l, ...updated };
+      return fullUpdatedLead;
+    }
+    return l;
+  });
+
+  if (fullUpdatedLead && fullUpdatedLead.status === "Venda Fechada") {
+    // Mover para arquivo morto
+    const arquivoMorto = readJSONDb("arquivo_morto.json", []);
+    arquivoMorto.push(fullUpdatedLead);
+    writeJSONDb("arquivo_morto.json", arquivoMorto);
+    
+    // Remover do funil e shift rows
+    const deletedLinhaNum = parseInt(String(fullUpdatedLead._linha), 10);
+    leads = leads.filter(l => String(l._linha) !== String(fullUpdatedLead._linha));
+    leads = leads.map(l => {
+      const currentLinha = parseInt(String(l._linha), 10);
+      if (currentLinha > deletedLinhaNum) {
+        return { ...l, _linha: currentLinha - 1 };
+      }
+      return l;
+    });
+    
+    writeJSONDb("leads.json", leads);
+    lastLeadsSyncTime = Date.now();
+    await writeLeadToGoogleSheet(fullUpdatedLead, "delete"); // Exclui da planilha ativa
+    return res.json({ status: "success" });
+  }
+
+  writeJSONDb("leads.json", leads);
+  lastLeadsSyncTime = Date.now();
+  if (fullUpdatedLead) {
+    writeLeadToGoogleSheet(fullUpdatedLead, "save");
+  }
+  res.json({ status: "success" });
+});
+
+app.delete("/api/leads", (req, res) => {
+  const { linha } = req.query;
+  const leadToDel = leads.find(l => String(l._linha) === String(linha));
+  
+  if (leadToDel) {
+    const deletedLinhaNum = parseInt(String(leadToDel._linha), 10);
+    
+    leads = leads.filter(l => String(l._linha) !== String(linha));
+    
+    // Shift all subsequent leads' _linha down by 1 to match Google Sheets row shifting
+    leads = leads.map(l => {
+      const currentLinha = parseInt(String(l._linha), 10);
+      if (currentLinha > deletedLinhaNum) {
+        return { ...l, _linha: currentLinha - 1 };
+      }
+      return l;
+    });
+
+    writeJSONDb("leads.json", leads);
+    lastLeadsSyncTime = Date.now();
+    writeLeadToGoogleSheet(leadToDel, "delete");
+  }
+  
+  res.json({ status: "success" });
+});
+
+app.post("/api/leads/bulk-transfer", (req, res) => {
+  const { fromSeller, toSeller } = req.body;
+  if (!fromSeller || !toSeller) {
+    return res.status(400).json({ status: "error", message: "Vendedor de origem e de destino são obrigatórios." });
+  }
+
+  // Count matches first
+  const affectedLeadsCount = leads.filter(l => l.vendedor === fromSeller).length;
+  
+  // Update leads
+  leads = leads.map(l => l.vendedor === fromSeller ? { ...l, vendedor: toSeller } : l);
+  writeJSONDb("leads.json", leads);
+  writeBulkTransferToGoogleSheet(fromSeller, toSeller);
+
+  // Update tasks if any
+  let affectedTasksCount = 0;
+  if (typeof tasks !== 'undefined' && Array.isArray(tasks)) {
+    affectedTasksCount = tasks.filter(t => t.vendedor === fromSeller).length;
+    tasks = tasks.map(t => t.vendedor === fromSeller ? { ...t, vendedor: toSeller } : t);
+    writeJSONDb("tasks.json", tasks);
+  }
+
+  res.json({ 
+    status: "success", 
+    message: "Transferência em massa realizada com sucesso!",
+    details: {
+      fromSeller,
+      toSeller,
+      leadsTransferred: affectedLeadsCount,
+      tasksTransferred: affectedTasksCount
+    }
+  });
+});
+
+// FTTA Endpoints
+app.get("/api/ftta", async (req, res) => {
+  await syncFttaFromGoogleSheet();
+  res.json({ status: "success", sites: fttaItems, prospeccoes: fttaProsps });
+});
+
+async function writeFttaToGoogleSheet(type: string, data: any) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    let route = "";
+    if (type === "site") {
+      // The new Apps script expects updateFttaBloco for sites, but we'll try to just pass it or ignore if not supported for adding new ones.
+      // Wait, there's no addFttaBloco in their script. We'll skip new sites or just do update.
+      return; 
+    } else {
+      route = data._linha ? "updateFttaProspeccao" : "addFttaProspeccao";
+    }
+
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify({
+        route,
+        payload: data
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+  } catch (err: any) {
+    console.warn(`[SYNC] Google Sheet FTTA write-back failed: ${err.message}`);
+  }
+}
+
+app.post("/api/ftta", (req, res) => {
+  const { type, data } = req.body;
+  if (type === "site") {
+    if (data._linha) {
+      const idx = fttaItems.findIndex((s: any) => String(s._linha) === String(data._linha));
+      if (idx !== -1) {
+        fttaItems[idx] = { ...fttaItems[idx], ...data };
+      } else {
+        fttaItems.push(data);
+      }
+    } else {
+      const newItem = { ...data, _linha: String(fttaItems.length + 2) };
+      fttaItems.push(newItem);
+    }
+    writeJSONDb("fttaItems.json", fttaItems);
+  } else {
+    const newItem = { ...data, _linha: String(fttaProsps.length + 2) };
+    fttaProsps.push(newItem);
+    writeJSONDb("fttaProsps.json", fttaProsps);
+    writeFttaToGoogleSheet(type, newItem);
+  }
+  res.json({ status: "success" });
+});
+
+// Matriz Objeções Endpoints
+let localObjections: any[] = [];
+try {
+  if (fs.existsSync("local_objections.json")) {
+    localObjections = JSON.parse(fs.readFileSync("local_objections.json", "utf-8"));
+  }
+} catch (e) {}
+
+app.get("/api/matriz-objecoes", async (req, res) => {
+  const sheetName = "Matriz Objeções";
+  const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName);
+  
+  try {
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
+    const sheetsResponse = await fetch(url, { signal });
+    if (!sheetsResponse.ok) {
+       return res.status(404).json({ status: "error", message: "Planilha de Objeções não encontrada." });
+    }
+    const csvText = await sheetsResponse.text();
+    if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) {
+      return res.status(404).json({ status: "error", message: "Aba não existe na planilha." });
+    }
+
+    if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+    const rows = parseCSV(csvText);
+    const objections = [];
+    if (rows.length > 1) {
+      const headers = rows[0].map(h => h.trim().toLowerCase());
+      const objIdx = headers.findIndex(h => h.includes("objeção") || h.includes("objecao") || h.includes("motivo") || h.includes("nome"));
+      const etapaIdx = headers.findIndex(h => h.includes("etapa"));
+      const catIdx = headers.findIndex(h => h.includes("categoria"));
+      const respIdx = headers.findIndex(h => h.includes("resposta") || h.includes("contorno"));
+      
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || !row.join("").trim()) continue;
+        objections.push({
+          id: `obj-${i}`,
+          objecao: objIdx >= 0 ? row[objIdx] : `Objeção ${i}`,
+          etapa: etapaIdx >= 0 ? row[etapaIdx] : "Não definida",
+          categoria: catIdx >= 0 ? row[catIdx] : "Geral",
+          resposta_ideal: respIdx >= 0 ? row[respIdx] : "Sem resposta definida.",
+        });
+      }
+    }
+    
+    // Merge with local objections
+    const merged = [...objections, ...localObjections];
+    res.json({ status: "success", data: merged });
+  } catch (err: any) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+});
+
+app.post("/api/matriz-objecoes", (req, res) => {
+  const newObj = req.body;
+  if (!newObj || !newObj.objecao) {
+    return res.status(400).json({ status: "error", message: "Objeção é obrigatória." });
+  }
+  
+  const objToSave = {
+    id: `local-obj-${Date.now()}`,
+    objecao: newObj.objecao,
+    etapa: newObj.etapa || "Sugerida pelo Vendedor",
+    categoria: newObj.categoria || "Nova",
+    resposta_ideal: newObj.resposta_ideal || "Ainda não mapeada pela coordenação. Será estudada.",
+    vendedor: newObj.vendedor || "Desconhecido",
+    dataCriacao: new Date().toISOString()
+  };
+  
+  localObjections.push(objToSave);
+  writeJSONDb("local_objections.json", localObjections);
+  
+  res.json({ status: "success", data: objToSave });
+});
+
+app.post("/api/gemini/copilot-objecoes", async (req, res) => {
+  const { input, objecoes } = req.body;
+  if (!input) return res.status(400).json({ error: "Input is required" });
+  
+  try {
+    if (!process.env.GEMINI_API_KEY) throw new Error("No API Key");
+    
+    const prompt = `Você é o "Mhnet Sales Copilot", um assistente de inteligência artificial especializado em apoiar a equipe de vendas da Mhnet Telecom. Seu objetivo é ajudar o vendedor a contornar objeções de clientes de forma empática, persuasiva e técnica, utilizando estritamente a base de conhecimento oficial da empresa.
+
+Instruções de Comportamento:
+1. Quando o usuário (vendedor) inserir uma frase, dúvida ou objeção dita por um cliente, identifique a qual objeção mapeada ela corresponde.
+2. Forneça uma resposta estruturada contendo:
+   - 🎯 A estratégia de contorno (baseada na resposta ideal).
+   - 💬 Um script pronto e humanizado para o vendedor copiar/adaptar e enviar ao cliente.
+3. Mantenha o tom profissional, acolhedor, focado em benefícios e focado na realidade local (ex: suporte humanizado, fibra 100%, presença regional).
+4. Se a objeção envolver termos técnicos (como Wi-Fi Mesh, SLA, Latência), explique de forma simples e clara conforme as diretrizes da empresa.
+
+Base de Conhecimento (Matriz de Objeções):
+${JSON.stringify(objecoes || [], null, 2)}
+
+Objeção do cliente inserida pelo vendedor: "${input}"`;
+
+    if (!ai) throw new Error("AI Client not initialized");
+
+    const result = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    
+    return res.json({ status: "success", text: result.text });
+  } catch(error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Pos Vendas Endpoints
+app.get("/api/pos-vendas/:sheetName", async (req, res) => {
+  const sheetName = req.params.sheetName;
+  const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName);
+  
+  try {
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
+    const sheetsResponse = await fetch(url, { signal });
+    if (!sheetsResponse.ok) {
+      return res.status(404).json({ status: "error", message: "Planilha não encontrada para este mês." });
+    }
+    const csvText = await sheetsResponse.text();
+    
+    // Check if the HTML returned instead of CSV
+    if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) {
+      return res.status(404).json({ status: "error", message: "Aba não existe na planilha." });
+    }
+
+    if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+    const rows = parseCSV(csvText);
+    if (rows.length < 2) {
+      return res.json({ status: "success", clients: [] });
+    }
+
+    const headers = rows[0].map((h: string) => h.trim().toLowerCase());
+    const nomeIdx = headers.findIndex((h: string) => h.includes("nome") || h.includes("cliente"));
+    const telefoneIdx = headers.findIndex((h: string) => h.includes("telefone") || h.includes("celular") || h.includes("contato") || h.includes("whats"));
+    const enderecoIdx = headers.findIndex((h: string) => h.includes("endereço") || h.includes("endereco") || h.includes("rua"));
+    const planoIdx = headers.findIndex((h: string) => h.includes("plano") || h.includes("pacote"));
+    let vendedoraIdx = headers.findIndex((h: string) => h.includes("vendedor") || h.includes("consultor"));
+    if (vendedoraIdx === -1) {
+      // In this sheet, Vendedor seems to be the first column
+      vendedoraIdx = 0;
+    }
+    const instalacaoIdx = headers.findIndex((h: string) => h.includes("data") || h.includes("instalação") || h.includes("instalacao"));
+    const cpfIdx = headers.findIndex((h: string) => h.includes("cpf") || h.includes("cnpj"));
+    const cidadeIdx = headers.findIndex((h: string) => h.includes("cidade") || h.includes("municipio"));
+    const bairroIdx = headers.findIndex((h: string) => h.includes("bairro"));
+    
+    const clients = [];
+    
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0 || !row.join("").trim()) continue;
+      
+      const nome = nomeIdx >= 0 ? row[nomeIdx] : `Cliente ${i}`;
+      if (!nome) continue;
+      
+      const id = `${sheetName}-${i}`;
+      
+      const clientObj = {
+        id,
+        nome: nome,
+        telefone: telefoneIdx >= 0 ? row[telefoneIdx] : "",
+        cpf: cpfIdx >= 0 ? row[cpfIdx] : (row[6] || ""),
+        endereco: enderecoIdx >= 0 ? row[enderecoIdx] : "",
+        cidade: cidadeIdx >= 0 ? row[cidadeIdx] : (row[8] || ""),
+        bairro: bairroIdx >= 0 ? row[bairroIdx] : (row[9] || ""),
+        plano: planoIdx >= 0 ? row[planoIdx] : "",
+        vendedora: vendedoraIdx >= 0 ? row[vendedoraIdx] : "",
+        dataInstalacao: row[3] || (instalacaoIdx >= 0 ? row[instalacaoIdx] : ""),
+        dataAlvo: "", 
+        rx_onu: row[11] || "",
+        rx_olt: row[12] || "",
+        status: "Pendente",
+        score: 0,
+        dataConclusao: "",
+        checklist: null,
+        observacoes: ""
+      };
+      
+      if (posVendasData[id]) {
+        Object.assign(clientObj, posVendasData[id]);
+      }
+      
+      clients.push(clientObj);
+    }
+    
+    res.json({ status: "success", clients });
+  } catch (err: any) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+});
+
+app.post("/api/pos-vendas/:id", (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  
+  if (!posVendasData[id]) {
+    posVendasData[id] = {};
+  }
+  
+  const wasNotConcluido = posVendasData[id].status !== "Concluído";
+  Object.assign(posVendasData[id], updates);
+  writeJSONDb("posVendas.json", posVendasData);
+
+  // If newly concluded, add to baseClients
+  if (updates.status === "Concluído" && wasNotConcluido) {
+    if (updates.nome) {
+      // Extract speed from plan to match other base inserts (e.g. "400MEGA", "MHNET 400")
+      let velocidadeMb = 400;
+      const extractMb = (p: string) => {
+        const m = p.match(/(\d{3,4})\s*(mb|mega)/i);
+        if (m) return parseInt(m[1], 10);
+        const m2 = p.match(/(\d{3,4})/);
+        if (m2) return parseInt(m2[1], 10);
+        return null;
+      };
+      const extracted = extractMb(updates.plano || "");
+      if (extracted) velocidadeMb = extracted;
+
+      const existingIndex = baseClients.findIndex(c => 
+        c.nome.toLowerCase() === updates.nome.toLowerCase()
+      );
+
+      if (existingIndex !== -1) {
+        baseClients[existingIndex] = {
+           ...baseClients[existingIndex],
+           status: "Ativo", 
+           plano: updates.plano, 
+           velocidadeMb, 
+           telefoneExterno: updates.telefone, 
+           dataAtivacao: updates.dataInstalacao,
+           endereco: updates.endereco
+        };
+      } else {
+        const idContrato = `MHN_POS_${Math.floor(Math.random()*100000)}`;
+        baseClients.push({
+          idContrato,
+          nome: updates.nome,
+          plano: updates.plano,
+          status: "Ativo",
+          valor: 0,
+          velocidadeMb,
+          telefoneExterno: updates.telefone,
+          endereco: updates.endereco,
+          dataAtivacao: updates.dataInstalacao,
+          consultorOrigem: updates.vendedora || "Pós Vendas",
+          cidade: "Indefinido"
+        });
+      }
+      writeJSONDb("baseClients.json", baseClients);
+    }
+  }
+
+  res.json({ status: "success" });
+});
+
+// Tasks Endpoints
+app.get("/api/tasks", (req, res) => {
+  res.json({ status: "success", tasks });
+});
+
+app.post("/api/tasks", async (req, res) => {
+  const task = req.body;
+  tasks.push(task);
+  writeJSONDb("tasks.json", tasks);
+
+  let webhookStatus = null;
+  // Trigger n8n webhook for new task
+  try {
+    const n8nTasksUrl = resolveN8nWebhookUrl(
+      process.env.N8N_NEW_TASK_WEBHOOK_URL,
+      process.env.N8N_WEBHOOK_URL,
+      "agenda-tarefas",
+      process.env.N8N_TEST_NEW_TASK_WEBHOOK_URL,
+      process.env.USE_N8N_TEST_NEW_TASK
+    );
+
+    if (n8nTasksUrl && !n8nTasksUrl.includes("sua-url-ngrok") && !n8nTasksUrl.includes("localhost:5678")) {
+      // Try to find the vendor's phone number if a lead/vendor is attached
+      const vendorData = vendors.find(v => v.nome === task.vendedor);
+      const vendedorWhatsApp = vendorData?.telefone || "";
+
+      console.log(`[n8n] Nova Tarefa Criada: ${task.descricao}. Enviando webhook para ${n8nTasksUrl}...`);
+      
+      try {
+        const response = await fetch(n8nTasksUrl, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json", "ngrok-skip-browser-warning": "true"
+             
+          },
+          body: JSON.stringify({
+            event: "nova_tarefa",
+            task_id: task.id,
+            vendedor: task.vendedor,
+            vendedor_telefone: formatWhatsAppNumber(vendedorWhatsApp),
+            descricao: task.descricao,
+            nomeLead: task.nomeLead,
+            dataLimite: task.dataLimite,
+            status: task.status
+          })
+        });
+        webhookStatus = response.status;
+      } catch(err: any) {
+        console.warn("[n8n] Falha ao enviar webhook de nova tarefa:", err.message);
+        webhookStatus = 500;
+      }
+    } else if (n8nTasksUrl.includes("localhost:5678")) {
+      console.warn("[n8n] Webhook ignorado: URL configurada como localhost. Use a URL do Ngrok na nuvem.");
+    }
+  } catch (err) {
+    console.error("[Tasks Webhook] Erro:", err);
+  }
+
+  res.json({ status: "success", webhookStatus });
+});
+
+app.put("/api/tasks", (req, res) => {
+  const { id, action } = req.body;
+  if (action === "toggle") {
+    tasks = tasks.map(t => t.id === id ? { ...t, status: t.status === "PENDENTE" ? "CONCLUIDA" : "PENDENTE" } : t);
+    writeJSONDb("tasks.json", tasks);
+  }
+  res.json({ status: "success" });
+});
+
+app.delete("/api/tasks", (req, res) => {
+  const { id, action } = req.query;
+  if (action === "clear_completed") {
+    tasks = tasks.filter(t => t.status !== "CONCLUIDA");
+  } else if (id) {
+    tasks = tasks.filter(t => t.id !== String(id));
+  }
+  writeJSONDb("tasks.json", tasks);
+  res.json({ status: "success" });
+});
+
+// Absences Endpoints
+app.get("/api/absences", (req, res) => {
+  res.json({ status: "success", absences });
+});
+
+app.post("/api/absences", async (req, res) => {
+  const abs = req.body;
+  const newAbsence = {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+    vendedor: abs.vendedor || "Consultor",
+    dataFalta: abs.dataFalta || new Date().toISOString().split("T")[0],
+    motivo: abs.motivo || "Falta Particular",
+    status: "Aguardando",
+    observacao: abs.observacao || "",
+    link: abs.driveLink || ""
+  };
+  absences.push(newAbsence);
+  writeJSONDb("absences.json", absences);
+
+  // We will also use newAbsence for the email
+  abs.id = newAbsence.id;
+
+  let emailStatus = "simulated";
+  let emailError = null;
+
+  // Send email via nodemailer
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const hasCredentials = !!process.env.SMTP_USER && !!process.env.SMTP_PASS;
+
+    const attachments = [];
+    if (abs.fileData && abs.fileName) {
+       // fileData is expected to be a base64 string, potentially with data URL prefix
+       const base64Data = abs.fileData.split(',')[1] || abs.fileData; 
+       attachments.push({
+           filename: abs.fileName,
+           content: base64Data,
+           encoding: 'base64'
+       });
+    }
+
+    const driveLinkHtml = abs.driveLink 
+      ? `
+        <div style="text-align: center; margin: 25px 0;">
+            <a href="${abs.driveLink}" style="display: inline-block; background-color: #ea580c; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-family: sans-serif;">Visualizar Comprovante no Drive</a>
+        </div>
+        `
+      : "";
+
+    const [ano, mes, dia] = (abs.dataFalta || "").split("-");
+    const dataFaltaFormatada = (dia && mes && ano) ? `${dia}-${mes}-${ano}` : abs.dataFalta;
+
+    const mailOptions: any = {
+      from: process.env.SMTP_USER || '"Sistema MHNET" <no-reply@mhnet.com.br>',
+      to: "bruno.queiroz@mhnet.com.br",
+      subject: `📄 [Registrado] Justificativa de Falta: ${abs.vendedor || "Consultor"} - ${dataFaltaFormatada}`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .header {
+            background-color: #ea580c;
+            padding: 24px 30px;
+            color: #ffffff;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+        .content {
+            padding: 32px;
+            color: #3f3f46;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        .info-block {
+            background-color: #fafafa;
+            border: 1px solid #e4e4e7;
+            border-left: 4px solid #ea580c;
+            padding: 20px;
+            margin-bottom: 24px;
+            border-radius: 6px;
+        }
+        .info-row {
+            margin-bottom: 12px;
+        }
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #52525b;
+            display: inline-block;
+            min-width: 140px;
+        }
+        .observation {
+            background-color: #fff7ed;
+            border: 1px solid #ffedd5;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 10px;
+            color: #431407;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div style="font-family: sans-serif; background-color: #f4f4f5; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            <div style="background-color: #ea580c; padding: 24px 30px; text-align: center;">
+                <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff;">Justificativa de Falta / Atraso</h1>
+            </div>
+            
+            <div style="padding: 32px; color: #3f3f46; line-height: 1.6; font-size: 15px;">
+                <p style="margin-top: 0;">Olá,</p>
+                <p>Uma nova solicitação foi registrada no <strong>Painel MHNET</strong>.</p>
+                
+                <div style="background-color: #fafafa; border: 1px solid #e4e4e7; border-left: 4px solid #ea580c; padding: 20px; margin: 24px 0; border-radius: 6px;">
+                    <div style="margin-bottom: 12px;">
+                        <span style="font-weight: 600; color: #52525b; display: inline-block; min-width: 140px;">Colaborador:</span>
+                        <span style="color: #18181b; font-weight: 500;">${abs.vendedor}</span>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <span style="font-weight: 600; color: #52525b; display: inline-block; min-width: 140px;">Data da Ocorrência:</span>
+                        <span style="color: #18181b;">${dataFaltaFormatada}</span>
+                    </div>
+                    <div style="margin-bottom: 0;">
+                        <span style="font-weight: 600; color: #52525b; display: inline-block; min-width: 140px;">Descrição/Motivo:</span>
+                        <span style="color: #18181b;">${abs.motivo}</span>
+                    </div>
+                </div>
+
+                <h3 style="margin: 0 0 10px 0; color: #18181b; font-size: 16px;">Observação Adicional:</h3>
+                <div style="background-color: #fff7ed; border: 1px solid #ffedd5; padding: 16px; border-radius: 8px; color: #431407; font-size: 14px; white-space: pre-wrap;">${abs.observacao ? abs.observacao : "Nenhuma observação informada."}</div>
+
+                ${driveLinkHtml}
+
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
+                    <h3 style="margin: 0 0 15px 0; color: #18181b; font-size: 16px;">Ação de Gerência</h3>
+                    <a href="https://${req.get("host")}/api/absences/action?id=${newAbsence.id}&action=approve" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; font-family: sans-serif; margin-right: 10px;">Aprovar Falta</a>
+                    <a href="https://${req.get("host")}/api/absences/action?id=${newAbsence.id}&action=reject" style="display: inline-block; background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; font-family: sans-serif;">Rejeitar Falta</a>
+                </div>
+            </div>
+            
+            <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 13px; color: #64748b; border-top: 1px solid #e2e8f0;">
+                Este é um e-mail automático enviado pelo sistema <strong>Painel MHNET</strong>. Por favor, analise a documentação em anexo, se aplicável.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+      `,
+      attachments
+    };
+
+    if (hasCredentials && process.env.SMTP_USER !== "seu-email@gmail.com") {
+      await transporter.sendMail(mailOptions);
+      console.log("Email enviado automaticamente para bruno.queiroz@mhnet.com.br");
+      emailStatus = "sent";
+    } else {
+      console.log("SMTP não configurado logando simulacao email para bruno.queiroz@mhnet.com.br:", mailOptions.subject);
+      emailStatus = "not_configured";
+      emailError = "Credenciais SMTP não foram alteradas (ainda estão como padrão) ou estão vazias.";
+    }
+  } catch (error: any) {
+    console.error("Erro ao enviar email de justificativa:", error.message);
+    emailStatus = "error";
+    emailError = error.message;
+    if (error.responseCode === 535) {
+      emailError = "Credenciais inválidas: Por favor certifique-se de usar a 'Senha de Aplicativo' (App Password) da sua Conta do Google se estiver usando o Gmail.";
+    }
+  }
+
+  res.json({ status: "success", emailStatus, emailError });
+});
+
+app.patch("/api/absences/:id", (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const idx = absences.findIndex((a: any) => a.id === id);
+  if (idx !== -1) {
+    absences[idx].status = status;
+    writeJSONDb("absences.json", absences);
+    res.json({ status: "success", absence: absences[idx] });
+  } else {
+    res.status(404).json({ status: "error", message: "Absence not found" });
+  }
+});
+
+app.get("/api/absences/action", (req, res) => {
+  const { id, action } = req.query;
+  if (!id || !action) {
+    return res.status(400).send("Ação inválida.");
+  }
+  const idx = absences.findIndex((a: any) => a.id === id);
+  if (idx !== -1) {
+    absences[idx].status = action === "approve" ? "Aprovado" : "Rejeitado";
+    writeJSONDb("absences.json", absences);
+    
+    // Simple HTML response
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Ação Confirmada</title>
+          <style>
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+              .card { background-color: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; max-width: 400px; }
+              .icon { font-size: 48px; margin-bottom: 20px; color: ${action === 'approve' ? '#16a34a' : '#dc2626'}; }
+              h1 { margin: 0 0 10px; color: #1e293b; font-size: 24px; }
+              p { color: #64748b; font-size: 16px; margin: 0; }
+          </style>
+      </head>
+      <body>
+          <div class="card">
+              <div class="icon">${action === 'approve' ? '✅' : '❌'}</div>
+              <h1>Justificativa ${action === 'approve' ? 'Aprovada' : 'Rejeitada'}</h1>
+              <p>O status da justificativa de <strong>${absences[idx].vendedor}</strong> foi atualizado com sucesso.</p>
+          </div>
+      </body>
+      </html>
+    `);
+  } else {
+    res.status(404).send("Justificativa não encontrada.");
+  }
+});
+
+// Base Management Endpoints
+app.get("/api/base", async (req, res) => {
+  await syncBaseClientsFromGoogleSheet();
+  res.json({ status: "success", clients: baseClients, actions: baseActions });
+});
+
+app.post("/api/base/bulk-transfer", (req, res) => {
+  const { ids, consultor } = req.body;
+  if (!ids || !consultor) return res.status(400).json({ status: "error", message: "Missing data" });
+
+  ids.forEach((id: string) => {
+    if (!baseOverrides[id]) baseOverrides[id] = {};
+    baseOverrides[id].consultorOrigem = consultor;
+
+    const clientIndex = baseClients.findIndex(c => c.idContrato === id);
+    if (clientIndex !== -1) {
+       baseClients[clientIndex].consultorOrigem = consultor;
+    }
+  });
+
+  writeJSONDb("baseOverrides.json", baseOverrides);
+  writeJSONDb("baseClients.json", baseClients);
+
+  res.json({ status: "success" });
+});
+
+app.post("/api/base/actions", (req, res) => {
+  const action = req.body;
+  action.id = "act_" + Date.now();
+  action.dataContato = new Date().toISOString();
+  baseActions.push(action);
+  writeJSONDb("baseActions.json", baseActions);
+  writeBaseActionToGoogleSheet(action);
+
+  // IF requesting status change:
+  if (action.novoStatusContrato) {
+    if (!baseOverrides[action.idContrato]) baseOverrides[action.idContrato] = {};
+    baseOverrides[action.idContrato].status = action.novoStatusContrato;
+    writeJSONDb("baseOverrides.json", baseOverrides);
+
+    const clientIndex = baseClients.findIndex(c => c.idContrato === action.idContrato);
+    if (clientIndex !== -1) {
+       baseClients[clientIndex].status = action.novoStatusContrato;
+       writeJSONDb("baseClients.json", baseClients);
+    }
+  }
+
+  res.json({ status: "success" });
+});
+
+app.post("/api/base/sync", async (req, res) => {
+  try {
+    lastBaseSyncTime = 0; // force renew
+    await syncBaseClientsFromGoogleSheet();
+    res.json({ status: "success", count: baseClients.length });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+app.post("/api/base/batch", (req, res) => {
+  const { operation, rawData } = req.body;
+  if (!rawData || typeof rawData !== "string") {
+    return res.status(400).json({ status: "error", message: "invalid rawData" });
+  }
+
+  const rows = rawData.split("\n").map(r => r.split("\t").map(c => c.trim()));
+  let count = 0;
+
+  for (const row of rows) {
+    if (row.length < 5) continue; // Skip if less than minimal cols
+
+    const consultorOrigem = cleanConsultorName(row[0] || "");
+    const nome = row[1] || "";
+    const planoProd = row[2] || "MHNET Fibra 400Mbps";
+    const status = row[3] || "Ativo";
+    const telefoneExterno = row[4] || "";
+    const cpf = row[5] || "";
+    const endereco = row[6] || "";
+    const cidadeRaw = row[7] || "";
+    const bairro = row[8] || "";
+    let cidade = cidadeRaw.split("-")[0].trim();
+    if (cidade) cidade = cidade.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+
+    if (!nome) continue;
+
+    const idContrato = `MHN${String(cpf).replace(/\D/g, '').substring(0, 8)}_${Math.floor(Math.random()*1000)}`;
+    const velocidadeMb = extractMbFromPlano(planoProd) || 400;
+
+    const existingIndex = baseClients.findIndex(c => 
+      c.nome.toLowerCase() === nome.toLowerCase() || 
+      (c.CPF && cpf && String(c.CPF).replace(/\D/g,'') === String(cpf).replace(/\D/g,''))
+    );
+
+    if (operation === "upsert") {
+      if (existingIndex !== -1) {
+        baseClients[existingIndex] = {
+           ...baseClients[existingIndex],
+           status, plano: planoProd, velocidadeMb, telefoneExterno, cidade, bairro, endereco, cpf
+        };
+      } else {
+        baseClients.push({
+          idContrato,
+          nome,
+          plano: planoProd,
+          status,
+          velocidadeMb,
+          cidade: cidade || "Lajeado",
+          cpf,
+          bairro,
+          endereco,
+          telefoneExterno,
+          consultorOrigem,
+          valor: 99.90, // Defaults because it's not in the paste format
+          dataAtivacao: new Date().toISOString()
+        });
+      }
+      count++;
+    } else if (operation === "delete") {
+      if (existingIndex !== -1) {
+        baseClients.splice(existingIndex, 1);
+        count++;
+      }
+    }
+  }
+
+  writeJSONDb("baseClients.json", baseClients);
+  res.json({ status: "success", count });
+});
+
+app.post("/api/leads/sync", async (req, res) => {
+  try {
+    lastLeadsSyncTime = 0; // force renew
+    await syncLeadsFromGoogleSheet();
+    res.json({ status: "success", count: leads.length });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+app.post("/api/ftta/sync", async (req, res) => {
+  try {
+    lastFttaSyncTime = 0; // force renew
+    await syncFttaFromGoogleSheet();
+    res.json({ 
+      status: "success", 
+      sitesCount: fttaItems.length, 
+      prospeccoesCount: fttaProsps.length 
+    });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// Cobrancas Endpoints
+app.get("/api/cobrancas", async (req, res) => {
+  await syncCobrancasFromGoogleSheet();
+  res.json({ status: "success", cobrancas });
+});
+
+app.post("/api/cobrancas", (req, res) => {
+  const payload = req.body;
+  const existingIndex = cobrancas.findIndex(c => c.idContrato === payload.idContrato);
+  if (existingIndex !== -1) {
+    cobrancas[existingIndex] = {
+      ...cobrancas[existingIndex],
+      ...payload
+    };
+  } else {
+    cobrancas.push({
+      ...payload,
+      historicoContatos: payload.historicoContatos || []
+    });
+  }
+  writeJSONDb("cobrancas.json", cobrancas);
+  res.json({ status: "success" });
+});
+
+app.post("/api/cobrancas/disparar-n8n", async (req, res) => {
+  const { clientes } = req.body;
+  if (!Array.isArray(clientes)) {
+    return res.status(400).json({ status: "error", message: "Clientes deve ser um array" });
+  }
+
+  // Marcar como "Em Fila" no cache interno (vai refletir no UI imediatamente)
+  const idsToMark = new Set(clientes.map(c => c.codigo_cliente));
+  cobrancas = cobrancas.map(c => {
+    if (idsToMark.has(c.idContrato)) {
+      return { ...c, statusEnvio: "Em Fila" };
+    }
+    return c;
+  });
+  writeJSONDb("cobrancas.json", cobrancas);
+
+  // Payload pro n8n:
+  if (process.env.PAUSE_ALL_N8N_WEBHOOKS === "true" || process.env.PAUSE_COBRANCAS_JOB === "true") {
+    return res.status(400).json({ status: "error", message: "Disparo pausado pelas configurações do administrador." });
+  }
+
+  const isTest = process.env.USE_N8N_TEST_COBRANCAS === "true";
+  const n8nUrl = isTest 
+    ? (process.env.N8N_TEST_WEBHOOK_URL_COBRANCAS || "https://lake-elective-scoured.ngrok-free.dev/webhook-test/cobranca")
+    : (process.env.N8N_WEBHOOK_URL_COBRANCAS || "https://lake-elective-scoured.ngrok-free.dev/webhook/cobranca"); 
+
+  try {
+    console.log(`[DEBUG n8n Cobranças] URL Alvo: ${n8nUrl} (Modo Teste: ${isTest})`);
+    console.log(`[DEBUG n8n Cobranças] Payload (${clientes.length} clientes):`, JSON.stringify({ clientes }, null, 2));
+
+    const response = await fetch(n8nUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clientes })
+    });
+    
+    const textResponse = await response.text().catch(() => "");
+    console.log(`[DEBUG n8n Cobranças] Status Response: ${response.status}`);
+    console.log(`[DEBUG n8n Cobranças] Body Response: ${textResponse}`);
+
+    if (!response.ok) {
+      throw new Error(`N8N respondeu com erro: ${response.status} - ${textResponse}`);
+    }
+    res.json({ status: "success", count: clientes.length, n8n_response: textResponse });
+  } catch (error: any) {
+    console.error(`[DEBUG n8n Cobranças] Erro EXCEPTION:`, error);
+    res.status(500).json({ status: "error", message: "Falha ao comunicar com n8n.", details: error.message });
+  }
+});
+
+app.post("/api/cobrancas/import", (req, res) => {
+  const { list, overwrite } = req.body;
+  if (!Array.isArray(list)) {
+     return res.status(400).json({ status: "error", message: "Data list must be an array" });
+  }
+
+  if (overwrite) {
+    cobrancas = list;
+  } else {
+    list.forEach((newC: any) => {
+      const idx = cobrancas.findIndex(c => c.idContrato === newC.idContrato);
+      if (idx !== -1) {
+        cobrancas[idx] = { ...cobrancas[idx], ...newC };
+      } else {
+        cobrancas.push(newC);
+      }
+    });
+  }
+
+  writeJSONDb("cobrancas.json", cobrancas);
+  res.json({ status: "success", count: cobrancas.length });
+});
+
+app.post("/api/cobrancas/log", (req, res) => {
+  const { idContrato, operador, tipo, descricao, contatoEfetivo, acordoFirmado, motivoInadimplencia } = req.body;
+  const cobranca = cobrancas.find(c => c.idContrato === idContrato);
+  if (cobranca) {
+    if (!cobranca.historicoContatos) cobranca.historicoContatos = [];
+    const dateStr = new Date().toLocaleDateString("pt-BR") + " " + new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    cobranca.historicoContatos.unshift({
+      dataLog: dateStr,
+      operador: operador || "Sistema",
+      tipo: tipo || "WhatsApp",
+      descricao: descricao || "",
+      contatoEfetivo,
+      acordoFirmado,
+      motivoInadimplencia
+    });
+    writeJSONDb("cobrancas.json", cobrancas);
+    res.json({ status: "success", cobranca });
+  } else {
+    res.status(404).json({ status: "error", message: "Cobrança não encontrada" });
+  }
+});
+
+// Generate Cobranca personalized pitch message via Gemini AI
+app.post("/api/gemini/generateCobrancaMessage", async (req, res) => {
+  const { client } = req.body;
+  if (!client) {
+    return res.status(400).json({ status: "error", message: "Client is required" });
+  }
+
+  try {
+    const prompt = `Gere uma mensagem amigável, educada e altamente persuasiva para envio via WhatsApp para este cliente com pendência financeira:
+- Nome: ${client.nomeCliente || "Cliente"}
+- Plano de Internet: ${client.plano || "MHNET Fibra"}
+- Valor da Pendência: R$ ${Number(client.valor || 0).toFixed(2)}
+- Vencido em: ${client.dataVencimento || "Data Recente"}
+- Dias de Atraso: ${client.diasAtraso || 0} dias
+
+Orientações:
+- Seja extremamente empático e amigável (não queremos ofender nem parecer agressivos). Ele é um cliente valioso da nossa comunidade.
+- Ofereça uma alternativa rápida como pagamento via Pix para reestabelecimento IMEDIATO da velocidade total da fibra ou manutenção normal do serviço. Use o sotaque amigável do Sul / Vale do Taquari.
+- Diga que o suporte técnico da MHNET está pronto para auxiliá-lo se houver algum problema.
+- Use emojis regionais gaúchos ou profissionais (😊, 🤝, 📶, 💙).
+- Máximo de 7 linhas.`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+      },
+    });
+
+    const reply = response.text;
+    res.json({ status: "success", text: reply, answer: reply });
+  } catch (error: any) {
+    logGeminiFallback("CobrancaMessage", error);
+    const fallback = `Olá, ${client.nomeCliente || "Cliente"}! Tudo bem? 😊 Passando aqui de forma bem amigável para lembrar que o vencimento da sua fatura MHNET de R$ ${Number(client.valor || 0).toFixed(2)} foi em ${client.dataVencimento}. Conseguimos te mandar a chave Pix por aqui para facilitar o acerto hoje? Se precisar de ajuda, conte com a gente no Vale do Taquari! 💙📶`;
+    res.json({
+      status: "success",
+      text: fallback,
+      answer: fallback,
+    });
+  }
+});
+
+// Proxy route for Google Apps Script to bypass CORS and hide API details
+app.post("/api/proxy", async (req, res) => {
+  const { route, payload } = req.body;
+  if (!route) {
+    return res.status(400).json({ status: "error", message: "Route is required" });
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+    const gasResponse = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json", "ngrok-skip-browser-warning": "true"
+      },
+      body: JSON.stringify({ route, payload }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!gasResponse.ok) {
+      throw new Error(`Google Apps Script returned status ${gasResponse.status}`);
+    }
+
+    const text = await gasResponse.text();
+    try {
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error("Failed to parse JSON from Apps Script. Response was:", text.substring(0, 100));
+        throw new Error("A integração com a Planilha Google retornou uma página de erro ao invés de dados. Verifique a implantação do Apps Script.");
+      }
+      return res.json(data);
+    } catch (e) {
+      return res.json({ status: "success", message: "Processed but response was not JSON."});
+    }
+  } catch (error: any) {
+    console.error(`Erro ao rotear a requisição "${route}":`, error.message);
+    return res.status(502).json({
+      status: "error",
+      message: `Failed to communicate with Google Sheets server: ${error.message}`,
+    });
+  }
+});
+
+// Objection combat endpoint
+app.post("/api/gemini/combatObjection", async (req, res) => {
+  const { objection } = req.body;
+  if (!objection) {
+    return res.status(400).json({ status: "error", message: "Objection is required" });
+  }
+
+  try {
+    const prompt = `Um cliente em Lajeado/Estrela argumentou a seguinte objeção: "${objection}".
+Gere uma contramedida persuasiva e empática em até 4 linhas para desarmar a objeção e reatar a negociação.`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+      },
+    });
+
+    const reply = response.text;
+    return res.json({ status: "success", text: reply, answer: reply });
+  } catch (error: any) {
+    checkAndMarkLeakedKey(error);
+    console.info("[IA Fallback] Usado fallback devido à cota de API ou erro.");
+    const fallback = `Olha, compreendo perfeitamente o seu ponto! Na MHNET oferecemos instalação ultrarrápida, planos sem surpresas no fim do mês e um suporte técnico local em poucas horas na sua casa. Vamos experimentar pelo menos testar sem compromisso?`;
+    return res.json({
+      status: "success",
+      message: "Erro ao gerar resposta da IA. Use o script padrão.",
+      text: fallback,
+      answer: fallback,
+    });
+  }
+});
+
+// Generate personalized contact approach based on plan, arguments and history
+app.post("/api/gemini/analyzeBaseChurn", async (req, res) => {
+  const { topCancelamentos, topDesistencias, totalCancelamentos, totalDesistencias } = req.body;
+
+  try {
+    const prompt = `Atue como um analista de dados e estrategista de retenção (Customer Success) para a MHNET Fibra (Provedor de Internet Regional no Rio Grande do Sul).
+
+Temos os seguintes dados de CHURN e DESISTÊNCIA da nossa base de clientes:
+
+Total de Cancelamentos Contabilizados: ${totalCancelamentos}
+Top Motivos de Cancelamento (Texto bruto):
+${topCancelamentos}
+
+Total de Desistências/Inviabilidades Contabilizadas: ${totalDesistencias}
+Top Motivos de Desistência/Inviabilidades (Texto bruto):
+${topDesistencias}
+
+Por favor, faça uma análise sintética, com viés acionável e focada em resultados. Sua análise deve conter:
+1. **Diagnóstico Principal**: O que os dados dizem sobre o motivo principal da nossa perda de clientes (churn) e desistências antes da instalação? Há algum padrão de preço, atendimento, falha técnica, viabilidade (caixa lotada, sem rede) ou concorrência?
+2. **Plano de Ação (3 Passos)**: Três ações rápidas e práticas que a equipe técnica / retenção / vendas pode tomar na próxima semana para mitigar estes ofensores e blindar a base contra esses motivos específicos.
+
+Seja direto, profissional, e formate sua resposta em Markdown. Sem textão.`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+      },
+    });
+
+    return res.json({ status: "success", text: response.text });
+  } catch (error: any) {
+    logGeminiFallback("BaseChurn", error);
+    const fallbackReport = `### Diagnóstico de Churn da Base (Modo Local Seguro)
+A análise dos dados indica que os principais motivos de desligamento de clientes baseiam-se na combinação de **Fatores de Concorrência** (provedores menores oferecendo descontos agressivos) e **Inviabilidade de Atendimento** (falhas técnicas pontuais ou indisponibilidade de slots de fibra/portas na CTO).
+
+### Plano Estratégico em 3 Passos
+1. **Auditoria Expressa de Portas**: Mutirão do time de operações para mapear e expandir portas no Vale do Taquari.
+2. **Blitz de Retenção Comercial**: Oferta proativa de upgrade com desconto de 15% para clientes de longa data.
+3. **Campanha Local**: Reforçar o suporte técnico local e confiável como grande valor da MHNET.`;
+    return res.json({ status: "success", text: fallbackReport });
+  }
+});
+
+app.post("/api/gemini/generateApproach", async (req, res) => {
+  const { nomeLead, provedor, planoAtual, valorPlano, observacao, cidade, bairro, status, objecao } = req.body;
+
+  try {
+    const prompt = `Analise os seguintes dados gerais de um lead do Vale do Taquari/RS (Lajeado, Estrela e região) para formular uma estratégia e roteiro de venda matador.
+Nome do Lead: ${nomeLead || "Não informado"}
+Endereço / Localização: ${bairro || "Bairro não informado"} em ${cidade || "Cidade não informada"}
+Status Atual no Funil: ${status || "Não informado"}
+Provedor de Internet Atual: ${provedor || "Não informado"}
+Plano Atual: ${planoAtual || "Não informado"}
+Valor Pago Atualmente: ${valorPlano ? `R$ ${valorPlano}` : "Não informado"}
+Objeções Registradas: "${objecao || "Nenhuma objeção"}"
+Histórico do Atendimento (Anotações do Vendedor): "${observacao || "Nenhum histórico registrado"}"
+
+Este é um lead da MHNET TELECOM. Por favor, forneça uma análise estruturada lendo e consolidando ABSOLUTAMENTE TODOS OS FATOS E DADOS ACIMA (incluindo o que o corretor anotou no histórico) e retorne o seguinte formato:
+
+1. **Raio-X da Negociação:**
+Breve análise apontando os pontos fracos da concorrente atual (${provedor || "outro provedor"}), o que o cliente reclamou ou comentou nas anotações, e qual deve ser o foco argumentativo.
+
+2. **Roteiro de Abordagem Sugerido (WhatsApp):**
+Um texto pronto, amigável (tom gaúcho da região, sem exageros), focado em quebrar o gelo. A abordagem deve bater exatamente na dor identificada no "Histórico do Atendimento" e na "Objeção". Cite a presença forte e o suporte rápido da MHNET na cidade dele (${cidade || "na região"}).
+
+Responda de forma direta. Formatação em Markdown. Sem textão introdutório.`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+      },
+    });
+
+    const reply = response.text || "";
+    return res.json({ status: "success", text: reply });
+  } catch (error: any) {
+    logGeminiFallback("Approach", error);
+    const fallback = `*Olá, ${nomeLead || "tudo bem"}!* 😄\n\nSou consultor da MHNET aqui na região. Dei uma olhada no nosso histórico e vi que estávamos conversando sobre sua internet (você comentou que usava ${provedor || "outra operadora"}).\n\nQueria te contar que estamos com ofertas incríveis de Fibra Óptica essa semana com instalação grátis e suporte técnico presencial super ágil aqui em Lajeado e Estrela. Como está a qualidade da sua internet ultimamente? Vamos retomar nosso papo sem compromisso?`;
+    return res.json({
+      status: "success",
+      message: "Erro ao gerar resposta da IA.",
+      text: fallback,
+    });
+  }
+});
+
+// Custom Upgrade pitch generation handler for both endpoints
+const generateMessageAndPitchHandler = async (req: any, res: any) => {
+  const { clientData, client } = req.body;
+  const targetClient = clientData || client;
+  if (!targetClient) {
+    return res.status(400).json({ status: "error", message: "Client data is required" });
+  }
+
+  try {
+    const prompt = `Gere uma abordagem de WhatsApp personalizada de upgrade/retenção para o seguinte cliente:
+- Nome: ${targetClient.nome || targetClient.nomeLead || "Cliente"}
+- Plano atual: ${targetClient.plano || targetClient.provedor || "Nível Básico"}
+- Valor do plano: R$ ${Number(targetClient.valor || 0).toFixed(2)}
+- Meses de casa: ${targetClient.meses || 12} meses
+- Cidade: ${targetClient.cidade || targetClient.bairro || "Lajeado"}
+
+Orientações:
+- Cumprimente calorosamente pelo nome.
+- Valorize e agradeça a fidelidade de estar com a gente.
+- Ofereça um Upgrade com argumentos vantajosos e de forma descontraída ( regional de LRS / gaúcha ).
+- Ofereça também de forma breve que temos planos celular móvel, Wi-Fi integrado, ou TV MHPlay se precisar.
+- Máximo 8 linhas, use emojis (😊, 🚀, 📶, 💙).`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+      },
+    });
+
+    const reply = response.text;
+    return res.json({ status: "success", text: reply, answer: reply });
+  } catch (error: any) {
+    logGeminiFallback("UpgradeMessage", error);
+    const fallback = `Olá ${targetClient.nome || targetClient.nomeLead || "Cliente"}! Tudo bem? 😊 Aqui é da MHNET. Vimos que você já está conosco e por isso liberamos um upgrade especial para você navegar com muito mais velocidade e estabilidade! Que tal darmos uma olhada sem mexer no seu orçamento? Abraço!`;
+    return res.json({
+      status: "success",
+      message: "Fallback de mensagem por lentidão ou falta de chave.",
+      text: fallback,
+      answer: fallback,
+    });
+  }
+};
+
+app.post("/api/gemini/generateMessage", generateMessageAndPitchHandler);
+app.post("/api/gemini/generatePitch", generateMessageAndPitchHandler);
+
+// Coach tip generation
+app.post("/api/gemini/coach", async (req, res) => {
+  try {
+    const prompt = "Dê uma frase motivacional curta, poderosa e inspiradora para um vendedor de internet no porta a porta de campo hoje. Máximo 2 linhas.";
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+      },
+    });
+
+    const reply = response.text;
+    return res.json({ status: "success", text: reply, answer: reply });
+  } catch (error: any) {
+    logGeminiFallback("Coach", error);
+    const fallback = "O sucesso no porta a porta não reside em quem atende primeiro, mas na persistência do próximo 'Sim'! Vá firme que hoje a colheita é certa! 🚀💪";
+    return res.json({
+      status: "success",
+      text: fallback,
+      answer: fallback,
+    });
+  }
+});
+
+app.post("/api/gemini/analyzeSentiment", async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.json({ status: "success", text: "Nenhuma observação ainda." });
+  try {
+    const prompt = `Analise o seguinte texto de observação de um vendedor sobre um lead (cliente prospect) de provedor de internet:
+"${text}"
+
+Retorne o "tom" e uma breve análise do sentimento. Seja extremamente curto, no formato:
+Tom: [Emoção predominante - ex: Receptivo, Frustrado, Irritado, Desinteressado, Curioso]
+Ação Sugerida: [Uma linha curta de conselho].`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    return res.json({ status: "success", text: response.text });
+  } catch (error: any) {
+    logGeminiFallback("AnalyzeSentiment", error);
+    return res.json({ status: "success", text: "Tom: Neutro\nAção Sugerida: Tente contato em outro horário e aborde de forma amigável." });
+  }
+});
+
+app.post("/api/gemini/combatObjectionTrio", async (req, res) => {
+  const { objection, provedor, planoAtual, valorPlano } = req.body;
+  try {
+    const prompt = `O cliente de internet (provedor atual: ${provedor || "não informado"}, pagando R$${valorPlano || "não informado"}) levantou a seguinte objeção: "${objection}".
+Gere EXATAMENTE 3 opções curtas de resposta para o vendedor PAP da MHNET usar no WhatsApp ou presencial. O formato obrigatório é JSON:
+[
+  { "type": "Emocional", "text": "resposta focada em gerar conexão e empatia" },
+  { "type": "Direta", "text": "resposta objetiva e matadora focada em resolver o problema" },
+  { "type": "Técnica", "text": "resposta que foca na superioridade da rede fibra ótica, latência e estabilidade" }
+]`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+    return res.json({ status: "success", responses: JSON.parse(response.text) });
+  } catch (error: any) {
+    logGeminiFallback("CombatObjectionTrio", error);
+    return res.json({ status: "success", responses: [
+      { type: "Empática", text: "Entendo perfeitamente, muitos clientes também pensavam assim antes de conhecerem nossa instalação ágil e suporte local." },
+      { type: "Direta", text: "Na MHNET você tem suporte presencial rápido, diferentemente da maioria dos provedores que demoram dias para atender." },
+      { type: "Técnica", text: "Nossa fibra ponta-a-ponta garante latência baixíssima, sem as quedas frequentes." }
+    ]});
+  }
+});
+
+app.post("/api/gemini/leadSummary", async (req, res) => {
+  const { lead } = req.body;
+  try {
+    const prompt = `Analise os dados deste lead de internet fibra da MHNET:
+Nome: ${lead.nomeLead || ""}
+Cidade/Bairro: ${lead.cidade || ""} - ${lead.bairro || ""}
+Provedor Atual: ${lead.provedor || ""}
+Observações/Histórico: ${lead.observacao || ""}
+Status Funil: ${lead.status || ""}
+
+Gere um resumo executivo de exatas 3 linhas.
+Linha 1: "Lead [Nome], de [Cidade], usa [Provedor]."
+Linha 2: "Último contato foi sobre [Assunto]."
+Linha 3: "Sugerimos abordagem com foco em [Ação/Argumento]."`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    return res.json({ status: "success", text: response.text });
+  } catch (error: any) {
+    logGeminiFallback("LeadSummary", error);
+    return res.json({ status: "success", text: "Lead com perfil neutro e necessidade de contato de reaproximação.\nO último contato não registrou barreiras fortes.\nSugerimos abordagem com foco em instalação grátis." });
+  }
+});
+
+app.post("/api/gemini/generatePlanosPitch", async (req, res) => {
+  const { planos, isMultiple } = req.body;
+  if (!planos || !Array.isArray(planos)) {
+    return res.status(400).json({ status: "error", message: "Planos array is required" });
+  }
+
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      logGeminiFallback("PlanosPitch", new Error("No API Key"));
+      return res.json({ status: "success", text: "Aqui estão as opções de planos que selecionei para você: " + planos.map((p: any) => p.nome).join(", ") });
+    }
+
+    const planosTxt = planos.map((p: any) => `- ${p.nome} (Cód: ${p.codigo || "S/N"}): ${p.valorAd || p.valor}`).join("\n");
+    const prompt = `Você é um vendedor de internet da MHNET Telecom, focado em fechar vendas e ser muito educado, claro e atrativo no WhatsApp.
+Crie uma mensagem curta, amigável e com emojis para enviar para um cliente pelo WhatsApp.
+O objetivo é apresentar a(s) seguinte(s) opção(ões) de plano(s) que você selecionou especialmente para ele:
+${planosTxt}
+
+A mensagem deve:
+1. Começar com uma saudação calorosa.
+2. Destacar que são as melhores opções para o perfil dele.
+3. Listar os planos de forma clara e legível.
+4. Terminar com uma pergunta fechada para incentivar a resposta (ex: "Qual dessas opções se encaixa melhor para você?").
+5. Não incluir placeholders como "[Nome do Cliente]", apenas criar um texto pronto para envio.
+Não seja longo demais.`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    return res.json({ status: "success", text: response.text });
+  } catch (error: any) {
+    logGeminiFallback("PlanosPitch", error);
+    return res.json({ status: "success", text: "Aqui estão as opções de planos que selecionei para você:\n" + planos.map((p: any) => p.nome).join("\n") });
+  }
+});
+
+app.post("/api/gemini/suggestBasePlanos", async (req, res) => {
+  const { valorAtual } = req.body;
+  if (!valorAtual) {
+    return res.status(400).json({ status: "error", message: "valorAtual is required" });
+  }
+
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      logGeminiFallback("SuggestPlanos", new Error("No API Key"));
+      return res.json({ status: "success", suggestions: [] });
+    }
+
+    const SPREADSHEET_ID = "19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w";
+    const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&headers=1&sheet=Planos&t=${Date.now()}`;
+    const sheetsRes = await fetch(url);
+    const csvData = await sheetsRes.text();
+
+    const currentValNum = parseFloat(String(valorAtual).replace(",", "."));
+
+    const prompt = `Você é um especialista em retenção e vendas de planos de internet.
+Um cliente da base paga atualmente R$ ${currentValNum.toFixed(2)} por mês.
+Aqui está a tabela CSV de planos disponíveis:
+${csvData}
+
+Sua tarefa é encontrar EXATAMENTE 3 planos que sirvam como opções de upsell, baseados nestas faixas:
+1. "Premium Combo": Custe ATÉ R$ 40 a mais (idealmente combo de Internet + móvel ou TV).
+2. "Intermediário": Custe entre R$ 10 e R$ 20 a mais.
+3. "Leve": Custe entre R$ 1 e R$ 5 a mais.
+
+Se não houver planos exatos nessas faixas, escolha o plano mais próximo de upsell disponível. Se o plano atual já for muito alto, apenas sugira as melhores opções de valor agregado que superem um pouco o valor atual.
+
+Formato OBRIGATÓRIO de saída é APENAS UM ARRAY JSON com 3 objetos, nada mais, sem markdown (\`\`\`):
+[
+  { "tipo": "Premium Combo (Até +R$40)", "nomePlano": "Nome...", "valor": "129.90", "motivo": "Curto motivo de venda..." },
+  { "tipo": "Intermediário (+R$10 a +R$20)", "nomePlano": "Nome...", "valor": "99.90", "motivo": "Curto motivo de venda..." },
+  { "tipo": "Leve (+R$1 a +R$5)", "nomePlano": "Nome...", "valor": "79.90", "motivo": "Curto motivo de venda..." }
+]
+`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    let text = response.text || "[]";
+    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    let json = [];
+    try {
+      json = JSON.parse(text);
+    } catch(e) {
+      console.error("[SuggestPlanos] Erro ao analisar a resposta da IA", text);
+    }
+    
+    return res.json({ status: "success", suggestions: json });
+  } catch (error: any) {
+    logGeminiFallback("SuggestPlanos", error);
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// Chat endpoint
+app.post("/api/gemini/chat", async (req, res) => {
+  const { message, history } = req.body;
+  if (!message) {
+    return res.status(400).json({ status: "error", message: "Message is required" });
+  }
+
+  try {
+    // Basic chat utility, pass full context
+    const rawContents = [];
+    if (history && Array.isArray(history) && history.length > 0) {
+      history.slice(-10).forEach((item: any) => {
+        rawContents.push({
+          role: item.role === "user" ? "user" : "model",
+          text: item.text,
+        });
+      });
+    } else {
+      rawContents.push({
+        role: "user",
+        text: message,
+      });
+    }
+
+    const chatContents: any[] = [];
+    for (const msg of rawContents) {
+      const last = chatContents[chatContents.length - 1];
+      if (last && last.role === msg.role) {
+        last.parts[0].text += "\n" + msg.text;
+      } else {
+        chatContents.push({ role: msg.role, parts: [{ text: msg.text }] });
+      }
+    }
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: chatContents,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+      },
+    });
+
+    const reply = response.text;
+    return res.json({ status: "success", text: reply, answer: reply });
+  } catch (error: any) {
+    logGeminiFallback("Chat", error);
+    const fallback = "Sinto muito, meu sistema de inteligência artificial de vendas está passando por uma manutenção. Como posso ajudar com os planos da MHNET de forma tradicional?";
+    return res.json({
+      status: "success",
+      message: "Falha na comunicação com a IA.",
+      text: fallback,
+      answer: fallback,
+    });
+  }
+});
+
+app.get("/api/gemini/status", (req, res) => {
+  res.json({
+    status: "success",
+    isLeaked: isGeminiKeyLeaked,
+    errorMessage: geminiErrorMessage,
+    hasKey: true
+  });
+});
+
+// Competitor AI Helper
+app.post("/api/gemini/analyzeCompetitor", async (req, res) => {
+  const { name, question, mhnetVantagem } = req.body;
+  if (!name) {
+    return res.status(400).json({ status: "error", message: "Competitor name is required" });
+  }
+
+  try {
+    const prompt = question 
+      ? `Sobre o concorrente ${name} em Lajeado/RS: ${question}. Lembre que nossa vantagem da MHNET vs ele é: ${mhnetVantagem || "atendimento local, sem multa escondida"}`
+      : `Crie um argumento de vendas/comparativo matador contra o concorrente ${name}. Cite 2 desvantagens típicas dele (como suporte lento de callcenter e taxas ocultas) e 2 vantagens da MHNET (suporte no mesmo dia e técnicos locais). Máximo 5 linhas.`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+      },
+    });
+
+    const reply = response.text;
+    return res.json({ status: "success", text: reply, answer: reply });
+  } catch (error: any) {
+    checkAndMarkLeakedKey(error);
+    console.info("[IA Fallback] Usado fallback devido à cota de API ou erro.");
+    const fallback = `O concorrente ${name} costuma pecar no tempo de espera do suporte e fidelidade inflada. Nós na MHNET temos o melhor atendimento presencial de Lajeado e Estrela. Aposte nisso!`;
+    return res.json({
+      status: "success",
+      text: fallback,
+      answer: fallback,
+    });
+  }
+});
+
+// Competitors CRUD and generator
+app.get("/api/competitors", (req, res) => {
+  res.json({ status: "success", competitors });
+});
+
+app.post("/api/competitors", (req, res) => {
+  const comp = req.body;
+  if (!comp.name) {
+    return res.status(400).json({ status: "error", message: "Nome do concorrente é obrigatório." });
+  }
+
+  const existingIdx = competitors.findIndex((c: any) => c.id === comp.id || c.name.toLowerCase() === comp.name.toLowerCase());
+  
+  const updatedComp = {
+    ...comp,
+    id: comp.id || `comp_${Date.now()}`,
+    _linha: comp._linha || (competitors.length + 101),
+    pros: Array.isArray(comp.pros) ? comp.pros : [],
+    cons: Array.isArray(comp.cons) ? comp.cons : [],
+    sigla: comp.sigla || comp.name.substring(0, 2).toUpperCase()
+  };
+
+  if (existingIdx > -1) {
+    competitors[existingIdx] = updatedComp;
+  } else {
+    competitors.push(updatedComp);
+  }
+
+  writeJSONDb("competitors.json", competitors);
+  res.json({ status: "success", competitor: updatedComp, competitors });
+});
+
+app.delete("/api/competitors/:id", (req, res) => {
+  const { id } = req.params;
+  competitors = competitors.filter((c: any) => c.id !== id);
+  writeJSONDb("competitors.json", competitors);
+  res.json({ status: "success", competitors });
+});
+
+app.post("/api/competitors/generate-ai-profile", async (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ status: "error", message: "Nome do concorrente é obrigatório." });
+  }
+
+  try {
+    const prompt = `Analise o concorrente de telecomunicações/internet chamado "${name}" no mercado do Rio Grande do Sul (Lajeado, Estrela e região do Vale do Taquari).
+Gere informações precisas, realistas e úteis no formato JSON com a seguinte estrutura:
+{
+  "sigla": "2 letras maiúsculas identificadoras do concorrente",
+  "cor": "um código de cor HEX representativo associado à marca do concorrente (ex: #1565c0, #ea580c, #dc2626, #10b981)",
+  "type": "tipo de tecnologia principal ex: Fibra Óptica, Via Rádio, Híbrido / Coaxial",
+  "mhnet": "Argumento matador detalhado de como a MHNET supera este concorrente específico no campo (com nosso atendimento local presencial, suporte rápido em até 24h, sem aumento abusivo após promoção)",
+  "pros": ["ponto forte realista 1", "ponto forte realista 2", "ponto forte realista 3"],
+  "cons": ["ponto fraco realista 1", "ponto fraco realista 2", "ponto fraco realista 3"]
+}
+IMPORTANTE: Retorne APENAS o objeto JSON puro e válido, sem formatações de markdown como \`\`\`json ou explicações externas. Garanta que todas as aspas estejam escapadas corretamente e que seja um JSON perfeitamente parseável.`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+      },
+    });
+
+    const reply = response.text || "";
+    // Clean reply in case of code blocks
+    let cleanText = reply.trim();
+    if (cleanText.startsWith("```json")) {
+      cleanText = cleanText.substring(7);
+    } else if (cleanText.startsWith("```")) {
+      cleanText = cleanText.substring(3);
+    }
+    if (cleanText.endsWith("```")) {
+      cleanText = cleanText.substring(0, cleanText.length - 3);
+    }
+    cleanText = cleanText.trim();
+
+    let data;
+      try {
+        data = JSON.parse(cleanText);
+      } catch (err) {
+        console.error("Failed to parse JSON from Apps Script. Response was:", cleanText.substring(0, 100));
+        throw new Error("A integração com a Planilha Google retornou uma página de erro ao invés de dados. Verifique a implantação do Apps Script.");
+      }
+    res.json({ 
+      status: "success", 
+      profile: {
+        name,
+        sigla: data.sigla || name.substring(0, 2).toUpperCase(),
+        cor: data.cor || "#1e293b",
+        type: data.type || "Fibra Óptica",
+        mhnet: data.mhnet || "Oferecemos suporte técnico no mesmo dia com equipe de instalação própria da região, sem precisar aguardar dias ou depender de terceirizados.",
+        pros: Array.isArray(data.pros) ? data.pros : ["Preço inicial baixo", "Marca conhecida"],
+        cons: Array.isArray(data.cons) ? data.cons : ["Suporte telefônico demorado", "Fidelidade complexa de cancelar"]
+      } 
+    });
+  } catch (error: any) {
+    logGeminiFallback("AnalyzeCompetitor", error);
+    // Fallback profile
+    const initials = name.substring(0, 2).toUpperCase();
+    res.json({
+      status: "success",
+      profile: {
+        name,
+        sigla: initials,
+        cor: "#1e293b",
+        type: "Fibra Óptica",
+        mhnet: "Enquanto eles utilizam suporte em call centers distantes e terceirizados, a MHNET possui loja física próxima e assistência no mesmo dia. Oferecemos mais proximidade e transparência nos contratos.",
+        pros: ["Planos comerciais básicos", "Atendimento padrão"],
+        cons: ["Instabilidades ocasionais de sinal", "Lentidão em horários de pico", "Atendimento via URA nacional demorada"]
+      }
+    });
+  }
+});
+
+// Helper logic to parse pasted protocol string
+function parseProtocolText(raw: string) {
+  if (!raw) return { protocol: "Pendente", name: "Cliente Desconhecido" };
+  
+  // Extract code from: "Protocolo 15462138"
+  const protMatch = raw.match(/Protocolo\s+(\d+)/i);
+  const protocol = protMatch ? protMatch[1] : "";
+  
+  // Extract Name (part after the last " - ")
+  const parts = raw.split(" - ");
+  let name = "";
+  if (parts.length > 0) {
+    const rawName = parts[parts.length - 1].trim();
+    if (rawName && !rawName.toUpperCase().includes("PROTOCOLO") && !rawName.toUpperCase().includes("ATIVAÇÃO")) {
+      name = rawName;
+    }
+  }
+  
+  return { 
+    protocol: protocol || "Pendente", 
+    name: name || "Cliente" 
+  };
+}
+
+// Installations Management and AI Notifications CRUD
+app.get("/api/installations", async (req, res) => {
+  await syncInstallationsFromGoogleSheet();
+  res.json({ status: "success", installations });
+});
+
+app.post("/api/installations", async (req, res) => {
+  const inst = req.body;
+  
+  // Automatic extraction or parsing if protocolRaw is supplied
+  if (inst.protocolRaw) {
+    const parsed = parseProtocolText(inst.protocolRaw);
+    inst.nomeCliente = inst.nomeCliente || parsed.name;
+    inst.observacao = inst.observacao || `Protocolo: ${parsed.protocol}`;
+    inst.telefone = inst.telefone || "Consulte o Protocolo";
+    inst.endereco = inst.endereco || "Ativação de Cliente Fibra";
+  }
+
+  if (!inst.nomeCliente) {
+    return res.status(400).json({ status: "error", message: "Nome do cliente é obrigatório ou forneça o protocolo copia-e-cola." });
+  }
+
+  // Set default values for missing fields to avoid crash
+  inst.telefone = inst.telefone || "Consulte no Protocolo";
+  inst.endereco = inst.endereco || "Endereço no Protocolo";
+  inst.cidade = inst.cidade || "Lajeado";
+  inst.planoEscolhido = inst.planoEscolhido || "Instalação FTTH MHNET";
+
+  const existingIdx = installations.findIndex((i: any) => i.id === inst.id);
+  const idValue = inst.id || `inst_${Date.now()}`;
+  const dataCriacaoValue = inst.dataCriacao || new Date().toLocaleString("pt-BR");
+
+  let aiAlert = "";
+  try {
+    const prompt = `Gere uma notificação/alerta de agendamento de instalação de internet MHNET para o vendedor: "${inst.vendedorResponsavel || "Não informado"}" e Gerente: "${inst.gerenteResponsavel || "Não informado"}".
+Dados da Instalação:
+Cliente: ${inst.nomeCliente}
+Protocolo Informativo: "${inst.observacao || "MHNET"}"
+Plano/Observação: "${inst.planoEscolhido || "Instalação de Fibra"}"
+Data da Instalação: ${inst.dataAgendamento} (Turno Slot: ${inst.slotIndex || "Manhã"})
+Cidade/Região: ${inst.cidade}
+
+Escreva uma análise direta contendo:
+1. **⚠️ Alerta Técnico & Comercial**: RISCOS da instalação nessa localidade (${inst.cidade}) e o que o consultor comercial precisa ficar atento para garantir o sucesso operacional.
+2. **📲 Mensagem Pronta de Aviso (WhatsApp)**: Texto entusiasta para o consultor mandar no grupo e no privado do vendedor/gerente confirmando que foi agendada com sucesso pela equipe comercial.
+
+Foque no atendimento presencial local MHNET Fibra!`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+      },
+    });
+
+    aiAlert = response.text || "";
+  } catch (err: any) {
+    logGeminiFallback("TechnicalAlarm", err);
+    const seller = inst.vendedorResponsavel || "Vendedor";
+    const manager = inst.gerenteResponsavel || "Gerente";
+    aiAlert = `**⚠️ Alerta Técnico & Comercial**: Agendamento de instalação inserido com sucesso pela equipe de loja. Planeje a rota prévia com o time técnico comercial local para garantir as portas de Fibra MHNET do quadro.
+ 
+**📲 Mensagem Pronta de Aviso (WhatsApp)**:
+*Prezada equipe MHNET!* 📶🚀
+Novo agendamento de Instalação cadastrado com sucesso!
+👤 *Cliente:* ${inst.nomeCliente}
+📅 *Data:* ${inst.dataAgendamento} (Espaço Turno Slot: ${inst.slotIndex || "Turno Selecionado"})
+*Vendedor:* ${seller} | *Gerente:* ${manager}
+_Vamos acompanhar juntos o sucesso desta ativação!_ MHNET Fibra Lajeado/Estrela 💙`;
+  }
+
+  const updatedInst = {
+    ...inst,
+    id: idValue,
+    dataCriacao: dataCriacaoValue,
+    aiNotificationMessage: aiAlert
+  };
+
+  if (existingIdx > -1) {
+    installations[existingIdx] = updatedInst;
+  } else {
+    installations.push(updatedInst);
+  }
+
+  writeJSONDb("installations.json", installations);
+
+  // Background write-back to Google Sheet tab "Agenda Instalação"
+  writeInstallationToGoogleSheet(updatedInst, "save").catch(e => console.error("[SYNC] Erro de gravação em POST de instalações:", e));
+
+  let webhookStatus = null;
+  // Trigger n8n webhook
+  try {
+    let n8nUrl = resolveN8nWebhookUrl(
+      process.env.N8N_WEBHOOK_URL,
+      "https://sua-url-ngrok.ngrok-free.dev/webhook-test/novo-agendamento",
+      "novo-agendamento",
+      process.env.N8N_TEST_WEBHOOK_URL,
+      process.env.USE_N8N_TEST_AGENDAMENTO
+    );
+
+    // Auto-append path if missing
+    if (!n8nUrl.includes("/webhook/novo-agendamento") && !n8nUrl.includes("/webhook-test/novo-agendamento") && !n8nUrl.includes("novo-agendamento")) {
+      n8nUrl = n8nUrl.replace(/\/$/, "") + "/webhook/novo-agendamento";
+    }
+
+    if (n8nUrl && !n8nUrl.includes("localhost:5678") && !n8nUrl.includes("sua-url-ngrok")) {
+      try {
+        const response = await fetch(n8nUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({
+            ...updatedInst,
+            telefone: formatWhatsAppNumber(updatedInst.telefone, true),
+            vendedor_telefone: vendors.find((v: any) => v.nome === updatedInst.vendedorResponsavel)?.telefone ? formatWhatsAppNumber(vendors.find((v: any) => v.nome === updatedInst.vendedorResponsavel)!.telefone, true) : "",
+            mensagem_cliente: `Olá, ${updatedInst.nomeCliente}! Aqui é da MHNET Lajeado/Estrela. O seu agendamento de instalação da fibra óptica ${updatedInst.planoEscolhido || ''} está confirmado para o dia ${updatedInst.dataAgendamento || ''}.\n\nInstruções:\n- Tenha alguém maior de 18 anos no local.\n- Deixe o local da instalação desobstruído.\n- Fique atento ao telefone, nosso técnico ligará avisando quando estiver a caminho.\n\nQualquer dúvida, estamos à disposição!`,
+            mensagem_vendedor: `✅ Novo Agendamento de Instalação Realizado!
+
+📌 *Protocolo MHNET*
+${updatedInst.protocolRaw ? updatedInst.protocolRaw.trim() : `Protocolo - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cliente - ${updatedInst.nomeCliente.toUpperCase()}
+
+CPF:
+Endereço: ${updatedInst.endereco}
+Bairro:
+Cidade: ${updatedInst.cidade}
+
+Vendedor / Consultor: ${updatedInst.vendedorResponsavel}
+
+Telefone do Cliente * ${updatedInst.telefone}
+
+Turno: ${updatedInst.dataAgendamento || ''}`}
+
+Fique de olho no acompanhamento pós-venda!`
+          })
+        });
+        webhookStatus = response.status;
+        const text = await response.text();
+        const bodyPreview = text.length > 200 ? text.substring(0, 200) + '...' : text;
+        console.log(`[n8n Webhook] status: ${response.status}, body: ${bodyPreview}`);
+      } catch (err: any) {
+        console.warn("[n8n Webhook] Falha ao disparar webhook:", err.message);
+        webhookStatus = 500;
+      }
+    } else if (n8nUrl.includes("localhost:5678")) {
+      console.warn("[n8n] Webhook ignorado: URL configurada como localhost. Use a URL do Ngrok na nuvem.");
+    }
+  } catch (error) {
+    console.warn("[n8n Webhook] Erro síncrono:", error);
+  }
+
+  // Adicionar automaticamente à fila de monitoramento caso seja um novo agendamento
+  if (existingIdx === -1) {
+    try {
+      const newQueueItem = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+        cliente: updatedInst.nomeCliente || "-",
+        protocolo: updatedInst.protocolRaw || updatedInst.observacao || "Criado via Agendamento",
+        vendedor: updatedInst.vendedorResponsavel || "-",
+        observacoes: "Adicionado automaticamente via painel de agendamento",
+        dataAdicao: getCurrentDateTimeFormatted(),
+        status: 'Pendente'
+      };
+      
+      localInstallationQueue.unshift(newQueueItem);
+      writeJSONDb("installationsQueue.json", localInstallationQueue);
+      
+      // Sincronizar com a planilha no background
+      writeInstallationQueueToGoogleSheet(newQueueItem, "save").catch(e => console.error("[SYNC] Erro fila monitoramento:", e));
+    } catch(err) {
+      console.error("Erro ao adicionar na fila de monitoramento automaticamente:", err);
+    }
+  }
+
+  res.json({ status: "success", installation: updatedInst, installations, webhookStatus });
+});
+
+app.post("/api/installations/sync", async (req, res) => {
+  try {
+    lastInstallationsSyncTime = 0; // force renew
+    await syncInstallationsFromGoogleSheet();
+    res.json({ status: "success", count: installations.length, installations });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+// --- Leads Frios Endpoints ---
+app.post("/api/leads-frios/move", async (req, res) => {
+  const { lead, user } = req.body;
+  if (!lead || !user) return res.status(400).json({ status: "error", message: "Missing data" });
+
+  try {
+    // 1. Remove from Acompanhamento de Lead | Abordagens (Local + GAS)
+    const deletedLinhaNum = parseInt(String(lead._linha), 10);
+    leads = leads.filter(l => String(l._linha) !== String(lead._linha));
+    leads = leads.map(l => {
+      const currentLinha = parseInt(String(l._linha), 10);
+      if (currentLinha > deletedLinhaNum) {
+        return { ...l, _linha: currentLinha - 1 };
+      }
+      return l;
+    });
+    writeJSONDb("leads.json", leads);
+    lastLeadsSyncTime = Date.now();
+    
+    // We don't need to await this, let it run in background to speed up response
+    writeLeadToGoogleSheet({ ...lead, status: "Frio" }, "save")
+      .then(() => writeLeadToGoogleSheet(lead, "delete"))
+      .catch(err => console.error("Error updating/deleting lead on move to cold:", err)); 
+
+    // 2. Add to BaseLeadsFrios_Unificada
+    const dataTransferencia = new Date().toLocaleDateString("pt-BR");
+    const userName = user.nome || user;
+    const observacaoHistorico = lead.observacao || "";
+    
+    const novoFrio = {
+      id: `LF_${Date.now()}`,
+      data: lead.dataCadastro || dataTransferencia,
+      cidade: lead.cidade || "",
+      nome: lead.nomeLead || "",
+      cpfCnpj: "",
+      endereco: lead.endereco || "",
+      telefone1: lead.telefone || "",
+      telefone2: "",
+      email: "",
+      consultor: lead.vendedor || "",
+      origem: "Acompanhamento",
+      status: "Frio",
+      convertido: "Não",
+      motivoNaoConversao: "Movido por inatividade/rejeição",
+      codigoProposta: "",
+      provedorAtual: lead.provedor || "",
+      observacao: observacaoHistorico,
+      abaOrigem: "BaseLeadsFrios_Unificada"
+    };
+
+    leadsFrios.push(novoFrio);
+    writeJSONDb("leadsFrios.json", leadsFrios);
+
+    // Try to append to GAS BaseLeadsFrios_Unificada
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      
+      const mappedFrio = {
+        "Data": novoFrio.data,
+        "Cidade": novoFrio.cidade,
+        "Nome": novoFrio.nome,
+        "CPF / CNPJ": novoFrio.cpfCnpj,
+        "Endereço": novoFrio.endereco,
+        "Telefone 1": novoFrio.telefone1,
+        "Telefone 2": novoFrio.telefone2,
+        "Email": novoFrio.email,
+        "Consultor": novoFrio.consultor,
+        "Origem": novoFrio.origem,
+        "Status": novoFrio.status,
+        "Convertido": novoFrio.convertido,
+        "Motivo da Não Conversão": novoFrio.motivoNaoConversao,
+        "Código da Proposta": novoFrio.codigoProposta,
+        "Provedor Atual": novoFrio.provedorAtual,
+        "Observação": novoFrio.observacao,
+        "Aba Origem": novoFrio.abaOrigem
+      };
+
+      await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+        body: JSON.stringify({
+          route: "appendRow",
+          payload: {
+            sheetName: "BaseLeadsFrios_Unificada",
+            item: mappedFrio
+          }
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+    } catch (e) {
+      console.warn("Could not save to leads frios GAS:", e);
+    }
+
+    res.json({ status: "success" });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+app.get("/api/leads-frios", async (req, res) => {
+  await syncLeadsFriosFromGoogleSheet();
+  res.json({ status: "success", leads: leadsFrios });
+});
+
+app.post("/api/leads-frios/sync", async (req, res) => {
+  try {
+    lastLeadsFriosSyncTime = 0;
+    await syncLeadsFriosFromGoogleSheet();
+    res.json({ status: "success", count: leadsFrios.length, leads: leadsFrios });
+  } catch (error: any) {
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+app.post("/api/gemini/analyze-lead", async (req, res) => {
+  const { lead } = req.body;
+  if (!ai) {
+    return res.status(503).json({ 
+      status: "error", 
+      message: "Serviço de IA indisponível. Verifique a chave de API (GEMINI_API_KEY).",
+      analysis: "A IA está offline no momento."
+    });
+  }
+
+  try {
+    const prompt = `Você é um especialista em vendas porta a porta (PAP) da MHNET Telecom.
+O usuário está visualizando os dados de um lead frio que foi prospectado anteriormente mas não converteu, e deseja saber a melhor abordagem.
+
+Dados do Lead:
+Nome: ${lead.nome}
+Cidade/Localidade: ${lead.cidade}
+Bairro: ${lead.bairro || "Não informado"}
+Endereço: ${lead.endereco || "Não informado"}
+Origem: ${lead.origem || lead.abaOrigem}
+Data do Registro Inicial: ${lead.data || "Não informado"}
+Motivo de não conversão anterior: ${lead.motivoNaoConversao || "Não informado"}
+Observações anteriores: ${lead.observacao || "Não informado"}
+
+Histórico de Interações/Chamadas:
+${lead.historico && lead.historico.length > 0 ? lead.historico.map((h: any) => `- [${h.data}] por ${h.consultor}: ${h.acao}`).join("\n") : "Sem interações recentes registradas."}
+
+Com base nesses dados (focando especialmente no tempo desde o registro, na cidade/região e no histórico de chamadas/interações), forneça uma análise estruturada contendo:
+1. Um resumo curto e objetivo do perfil do cliente potencial e a temperatura da negociação (baseado no histórico).
+2. Sugestões de "Quebra-Gelo" para abordar esse cliente por telefone ou WhatsApp, considerando o contexto da cidade e o tempo passado.
+3. Argumentos principais de vendas (focados em internet fibra ótica, estabilidade e planos da MHNET) baseando-se nas objeções e histórico de chamadas.
+4. Próximos passos práticos recomendados.
+
+Responda usando formatação Markdown. Seja persuasivo, encorajador e forneça exemplos práticos de roteiro/scripts.
+`;
+
+    const result = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    
+    res.json({ status: "success", analysis: result.text });
+  } catch (error: any) {
+    console.error("Erro ao analisar lead:", error);
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+app.delete("/api/installations/:id", (req, res) => {
+  const { id } = req.params;
+  const itemToDel = installations.find((i: any) => i.id === id);
+  installations = installations.filter((i: any) => i.id !== id);
+  writeJSONDb("installations.json", installations);
+
+  // Background delete from Google Sheet tab "Agenda Instalação"
+  if (itemToDel) {
+    writeInstallationToGoogleSheet(itemToDel, "delete").catch(e => console.error("[SYNC] Erro de gravação em DELETE de instalações:", e));
+  }
+
+  res.json({ status: "success", installations });
+});
+
+app.post("/api/gemini/generateRouteBriefing", async (req, res) => {
+  const { leads, loggedUser, weekMonday } = req.body;
+  if (!ai) {
+    return res.status(503).json({ 
+      status: "error", 
+      message: "AI service unavailable. Using local fallback.",
+      briefing: "A IA está offline. Concentre-se nos bairros Florestal e Centro de Lajeado hoje.",
+      rotaSemanal: []
+    });
+  }
+
+  try {
+    const prompt = `Você é o estrategista de campo da MHNET Telecom em Lajeado e Estrela.
+    O vendedor atual é: ${loggedUser}.
+    A segunda-feira da semana requisitada é: ${weekMonday || "uma data recente"}.
+    
+    CRONOGRAMA SEMANAL MANDATÓRIO DA FROTA:
+    - 10 primeiros dias do mês: focar nos bairros mais quentes.
+    - Dias 11 a 16: focar nos bairros com menos clientes.
+    - Sempre Sexta à tarde: Condomínios.
+    - Todos os Sábados: Ação Externa PDV.
+    - Dividir os dias em 2 turnos: 1 = Manhã, 2 = Tarde.
+
+    Retorne um JSON válido contendo:
+    - "briefing": texto motivacional e direcionador curto.
+    - "rotaSemanal": array com exatos 14 itens (7 dias * 2 turnos). De segunda a domingo.
+      Formato do item do array: {"dateStr": "YYYY-MM-DD", "turno": 1, "foco": "Bairro/Ação", "justificativa": "Razão"} e turno 2 para tarde. Use datas baseadas na segunda-feira fornecida.
+
+    Exemplo JSON:
+    {
+      "briefing": "...",
+      "rotaSemanal": [
+        {"dateStr": "2026-06-22", "turno": 1, "foco": "Centro - Lajeado", "justificativa": "Bairro quente"},
+        {"dateStr": "2026-06-22", "turno": 2, "foco": "Florestal - Lajeado", "justificativa": "Bairro quente"}
+      ]
+    }`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: MHNET_CONTEXT,
+        responseMimeType: "application/json",
+      },
+    });
+
+    const parsedData = JSON.parse(response.text || "{}");
+
+    return res.json({ 
+      status: "success", 
+      briefing: parsedData.briefing || "Foque nos principais bairros com alta densidade.",
+      rotaSemanal: parsedData.rotaSemanal || []
+    });
+  } catch (error: any) {
+    console.info("[IA Fallback] Rota Briefing usou fallback devido aos limites de cota da API.");
+    return res.json({
+      status: "success",
+      briefing: "Foque nos bairros Florestal (Lajeado) e Oriental (Estrela). Dê atenção a condomínios à tarde.",
+      rotaSemanal: []
+    });
+  }
+});
+
+const sessoes = new Map<string, { historico: any[]; ultimaAtividade: number }>();
+const SESSAO_TTL_MS = 30 * 60 * 1000;
+
+function obterOuCriarSessao(sessionId: string) {
+  const agora = Date.now();
+  if (sessoes.has(sessionId)) {
+    const sessao = sessoes.get(sessionId)!;
+    if (agora - sessao.ultimaAtividade > SESSAO_TTL_MS) {
+      sessoes.delete(sessionId);
+    } else {
+      sessao.ultimaAtividade = agora;
+      return sessao;
+    }
+  }
+  const novaSessao = { historico: [], ultimaAtividade: agora };
+  sessoes.set(sessionId, novaSessao);
+  return novaSessao;
+}
+
+const SYSTEM_PROMPT_ESTRATEGICO = `Você é um assistente especializado em gestão estratégica e comercial para lojas e unidades de vendas de planos de internet (ISP / provedores de telecomunicações), com foco em operações de venda porta a porta (field sales), expansão de rede FTTH e gestão por indicadores.
+
+## CONTEXTO DO NEGÓCIO
+- Consultores de vendas porta a porta (field sales)
+- Comercialização de planos de internet fibra óptica (FTTH)
+- Gestão por KPIs: adesões, ativação líquida, churn, cancelamentos evitáveis
+- Expansão de rede por demanda comercial (novos loteamentos, CTOs, splitters)
+
+## FERRAMENTAS DISPONÍVEIS
+1. SWOT — forças, fraquezas, oportunidades, ameaças
+2. 5W2H — plano de ação
+3. OKR — objetivos e resultados-chave
+4. Matriz GUT — priorização (Gravidade × Urgência × Tendência)
+5. Ciclo PDCA — planejar, executar, verificar, agir
+6. BSC (Balanced Scorecard)
+7. Diagrama de Ishikawa — análise de causa raiz
+8. Matriz BCG — portfólio de planos
+9. Kanban estratégico
+10. Kaizen / Kaikaku — melhoria de processos
+11. Matriz de Eisenhower — urgente vs importante
+12. Funil de vendas
+
+## FORMATO DE RESPOSTA
+Sempre estruture:
+**[Ferramenta aplicada]** (Se aplicável)
+**Síntese Estratégica**
+**Top 3 Ações Prioritárias** (Ação, Responsável, Prazo)
+**Indicadores para Monitorar**`;
+
+app.post("/api/agente/consulta", async (req, res) => {
+  try {
+    const { sessionId, mensagem, ferramenta } = req.body;
+    if (!sessionId || !mensagem) {
+      return res.status(400).json({ error: "sessionId e mensagem são obrigatórios." });
+    }
+
+    const sessao = obterOuCriarSessao(sessionId);
+    const textoUsuario = ferramenta ? `[Ferramenta solicitada: ${ferramenta}]\n\n${mensagem}` : mensagem;
+
+    sessao.historico.push({ role: "user", parts: [{ text: textoUsuario }] });
+
+    if (!ai) {
+      const fallbackResponse = "A inteligência artificial está temporariamente indisponível. Por favor, tente novamente mais tarde.";
+      sessao.historico.push({ role: "model", parts: [{ text: fallbackResponse }] });
+      return res.json({ resposta: fallbackResponse, provedor: "fallback", totalTurnos: sessao.historico.length / 2 });
+    }
+
+    try {
+      const response = await safeGenerateContent({
+        model: "gemini-2.5-flash",
+        contents: sessao.historico,
+        config: {
+          systemInstruction: SYSTEM_PROMPT_ESTRATEGICO,
+        },
+      });
+
+      const respostaTexto = response.text || "";
+      sessao.historico.push({ role: "model", parts: [{ text: respostaTexto }] });
+
+      if (sessao.historico.length > 40) {
+        sessao.historico = sessao.historico.slice(-40);
+      }
+
+      return res.json({
+        resposta: respostaTexto,
+        provedor: "gemini",
+        totalTurnos: sessao.historico.length / 2,
+      });
+    } catch (apiErr: any) {
+      console.error("[Agente] Erro Gemini:", apiErr);
+      return res.status(500).json({ error: "Nenhum provedor de IA disponível." });
+    }
+  } catch (err: any) {
+    console.error("[Agente] Erro na consulta:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/agente/nova-sessao", (req, res) => {
+  const { sessionId } = req.body;
+  if (sessionId) sessoes.delete(sessionId);
+  return res.json({ ok: true });
+});
+
+// Trade Marketing Endpoints
+let localTradeActions: Record<string, any[]> = {};
+try {
+  if (fs.existsSync("local_trade.json")) {
+    localTradeActions = JSON.parse(fs.readFileSync("local_trade.json", "utf-8"));
+  }
+} catch (e) {}
+
+app.get("/api/trade/:sheetName", (req, res) => {
+  const sheetName = req.params.sheetName;
+  res.json({ status: "success", data: localTradeActions[sheetName] || [] });
+});
+
+app.post("/api/trade/:sheetName", (req, res) => {
+  const sheetName = req.params.sheetName;
+  const newAction = req.body;
+  
+  if (!newAction.id) {
+    newAction.id = `trade-${Date.now()}`;
+  }
+  
+  if (!localTradeActions[sheetName]) {
+    localTradeActions[sheetName] = [];
+  }
+  
+  localTradeActions[sheetName].push(newAction);
+  writeJSONDb("local_trade.json", localTradeActions);
+  
+  res.json({ status: "success", data: newAction });
+});
+
+// Background Task: Check for Overdue Tasks and Trigger n8n Webhook
+setInterval(() => {
+  if (process.env.PAUSE_OVERDUE_TASKS_JOB === "true") {
+    return;
+  }
+  try {
+    const now = new Date();
+    const currentYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const currentH = now.getHours();
+    const currentM = now.getMinutes();
+
+    let hasChanges = false;
+    let n8nTasksUrl = resolveN8nWebhookUrl(
+      process.env.N8N_OVERDUE_TASKS_WEBHOOK_URL,
+      process.env.N8N_WEBHOOK_URL,
+      "tarefa-atrasada",
+      process.env.N8N_TEST_OVERDUE_TASKS_WEBHOOK_URL,
+      process.env.USE_N8N_TEST_OVERDUE_TASKS
+    );
+
+    if (n8nTasksUrl.includes("localhost:5678") || n8nTasksUrl.includes("127.0.0.1:5678")) {
+      console.warn("[n8n] Tarefas atrasadas: URL do N8N configurada como localhost. Isso vai falhar. Use a URL do Ngrok.");
+    }
+
+    if (n8nTasksUrl && n8nTasksUrl.includes("sua-url-ngrok")) {
+      n8nTasksUrl = ""; // cancel if placeholder
+    }
+
+    tasks.forEach(t => {
+      if (t.status !== "PENDENTE") return;
+      if (!t.dataLimite) return;
+      
+      // If we already sent all notifications, skip
+      if (t.n8nNotified2h) return;
+
+      const dateObj = new Date(t.dataLimite);
+      if (isNaN(dateObj.getTime())) return;
+      
+      const timeMatch = t.descricao.match(/ às (\d{2}):(\d{2})/);
+      let taskTimeMs = dateObj.getTime();
+      
+      if (timeMatch) {
+        const h = parseInt(timeMatch[1], 10);
+        const m = parseInt(timeMatch[2], 10);
+        // Correct time based on timezone offset (assuming local string for YYYY-MM-DD was parsed as UTC midnight)
+        dateObj.setUTCHours(dateObj.getTimezoneOffset() / 60 + h, m, 0, 0);
+        taskTimeMs = dateObj.getTime();
+      } else {
+        dateObj.setUTCHours(dateObj.getTimezoneOffset() / 60 + 18, 0, 0, 0);
+        taskTimeMs = dateObj.getTime();
+      }
+      
+      const nowMs = Date.now();
+      const diffMins = Math.floor((nowMs - taskTimeMs) / 60000);
+      
+      if (diffMins >= 0) {
+        let level = 0; // 0=just overdue, 1=30m, 2=1h, 3=2h
+        if (diffMins >= 120 && !t.n8nNotified2h) level = 3;
+        else if (diffMins >= 60 && diffMins < 120 && !t.n8nNotified1h) level = 2;
+        else if (diffMins >= 30 && diffMins < 60 && !t.n8nNotified30m) level = 1;
+        
+        if (level > 0) {
+          if (level === 3) t.n8nNotified2h = true;
+          if (level === 2) t.n8nNotified1h = true;
+          if (level === 1) t.n8nNotified30m = true;
+          
+          hasChanges = true;
+
+          const vendorData = vendors.find(v => v.nome === t.vendedor);
+          const vendedorWhatsApp = vendorData?.telefone || "";
+
+          console.log(`[n8n] Tarefa atrasada (${level}) detectada: ${t.descricao} (Vendedor: ${t.vendedor}). Enviando webhook...`);
+          
+          if (n8nTasksUrl && !n8nTasksUrl.includes("localhost:5678")) {
+            fetch(n8nTasksUrl, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json", "ngrok-skip-browser-warning": "true"
+                
+              },
+              body: JSON.stringify({
+                event: "overdue_task",
+                level: level, // 1=30m, 2=1h, 3=2h (gerente)
+                task_id: t.id,
+                vendedor: t.vendedor,
+                vendedor_telefone: formatWhatsAppNumber(vendedorWhatsApp),
+                gerente_telefone: "5551981320499", // Bruno's number or configured number
+                descricao: t.descricao,
+                nomeLead: t.nomeLead,
+                dataLimite: t.dataLimite,
+                atraso_minutos: diffMins
+              })
+            }).catch(err => console.warn("[n8n] Falha ao enviar webhook de tarefa atrasada:", err.message));
+          }
+        }
+      }
+    });
+
+    if (hasChanges) {
+      writeJSONDb("tasks.json", tasks);
+    }
+  } catch (err) {
+    console.error("[Tasks Checker] Erro:", err);
+  }
+}, 60 * 1000); // Check every minute
+
+let isProcessingInactiveLeads = false;
+
+// Background Task: Check for Lead Inactivity and Trigger n8n Webhook
+setInterval(async () => {
+  if (process.env.PAUSE_LEAD_INACTIVITY_JOB === "true") {
+     return;
+  }
+  if (isProcessingInactiveLeads) {
+     console.log("[n8n] Tarefa de leads inativos já em andamento, ignorando nova execução.");
+     return;
+  }
+  
+  isProcessingInactiveLeads = true;
+  try {
+    let webhookUrl = resolveN8nWebhookUrl(
+      process.env.N8N_LEAD_INACTIVITY_WEBHOOK_URL,
+      process.env.N8N_WEBHOOK_URL,
+      "lead-inativo",
+      process.env.N8N_TEST_LEAD_INACTIVITY_WEBHOOK_URL,
+      process.env.USE_N8N_TEST_LEAD_INACTIVITY
+    );
+    if (!webhookUrl || webhookUrl.includes("sua-url-ngrok")) return;
+
+    if (webhookUrl.includes("localhost:5678") || webhookUrl.includes("127.0.0.1:5678")) {
+      console.warn("[n8n] Inatividade de Lead: URL do Webhook é localhost. Use o Ngrok.");
+    }
+
+    const now = new Date().getTime();
+    let hasChanges = false;
+    let aiRateLimitHit = false;
+
+    for (const lead of leads) {
+      if (lead.status === "Venda Fechada" || lead.status === "Sem Interesse" || lead.status === "Frio") continue;
+      if (!lead.dataCadastro) continue;
+      
+      const cadastroTime = new Date(lead.dataCadastro).getTime();
+      const diffMs = now - cadastroTime;
+      const diffHours = diffMs / (1000 * 60 * 60);
+      const diffDays = diffHours / 24;
+
+      let avisoToTrigger = 0;
+
+      // Type cast the lead to any since we are mutating dynamically
+      const l = lead as any;
+
+      // Cooldown de 3 dias para não floodar o n8n sobre o mesmo lead
+      if (l.ultimaNotificacaoN8n) {
+        const lastNotifTime = new Date(l.ultimaNotificacaoN8n).getTime();
+        const diffNotif = now - lastNotifTime;
+        if (diffNotif < 3 * 24 * 60 * 60 * 1000) {
+          continue; // Pula este lead se foi notificado há menos de 3 dias
+        }
+      }
+
+      if (diffDays >= 60 && !l.n8nAviso60d) {
+        avisoToTrigger = 60;
+        l.n8nAviso60d = true;
+      } else if (diffDays >= 30 && diffDays < 60 && !l.n8nAviso30d) {
+        avisoToTrigger = 30;
+        l.n8nAviso30d = true;
+      } else if (diffDays >= 7 && diffDays < 30 && !l.n8nAviso7d) {
+        avisoToTrigger = 7;
+        l.n8nAviso7d = true;
+      } else if (diffHours >= 48 && diffDays < 7 && !l.n8nAviso48h) {
+        avisoToTrigger = 48;
+        l.n8nAviso48h = true;
+      } else if (diffHours >= 24 && diffHours < 48 && !l.n8nAviso24h) {
+        avisoToTrigger = 24;
+        l.n8nAviso24h = true;
+      }
+
+      if (avisoToTrigger > 0) {
+        hasChanges = true;
+        // Generate AI Suggestion
+        let iaMessage = "Não foi possível gerar dica no momento.";
+        if (!aiRateLimitHit) {
+          try {
+            await new Promise(r => setTimeout(r, 4500));
+            const prompt = `Atue como um gerente de vendas. O lead ${lead.nomeLead} está parado há ${avisoToTrigger >= 24 && avisoToTrigger <= 48 ? avisoToTrigger + ' horas' : avisoToTrigger + ' dias'} sem fechar.
+Bairro: ${lead.bairro}
+Interesse/Plano: ${lead.planoAtual || 'Desconhecido'}
+Observação: ${lead.observacao || 'Nenhuma'}
+Crie uma mensagem muito curta (max 3 linhas) com uma dica de abordagem criativa para o vendedor (${lead.vendedor}) reativar/fechar esta venda.`;
+            const result = await safeGenerateContent({
+               model: "gemini-2.5-flash",
+               contents: prompt,
+            });
+            if (result.text) iaMessage = result.text.trim();
+          } catch (e: any) {
+            if (e.message && (e.message.includes("429") || e.message.includes("402"))) {
+              console.warn("[n8n Inatividade de Lead] Geração de IA ignorada: Cota excedida.");
+              iaMessage = "Dica não gerada (limite de uso da IA excedido). Entre em contato com o lead com uma oferta especial!";
+              aiRateLimitHit = true;
+            } else {
+              console.warn("[n8n Inatividade de Lead] Geração de IA falhou: ", e.message);
+            }
+          }
+        } else {
+           iaMessage = "Dica não gerada (limite de IA atingido).";
+        }
+
+        l.ultimaNotificacaoN8n = new Date().toISOString();
+
+        const payload = {
+          aviso: avisoToTrigger === 24 ? "01" : avisoToTrigger === 48 ? "02" : avisoToTrigger === 7 ? "03" : avisoToTrigger === 30 ? "04" : "05",
+          tempoInativo: avisoToTrigger === 24 ? "24 horas" : avisoToTrigger === 48 ? "48 horas" : avisoToTrigger + " dias",
+          acao: avisoToTrigger === 60 ? "Encaminhar para Leads Frios" : "Acompanhamento",
+          vendedor: lead.vendedor,
+          vendedor_telefone: vendors.find((v: any) => v.nome === lead.vendedor)?.telefone ? formatWhatsAppNumber(vendors.find((v: any) => v.nome === lead.vendedor)!.telefone) : "",
+          lead: {
+            nome: lead.nomeLead,
+            telefone: formatWhatsAppNumber(lead.telefone, false),
+            enderecoCompleto: `${lead.endereco}${lead.numero ? ', ' + lead.numero : ''}${lead.complemento ? ' - ' + lead.complemento : ''}, ${lead.bairro}, ${lead.cidade}`,
+            dataUltimaAtualizacao: lead.ultimaAtualizacao || lead.dataCadastro,
+            observacao: lead.observacao || ""
+          },
+          dicaIA: iaMessage
+        };
+
+        console.log(`[n8n] Lead Inativo detectado: ${lead.nomeLead} (${avisoToTrigger}). Enviando webhook...`);
+        if (!payload.vendedor_telefone) {
+          console.warn(`[n8n WARNING] O vendedor "${payload.vendedor}" não possui telefone configurado na aba "Vendedores". O n8n (WAHA) pode falhar com erro 500 ao tentar enviar mensagem para "@c.us".`);
+        }
+        if (!webhookUrl.includes("localhost:5678")) {
+          try {
+            await fetch(webhookUrl, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json", "ngrok-skip-browser-warning": "true"
+                 
+              },
+              body: JSON.stringify(payload)
+            });
+          } catch (err: any) {
+            console.warn("[n8n] Falha ao enviar webhook de lead inativo:", err.message);
+          }
+        } else {
+           console.warn("[n8n] Webhook ignorado para Lead Inativo pois a URL é localhost.");
+        }
+        
+        // Save database after each webhook to persist the update
+        writeJSONDb("leads.json", leads);
+
+        console.log(`[n8n] Aguardando 65 segundos antes de processar o próximo lead inativo (rate limit)...`);
+        await new Promise(resolve => setTimeout(resolve, 65000));
+      }
+    }
+  } catch (error: any) {
+    console.error("[Checador de Inatividade de Lead] Erro:", error.message);
+  } finally {
+    isProcessingInactiveLeads = false;
+  }
+}, 5 * 60 * 1000); // Check every 5 minutes
+
+// N8N Competitors Webhook integration
+app.post("/api/n8n/webhook-competitors", async (req, res) => {
+  const payload = req.body;
+  const isTest = process.env.USE_N8N_TEST_COMPETITORS === "true";
+  let webhookUrl = isTest 
+     ? (process.env.N8N_TEST_COMPETITORS_WEBHOOK_URL || "https://n8n-url-placeholder/webhook-test/sync-competitor") 
+     : (process.env.N8N_COMPETITORS_WEBHOOK_URL || "https://n8n-url-placeholder/webhook/sync-competitor");
+     
+  const historyItem: Record<string, any> = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    event: 'sync_competitor',
+    url: webhookUrl,
+    payload: payload,
+    status: 'pending'
+  };
+  n8nHistory.unshift(historyItem);
+  if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      let extra = "";
+      if (response.status === 404) {
+        extra = webhookUrl.includes("webhook-test") 
+           ? " (Dica: Para URLs webhook-test, certifique-se de clicar em 'Execute Workflow' no n8n primeiro!)" 
+           : " (Dica: Para URLs de produção, certifique-se de que o workflow está Ativo no n8n!)";
+      }
+      throw new Error(`N8N HTTP error! status: ${response.status}${extra}`);
+    }
+    
+    const data = await response.text();
+    historyItem.status = 'success';
+    historyItem.response = data;
+    res.json({ success: true, status: response.status, n8n_response: data });
+  } catch (error: any) {
+    historyItem.status = 'error';
+    historyItem.error = error.message;
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// N8N Upgrade Webhook integration
+app.post("/api/n8n/webhook-upgrade", async (req, res) => {
+  const payload = req.body;
+  // If not configured, just return simulated success
+  const isTest = process.env.USE_N8N_TEST_UPGRADE_BASE === "true";
+  let webhookUrl = isTest 
+    ? (process.env.N8N_TEST_UPGRADE_BASE_WEBHOOK_URL || "https://n8n-url-placeholder/webhook-test/upgrade-base") 
+    : (process.env.N8N_UPGRADE_BASE_WEBHOOK_URL || "https://n8n-url-placeholder/webhook/upgrade-base");
+  
+  console.log("[N8N] Disparando webhook para:", webhookUrl);
+  console.log("[N8N] Payload:", payload);
+
+  const historyItem: Record<string, any> = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    event: 'upgrade_base_disparo',
+    url: webhookUrl,
+    payload: payload,
+    status: 'pending'
+  };
+  n8nHistory.unshift(historyItem);
+  if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      let extra = "";
+      if (response.status === 404) {
+        extra = webhookUrl.includes("webhook-test") 
+          ? " (Dica: Para URLs webhook-test, certifique-se de clicar em 'Execute Workflow' no n8n primeiro!)" 
+          : " (Dica: Para URLs de produção, certifique-se de que o workflow está Ativo no n8n!)";
+      }
+      throw new Error(`N8N HTTP error! status: ${response.status}${extra}`);
+    }
+    
+    const data = await response.text();
+    historyItem.status = 'success';
+    historyItem.response = data;
+    res.json({ success: true, status: response.status, n8n_response: data });
+  } catch (error: any) {
+    
+    historyItem.status = 'error';
+    historyItem.error = error.message;
+    
+    if (webhookUrl.includes("placeholder") || webhookUrl.includes("sua-url-ngrok")) {
+        res.json({ success: false, message: "URL do n8n não configurada corretamente no .env" });
+    } else {
+        res.json({ success: false, message: error.message });
+    }
+  }
+});
+
+// N8N Pos-Venda Webhook integration
+app.post("/api/n8n/webhook-pos-venda", async (req, res) => {
+  const payload = req.body;
+  const isTest = process.env.USE_N8N_TEST_POS_VENDA === "true";
+  let webhookUrl = isTest 
+    ? (process.env.N8N_TEST_POS_VENDA_WEBHOOK_URL || "http://localhost:5678/webhook-test/pos-venda") 
+    : (process.env.N8N_POS_VENDA_WEBHOOK_URL || "http://localhost:5678/webhook/pos-venda");
+  
+  console.log("[N8N] Disparando webhook pos-venda para:", webhookUrl);
+
+  const historyItem: Record<string, any> = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    event: 'pos_venda_disparo',
+    url: webhookUrl,
+    payload: payload,
+    status: 'pending'
+  };
+  n8nHistory.unshift(historyItem);
+  if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      let extra = "";
+      if (response.status === 404) {
+        extra = webhookUrl.includes("webhook-test") 
+          ? " (Dica: Execute Workflow no n8n primeiro!)" 
+          : " (Dica: O workflow está Ativo no n8n?)";
+      }
+      throw new Error(`N8N HTTP error! status: ${response.status}${extra}`);
+    }
+    
+    const data = await response.json().catch(() => ({}));
+    historyItem.status = 'success';
+    historyItem.response = data;
+    res.json({ success: true, message: "Disparo enviado com sucesso", data });
+  } catch (error: any) {
+    historyItem.status = 'error';
+    historyItem.error = error.message;
+    res.json({ success: false, message: error.message });
+  }
+});
+
+
+let internalProtocols: any[] = [];
+let lastInternalProtocolsSyncTime = 0;
+
+try {
+  if (fs.existsSync("internalProtocols.json")) {
+    internalProtocols = JSON.parse(fs.readFileSync("internalProtocols.json", "utf8"));
+  }
+} catch (e) {}
+
+async function syncInternalProtocolsFromGoogleSheet() {
+  if (Date.now() - lastInternalProtocolsSyncTime < 300000) return; // 5 mins cache
+  
+  try {
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Protocolos Internos");
+    
+    const res = await fetch(url, { signal });
+    if (res.ok) {
+      const csvText = await res.text();
+      if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+    const rows = parseCSV(csvText);
+      let queue = [];
+      if (rows.length >= 2) {
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row[0] && !row[1] && !row[2]) continue;
+          
+          queue.push({
+            protocolo: row[0] || "-",
+            dataAbertura: row[1] || "",
+            setor: row[2] || "-",
+            motivo: row[3] || "-",
+            id: row[4] || ('fallback-' + i + '-' + (row[0] || '').replace(/[^a-zA-Z0-9]/g, ''))
+          });
+        }
+      }
+      
+      const existingIds = new Set(queue.map((q: any) => q.id));
+      const notInGas = internalProtocols.filter(q => !existingIds.has(q.id));
+      
+      internalProtocols = [...notInGas, ...queue.reverse()];
+      
+      // Deduplicate by ID
+      const seen = new Set();
+      internalProtocols = internalProtocols.filter(p => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      });
+
+      writeJSONDb("internalProtocols.json", internalProtocols);
+      
+      lastInternalProtocolsSyncTime = Date.now();
+      console.log("[SYNC] Protocolos Internos sincronizados. Itens:", internalProtocols.length);
+    }
+  } catch(e) {
+    console.warn("Falha ao buscar Protocolos Internos:", e.message);
+  }
+}
+
+syncInternalProtocolsFromGoogleSheet();
+
+async function writeInternalProtocolToGoogleSheet(item: any) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const mappedItem = {
+      "Protocolo": item.protocolo,
+      "Data Abertura": item.dataAbertura,
+      "Setor": item.setor,
+      "Motivo": item.motivo,
+      "ID": item.id,
+      "Vendedor": item.vendedor || "-",
+      "Timestamp": item.timestamp || "-"
+    };
+
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify({
+        route: "appendRow",
+        payload: {
+          sheetName: "Protocolos Internos",
+          item: mappedItem
+        }
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+  } catch (e) {
+    console.warn("Could not save to Protocolos Internos GAS:", e);
+  }
+}
+
+app.get("/api/sheets/internal-protocols", async (req, res) => {
+  try {
+    await syncInternalProtocolsFromGoogleSheet();
+    res.json(internalProtocols);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch internal protocols" });
+  }
+});
+
+app.post("/api/sheets/internal-protocols", async (req, res) => {
+  try {
+    // Implemente uma função de verificação no módulo de Protocolos Internos para garantir que cada registro salve um timestamp em formato DD/MM/AAAA e que o nome do vendedor esteja sendo enviado ao n8n
+    const timestampDDMMYYYY = req.body.timestamp || new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const vendedor = req.body.vendedor || "Não Informado";
+
+    const newItem = {
+      ...req.body,
+      timestamp: timestampDDMMYYYY,
+      vendedor: vendedor,
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+    };
+    internalProtocols.unshift(newItem);
+    writeJSONDb("internalProtocols.json", internalProtocols);
+    
+    writeInternalProtocolToGoogleSheet(newItem).catch(e => console.error(e));
+    
+    // Disparar Webhook para o n8n
+    let webhookUrl = process.env.N8N_WEBHOOK_URL || "https://sua-url-ngrok.ngrok-free.dev/webhook-test/protocolo-interno";
+    if (webhookUrl && !webhookUrl.includes("localhost:5678")) {
+      webhookUrl = webhookUrl.replace(/\/$/, "") + (webhookUrl.includes("webhook-test") ? "" : "/webhook/protocolo-interno");
+      if (!webhookUrl.includes("protocolo-interno")) {
+        webhookUrl += webhookUrl.includes("webhook/") || webhookUrl.includes("webhook-test/") ? "protocolo-interno" : "/webhook/protocolo-interno";
+      }
+      
+      try {
+        fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({
+            event: "novo_protocolo_interno",
+            ...newItem
+          })
+        }).catch(err => console.warn("[n8n Webhook] Falha ao disparar protocolo interno:", err.message));
+      } catch (e) {
+        console.warn("[n8n Webhook] Erro:", e);
+      }
+    }
+
+    res.json({ success: true, item: newItem });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to save internal protocol" });
+  }
+});
+
+app.put("/api/sheets/internal-protocols/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const index = internalProtocols.findIndex(p => p.id === id);
+    if (index !== -1) {
+      internalProtocols[index] = { ...internalProtocols[index], ...req.body };
+      writeJSONDb("internalProtocols.json", internalProtocols);
+      // We should ideally update Google Sheet as well, but for now local is fine
+      // writeInternalProtocolToGoogleSheet(internalProtocols[index], "update");
+      res.json({ success: true, item: internalProtocols[index] });
+    } else {
+      res.status(404).json({ error: "Not found" });
+    }
+  } catch (e) {
+    res.status(500).json({ error: "Failed to update internal protocol" });
+  }
+});
+
+app.delete("/api/sheets/internal-protocols/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const index = internalProtocols.findIndex(p => p.id === id);
+    if (index !== -1) {
+      internalProtocols.splice(index, 1);
+      writeJSONDb("internalProtocols.json", internalProtocols);
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: "Not found" });
+    }
+  } catch (e) {
+    res.status(500).json({ error: "Failed to delete internal protocol" });
+  }
+});
+
+
+let localInstallationQueue: any[] = [];
+let lastInstallationQueueSyncTime = 0;
+try {
+  if (fs.existsSync("installationsQueue.json")) {
+    localInstallationQueue = JSON.parse(fs.readFileSync("installationsQueue.json", "utf8"));
+  }
+} catch (e) {}
+
+async function syncInstallationQueueFromGoogleSheet() {
+  if (Date.now() - lastInstallationQueueSyncTime < 300000) return; // 5 mins cache
+  
+  try {
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Fila de Monitoramento");
+    
+    const res = await fetch(url, { signal });
+    if (res.ok) {
+      const csvText = await res.text();
+      if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+    const rows = parseCSV(csvText);
+      let queue = [];
+      if (rows.length >= 2) {
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row[0] && !row[2] && !row[3]) continue;
+          
+          queue.push({
+            dataAdicao: row[0] || "",
+            status: row[1] || "Pendente",
+            cliente: row[2] || "-",
+            protocolo: row[3] || "-",
+            vendedor: row[4] || "-",
+            observacoes: row[5] || "-",
+            id: row[6] || Date.now().toString() + Math.random().toString(36).substr(2, 5)
+          });
+        }
+      }
+      // Merge with local queue to not lose items that failed to save to GAS
+      const existingIds = new Set(queue.map((q: any) => q.id));
+      const notInGas = localInstallationQueue.filter(q => !existingIds.has(q.id));
+      
+      localInstallationQueue = [...notInGas, ...queue.reverse()];
+      writeJSONDb("installationsQueue.json", localInstallationQueue);
+      
+      lastInstallationQueueSyncTime = Date.now();
+      console.log("[SYNC] Fila de Monitoramento sincronizada. Itens:", localInstallationQueue.length);
+    }
+  } catch(e) {
+    console.warn("Falha ao buscar Fila de Monitoramento:", e.message);
+  }
+}
+
+// Perform initial sync
+syncInstallationQueueFromGoogleSheet();
+
+app.get("/api/installations-queue", async (req, res) => {
+  try {
+    await syncInstallationQueueFromGoogleSheet();
+    
+    // Check for delayed items
+    let hasChanges = false;
+    const nowTime = Date.now();
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    
+    localInstallationQueue.forEach(item => {
+      if (item.status === 'Pendente') {
+        let itemTime = 0;
+        const dateStr = item.dataAdicao;
+        if (dateStr) {
+          const match1 = dateStr.match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
+          if (match1) itemTime = new Date(Number(match1[3]), Number(match1[2]) - 1, Number(match1[1]), Number(match1[4]), Number(match1[5])).getTime();
+          else {
+            const match2 = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+            if (match2) itemTime = new Date(Number(match2[3]), Number(match2[2]) - 1, Number(match2[1]), Number(match2[4]), Number(match2[5]), Number(match2[6])).getTime();
+            else {
+              const parsed = Date.parse(dateStr);
+              if (!isNaN(parsed)) itemTime = parsed;
+            }
+          }
+        }
+        
+        if (itemTime > 0 && (nowTime - itemTime > TWENTY_FOUR_HOURS)) {
+          item.status = 'Atrasado';
+          hasChanges = true;
+          writeInstallationQueueToGoogleSheet(item, "update").catch(e => console.error(e));
+        }
+      }
+    });
+    
+    if (hasChanges) {
+      writeJSONDb("installationsQueue.json", localInstallationQueue);
+    }
+    
+    res.json(localInstallationQueue);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch queue" });
+  }
+});
+async function writeInstallationQueueToGoogleSheet(item: any, action: "save" | "update") {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    const mappedItem = {
+      "Data Adição": item.dataAdicao,
+      "Status": item.status,
+      "Cliente": item.cliente || "-",
+      "Protocolo": item.protocolo,
+      "Consultor": item.vendedor,
+      "Observações": item.observacoes || "-",
+      "ID": item.id
+    };
+
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify({
+        route: action === "update" ? "updateRow" : "appendRow", payload: { sheetName: "Fila de Monitoramento", item: mappedItem, id: item.id }
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+  } catch (e) {
+    console.warn("Could not save to Fila de Monitoramento GAS:", e);
+  }
+}
+
+app.post("/api/installations-queue", async (req, res) => {
+  try {
+    const newItem = {
+      ...req.body,
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+      dataAdicao: getCurrentDateTimeFormatted(),
+      status: 'Pendente'
+    };
+    localInstallationQueue.unshift(newItem);
+    writeJSONDb("installationsQueue.json", localInstallationQueue);
+    
+    // Send to Google Sheets
+    writeInstallationQueueToGoogleSheet(newItem, "save").catch(e => console.error(e));
+
+    res.json({ success: true, item: newItem });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to save to queue" });
+  }
+});
+app.post("/api/installations-queue/:id/finalize", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { observacaoFinal } = req.body || {};
+    const index = localInstallationQueue.findIndex(q => q.id === id);
+    if (index !== -1) {
+      localInstallationQueue[index].status = 'Concluido';
+      if (observacaoFinal) {
+        localInstallationQueue[index].observacoes = (localInstallationQueue[index].observacoes && localInstallationQueue[index].observacoes !== "-" ? localInstallationQueue[index].observacoes + " | " : "") + "Fechamento: " + observacaoFinal;
+      }
+      writeJSONDb("installationsQueue.json", localInstallationQueue);
+      writeInstallationQueueToGoogleSheet(localInstallationQueue[index], "update").catch(e => console.error(e));
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: "Not found" });
+    }
+  } catch (e) {
+    res.status(500).json({ error: "Failed to finalize" });
+  }
+});
+
+app.delete("/api/installations-queue/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const index = localInstallationQueue.findIndex(q => q.id === id);
+    if (index !== -1) {
+      localInstallationQueue.splice(index, 1);
+      writeJSONDb("installationsQueue.json", localInstallationQueue);
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: "Not found" });
+    }
+  } catch (e) {
+    res.status(500).json({ error: "Failed to delete" });
+  }
+});
+
+
+// Catch-all for undefined /api/* routes to avoid Vite SPA fallback returning index.html
+app.use("/api/*", (req, res) => {
+  res.status(404).json({ status: "error", message: "API endpoint not found", endpoint: req.originalUrl });
+});
+
+// Vite server integrations
+app.post("/api/ai/diagnostico-cobranca", async (req, res) => {
+  const { stats } = req.body;
+  if (!stats) return res.status(400).json({ error: "No stats provided." });
+
+  try {
+    const prompt = `Atue como um Especialista de Recuperação de Crédito e Retenção de Telecom (ISP). Analise os seguintes dados do painel de cobranças:
+- Total Devedores: ${stats.totalDevedores}
+- Média Dias Atraso: ${stats.mediaDiasAtraso}
+- % Baixaram App: ${stats.baixouAppPercent}%
+- Taxa Contato Efetivo: ${stats.taxaContatoEfetivo}%
+- Top Bairros: ${stats.bairrosCriticos.join(', ')}
+- Top Planos: ${stats.planosCriticos.join(', ')}
+
+Com base nisso, escreva um diagnóstico gerencial de no MÁXIMO 3 parágrafos contendo:
+1. Um raio-x rápido da situação (pontos críticos).
+2. O que o percentual de download do app ou o contato efetivo indica sobre o comportamento dos devedores.
+3. 2 recomendações acionáveis e práticas para a equipe de cobrança atacar nas próximas 48 horas e reduzir o saldo devedor.
+
+Seja direto, profissional e focado em resultados. Não use saudações, vá direto ao ponto.`;
+
+    const response = await safeGenerateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: "Você é um gestor financeiro sênior especializado em ISP local.",
+      },
+    });
+
+    const reply = response.text || "Não foi possível gerar o diagnóstico.";
+    res.json({ diagnostic: reply });
+  } catch(e) {
+    console.error("AI Error:", e);
+    res.status(500).json({ error: "AI Error" });
+  }
+});
+
+const startServer = async () => {
+  if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`[SERVIDOR MHNET] Rodando em http://localhost:${PORT} no modo ${process.env.NODE_ENV || "development"}`);
+  });
+};
+
+startServer().catch((err) => {
+  console.error("Falha ao iniciar o servidor full-stack:", err);
+});
+

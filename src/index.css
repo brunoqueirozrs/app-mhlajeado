@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inconsolata:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-navy: #0f0069;
+  --color-brand-paladino: #3a33ff;
+
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #3a33ff; /* Azul paladino */
+  --color-indigo-700: #2924b3; 
+  --color-indigo-800: #1d1980;
+  --color-indigo-900: #0f0069; /* Azul navy */
+  --color-indigo-950: #0a004a; /* Darker navy */
+
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Inconsolata", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+    font-weight: 800;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: #1e293b;
+  }
+  .markdown-body blockquote {
+    border-left: 4px solid #e2e8f0;
+    padding-left: 1rem;
+    color: #475569;
+    font-style: italic;
+  }
+  .markdown-body ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .markdown-body ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .markdown-body p {
+    margin-bottom: 0.5rem;
+  }
+  .markdown-body strong {
+    font-weight: 800;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .animate-fade-in > div.fixed {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+  .animate-fade-in > div.fixed * {
+    visibility: visible;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}
+@layer components {
+  .card-modern {
+    background: linear-gradient(180deg, #FFFFFF, #FAFBFD);
+    transition: all 0.3s ease-out;
+    border: 1px solid #E5EAF2;
+  }
+  .card-modern:hover {
+    background: #F8FAFC;
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+  }
+}
