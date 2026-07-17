@@ -41,11 +41,13 @@ export default function InstallationsQueuePage() {
       if (res.ok) {
         const data = await res.json();
         setQueue(data);
-       catch (e) {
+      }
+    } catch (e) {
       console.error(e);
     } finally {
       setIsLoading(false);
-    ;
+    }
+  };
 
   useEffect(() => {
     loadQueue();
@@ -65,9 +67,11 @@ export default function InstallationsQueuePage() {
         loadQueue();
       } else {
         alert("Erro ao finalizar.");
-       catch (e) {
+      }
+    } catch (e) {
       alert("Erro de conexão.");
-    ;
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if(!confirm("Tem certeza que deseja excluir permanentemente este item da fila?")) return;
@@ -78,11 +82,13 @@ export default function InstallationsQueuePage() {
         loadQueue();
       } else {
         alert("Erro ao excluir.");
-       catch (e) {
+      }
+    } catch (e) {
       alert("Erro de conexão.");
     } finally {
       setIsDeleting(null);
-    ;
+    }
+  };
   const filteredQueue = filterStatus === 'Todos' ? queue : queue.filter(q => q.status === filterStatus);
 
   return (
@@ -109,9 +115,10 @@ export default function InstallationsQueuePage() {
           
           <div className="flex shrink-0">
             <button onClick={loadQueue}
-              disabled={isLoading} className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-slate-300 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                  
+                  disabled={isLoading} className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-slate-300 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-sky-400' : ''}`/>
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-sky-400' : ''}`} />
               <span className="hidden sm:inline">Atualizar Fila</span>
             </button>
           </div>
@@ -197,7 +204,8 @@ export default function InstallationsQueuePage() {
                                 {item.status !== 'Concluido' && (
                   <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                     <button onClick={() => handleDelete(item.id)}
-                      disabled={isDeleting === item.id} className="text-xs font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-2.5 rounded-xl flex items-center justify-center transition-colors"
+                  
+                  disabled={isDeleting === item.id} className="text-xs font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-2.5 rounded-xl flex items-center justify-center transition-colors"
                       title="Excluir"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -232,7 +240,7 @@ export default function InstallationsQueuePage() {
                 <button onClick={() => {
                     setFinalizeId(null);
                     setObservacaoFinal('');
-                  } className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    }} className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -244,14 +252,14 @@ export default function InstallationsQueuePage() {
                 <textarea
                   value={observacaoFinal}
                   onChange={(e) => setObservacaoFinal(e.target.value)}
-                  placeholder="Observação final..."} className="w-full rounded-xl border border-slate-200 p-4 text-sm font-medium text-slate-700 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all resize-none h-32"
+                  placeholder="Observação final..." className="w-full rounded-xl border border-slate-200 p-4 text-sm font-medium text-slate-700 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all resize-none h-32"
                 />
               </div>
               <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/80 flex gap-3">
                 <button onClick={() => {
                     setFinalizeId(null);
                     setObservacaoFinal('');
-                  } className="flex-1 py-3 px-4 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200/50 transition-colors"
+                    }} className="flex-1 py-3 px-4 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200/50 transition-colors"
                 >
                   Cancelar
                 </button>

@@ -42,7 +42,8 @@ export default function CobrancasDashboard({ cobrancas, onClose, onOpenDetails }
         if (log.contatoEfetivo) totalContatosEfetivos++;
         if (log.acordoFirmado) totalAcordos++;
       });
-    );
+    }
+  });
 
   const taxaContatoEfetivo = totalLigacoes> 0 ? Math.round((totalContatosEfetivos / totalLigacoes) * 100) : 0;
 
@@ -66,7 +67,8 @@ export default function CobrancasDashboard({ cobrancas, onClose, onOpenDetails }
       p = match[1];
       if (/wifitotal/i.test(c.plano || '')) {
         p += " + WIFITotal";
-      
+      }
+    }
     if (c.diasAtraso> 0) acc[p] = (acc[p] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -107,7 +109,8 @@ export default function CobrancasDashboard({ cobrancas, onClose, onOpenDetails }
       filename:     'Apresentacao_Analise_Cobrancas.pdf',
       image:        { type: 'jpeg' as const, quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' as const ;
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' as const }
+    };
     
     // Botões a serem ocultados na hora do print
     const actionButtons = document.getElementById('dashboard-actions');
@@ -132,7 +135,8 @@ export default function CobrancasDashboard({ cobrancas, onClose, onOpenDetails }
             taxaContatoEfetivo,
             bairrosCriticos: bairroChartData.slice(0,3).map(b => `${b.bairro} (${b.count})`),
             planosCriticos: planoChartData.slice(0,3).map(p => `${p.name} (${p.value})`)
-          )
+          }
+        })
       });
       const data = await res.json();
       setAiDiagnostic(data.diagnostic);
@@ -140,10 +144,11 @@ export default function CobrancasDashboard({ cobrancas, onClose, onOpenDetails }
       setAiDiagnostic("Não foi possível gerar o diagnóstico no momento.");
     } finally {
       setAiGenerating(false);
-    ;
+    }
+  };
 
   return (
-    <div id="dashboard-content"} className="space-y-6 pb-12  font-sans bg-slate-50 p-6 rounded-3xl">
+    <div id="dashboard-content" className="space-y-6 pb-12  font-sans bg-slate-50 p-6 rounded-3xl">
       {/* Header Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 p-6 rounded-3xl shadow-xl text-white">
         <div className="flex items-center gap-4">
@@ -155,14 +160,15 @@ export default function CobrancasDashboard({ cobrancas, onClose, onOpenDetails }
             <p className="text-slate-400 text-sm font-medium">Gestão Estratégica de Cobranças - MINET</p>
           </div>
         </div>
-        <div id="dashboard-actions"} className="flex gap-3">
+        <div id="dashboard-actions" className="flex gap-3">
           <button onClick={exportToExcel} className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 rounded-xl font-bold text-sm transition-colors border border-emerald-500/20">
             <Download className="w-4 h-4" /> Planilha
           </button>
           <button onClick={exportToPDF} className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-xl font-bold text-sm transition-colors border border-rose-500/20">
             <FileText className="w-4 h-4" /> PDF Crítico
           </button>
-          <button onClick={generateDiagnostic} disabled={aiGenerating} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-indigo-500/30">
+          <button onClick={generateDiagnostic}
+                  disabled={aiGenerating} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-indigo-500/30">
             <Brain className="w-4 h-4" /> {aiGenerating ? 'Analisando...' : 'Raio-X IA'}
           </button>
         </div>
@@ -216,15 +222,15 @@ export default function CobrancasDashboard({ cobrancas, onClose, onOpenDetails }
           </h3>
           <div className="flex-1 min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={bairroChartData} layout="vertical" margin={{ top: 0, right: 30, left: 40, bottom: 0 }>
+              <BarChart data={bairroChartData} layout="vertical" margin={{ top: 0, right: 30, left: 40, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8'  axisLine={false} tickLine={false} />
-                <YAxis dataKey="bairro" type="category" width={100} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600  axisLine={false} tickLine={false} />
-                <RechartsTooltip cursor={{fill: '#f8fafc' contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}/>
-                <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20>
-                  <LabelList dataKey="count" position="right" style={{ fill: '#64748b', fontSize: 11, fontWeight: 'bold' }/>
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <YAxis dataKey="bairro" type="category" width={100} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} axisLine={false} tickLine={false} />
+                <RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20}>
+                  <LabelList dataKey="count" position="right" style={{ fill: '#64748b', fontSize: 11, fontWeight: 'bold' }} />
                   {bairroChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 0 ? '#ef4444' : '#3b82f6'/>
+                    <Cell key={`cell-${index}`} fill={index === 0 ? '#ef4444' : '#3b82f6'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -242,11 +248,11 @@ export default function CobrancasDashboard({ cobrancas, onClose, onOpenDetails }
               <PieChart>
                 <Pie data={planoChartData} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={2} dataKey="value">
                   {planoChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]/>
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <RechartsTooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}/>
-                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{fontSize: '11px', fontWeight: 600, color: '#64748b'}/>
+                <RechartsTooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{fontSize: '11px', fontWeight: 600, color: '#64748b'}} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -266,15 +272,15 @@ export default function CobrancasDashboard({ cobrancas, onClose, onOpenDetails }
             </div>
             <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
               <div className="flex justify-between items-center mb-1"><span className="text-xs font-bold text-slate-400">Tentativas (Disparos/Lig.)</span><span className="text-sm font-black">{totalLigacoes}</span></div>
-              <div className="w-full bg-slate-800 rounded-full h-1.5"><div className="bg-sky-500 h-1.5 rounded-full" style={{width: `${Math.min(100, (totalLigacoes/(totalDevedores||1))*100)}%`}></div></div>
+              <div className="w-full bg-slate-800 rounded-full h-1.5"><div className="bg-sky-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (totalLigacoes / (totalDevedores || 1)) * 100)}%` }}></div></div>
             </div>
             <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
               <div className="flex justify-between items-center mb-1"><span className="text-xs font-bold text-slate-400">Contatos Efetivos</span><span className="text-sm font-black">{totalContatosEfetivos}</span></div>
-              <div className="w-full bg-slate-800 rounded-full h-1.5"><div className="bg-emerald-500 h-1.5 rounded-full" style={{width: `${Math.min(100, (totalContatosEfetivos/(totalLigacoes||1))*100)}%`}></div></div>
+              <div className="w-full bg-slate-800 rounded-full h-1.5"><div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (totalContatosEfetivos / (totalLigacoes || 1)) * 100)}%` }}></div></div>
             </div>
             <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
               <div className="flex justify-between items-center mb-1"><span className="text-xs font-bold text-slate-400">Acordos Firmados</span><span className="text-sm font-black">{totalAcordos}</span></div>
-              <div className="w-full bg-slate-800 rounded-full h-1.5"><div className="bg-indigo-500 h-1.5 rounded-full" style={{width: `${Math.min(100, (totalAcordos/(totalContatosEfetivos||1))*100)}%`}></div></div>
+              <div className="w-full bg-slate-800 rounded-full h-1.5"><div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (totalAcordos / (totalContatosEfetivos || 1)) * 100)}%` }}></div></div>
             </div>
           </div>
         </div>

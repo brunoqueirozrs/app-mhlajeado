@@ -85,3 +85,131 @@
     box-shadow: 0 15px 30px rgba(0,0,0,0.08);
   }
 }
+
+/* ==========================================
+   Modo Escuro (Dark Mode) - Suporte Geral
+   ========================================== */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body, 
+.dark #root,
+.dark .bg-\[\#EDF2F7\],
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark .bg-slate-200\/40 {
+  background-color: #0b0f19 !important; /* Slate refinado escuro */
+  color: #f1f5f9 !important;
+}
+
+/* Modais, formulários e cartões */
+.dark .bg-white,
+.dark .card-modern {
+  background-color: #141b2b !important; /* Slate-900 refinado */
+  background-image: none !important;
+  border-color: #202b3f !important; /* Slate-800 border */
+  color: #f8fafc !important;
+}
+
+/* Ajustes de bordas */
+.dark .border-slate-200,
+.dark .border-slate-200\/60,
+.dark .border-slate-200\/80,
+.dark .border-slate-100,
+.dark .border-slate-300,
+.dark .border-slate-300\/50,
+.dark .border-slate-200\/40,
+.dark .border-slate-300\/80 {
+  border-color: #202b3f !important;
+}
+
+/* Textos principais escuros para claros */
+.dark .text-slate-900,
+.dark .text-slate-850,
+.dark .text-slate-950,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-slate-550,
+.dark .text-slate-750 {
+  color: #f1f5f9 !important;
+}
+
+/* Textos de suporte e descrição */
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-slate-400\/70,
+.dark .text-slate-500\/80 {
+  color: #94a3b8 !important;
+}
+
+/* Inputs, selects e textareas */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #1a2336 !important;
+  color: #f8fafc !important;
+  border-color: #2b3952 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #5b7094 !important;
+}
+
+/* Cabeçalhos de tabelas */
+.dark th {
+  background-color: #121824 !important;
+  color: #94a3b8 !important;
+}
+
+.dark tr:hover {
+  background-color: #1a2336 !important;
+}
+
+/* Cores de Badges e alertas sutis */
+.dark .bg-slate-50,
+.dark .bg-slate-100\/50,
+.dark .bg-slate-100\/80,
+.dark .bg-slate-100 {
+  background-color: #1a2336 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.08) !important; color: #34d399 !important; }
+.dark .bg-sky-50 { background-color: rgba(14, 165, 233, 0.08) !important; color: #38bdf8 !important; }
+.dark .bg-rose-50 { background-color: rgba(244, 63, 94, 0.08) !important; color: #fb7185 !important; }
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.08) !important; color: #fbbf24 !important; }
+.dark .bg-violet-50 { background-color: rgba(139, 92, 246, 0.08) !important; color: #a78bfa !important; }
+
+.dark .text-emerald-700, .dark .text-emerald-800 { color: #34d399 !important; }
+.dark .text-sky-700, .dark .text-sky-800 { color: #38bdf8 !important; }
+.dark .text-rose-700, .dark .text-rose-800 { color: #fb7185 !important; }
+.dark .text-amber-700, .dark .text-amber-800 { color: #fbbf24 !important; }
+.dark .text-violet-700, .dark .text-violet-800 { color: #a78bfa !important; }
+
+/* Gráficos Recharts e Tooltips */
+.dark .recharts-default-tooltip {
+  background-color: #141b2b !important;
+  border-color: #202b3f !important;
+  color: #f8fafc !important;
+}
+
+/* Caixas fixas e flutuantes */
+.dark .fixed {
+  border-color: #202b3f !important;
+}
+
+/* Elementos secundários hover */
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover {
+  background-color: #1c263b !important;
+}
+
+/* Alertas de segundo plano */
+.dark .bg-emerald-500\/10 { background-color: rgba(16, 185, 129, 0.06) !important; }
+.dark .bg-sky-500\/10 { background-color: rgba(14, 165, 233, 0.06) !important; }
+.dark .bg-rose-500\/10 { background-color: rgba(244, 63, 94, 0.06) !important; }
+.dark .bg-amber-500\/10 { background-color: rgba(245, 158, 11, 0.06) !important; }
+

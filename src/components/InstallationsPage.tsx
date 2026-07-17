@@ -40,16 +40,18 @@ interface InstallationsPageProps {
 // Client-side parser for live feedback
 function parseProtocolText(raw: string) {
   if (!raw) return { protocol: "", name: "" };
-  
+
   const protMatch = raw.match(/Protocolo\s+(\d+)/i);
   const protocol = protMatch ? protMatch[1] : "";
   
   const parts = raw.split(" - ");
   let name = "";
-  if (parts.length> 0) {
+  if (parts.length > 0) {
     const rawName = parts[parts.length - 1].trim();
     if (rawName && !rawName.toUpperCase().includes("PROTOCOLO") && !rawName.toUpperCase().includes("ATIVAÇÃO")) {
       name = rawName;
+    }
+  }
     
   return { 
     protocol: protocol || "Pendente", 
@@ -185,7 +187,8 @@ export default function InstallationsPage({
       setFormCpf("");
       setSelectedDayAndSlot({ date: dateStr, slot: slotIdx });
       setIsModalOpen(true);
-    ;
+    }
+  };
 
   // Extra Slot Modal
   const [extraSlotModal, setExtraSlotModal] = useState({ isOpen: false, date: "", password: "", error: "" });
@@ -219,7 +222,8 @@ export default function InstallationsPage({
       setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" });
     } else {
       setExtraSlotModal(prev => ({ ...prev, error: "Senha incorreta. Tente novamente." }));
-    ;
+    }
+  };
 
   const handleSaveModal = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,7 +245,8 @@ export default function InstallationsPage({
         // Remove o nono dígito (9) para integração com WhatsApp/n8n se houver 13 dígitos numéros (55 + 11 dígitos)
         if (finalPhone.length === 13 && finalPhone[4] === '9') {
           finalPhone = finalPhone.slice(0, 4) + finalPhone.slice(5);
-        
+        }
+      }
 
       const payload: Installation = {
         id: currentInstallation?.id || "",
@@ -269,7 +274,8 @@ export default function InstallationsPage({
       setProtocolRawInput("");
     } catch (e: any) {
       alert("Erro ao salvar agendamento: " + e.message);
-    ;
+    }
+  };
 
   const handleDeleteClick = (id: string) => {
     setInstToDelete(id);
@@ -304,7 +310,8 @@ export default function InstallationsPage({
       case 3: return "Slot 3 (Tarde - Espaço 1)";
       case 4: return "Slot 4 (Tarde - Espaço 2)";
       default: return `Slot ${slot} (Extra)`;
-    ;
+    }
+  };
 
   const getSlotTimeLabel = (slot: number) => {
     switch (slot) {
@@ -313,7 +320,8 @@ export default function InstallationsPage({
       case 3: return "13:30 às 15:30";
       case 4: return "15:30 às 17:30";
       default: return "A combinar";
-    ;
+    }
+  };
 
   const getStatusColor = (status: Installation["status"]) => {
     switch (status) {
@@ -322,7 +330,8 @@ export default function InstallationsPage({
       case "Cancelada": return "bg-rose-500/10 text-rose-400 border border-rose-500/20";
       case "Reagendada": return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
       default: return "bg-slate-500/10 text-slate-350 border border-slate-500/10";
-    ;
+    }
+  };
 
   // Quick live state for parsing
   const liveParsed = parseProtocolText(protocolRawInput);
@@ -363,9 +372,11 @@ export default function InstallationsPage({
         const swapPayload2 = { ...targetInst, dataAgendamento: draggedInst.dataAgendamento, slotIndex: draggedInst.slotIndex, horario: getSlotTimeLabel(draggedInst.slotIndex!) };
         await onSaveInstallation(swapPayload1);
         await onSaveInstallation(swapPayload2);
-       catch (err) {
+      }
+    } catch (err) {
       console.error("Drop err:", err);
-    ;
+    }
+  };
 
   return (
     <div className="space-y-6 pb-20">
@@ -392,10 +403,11 @@ export default function InstallationsPage({
                 } finally {
                   setIsSyncing(false);
                 }
-              disabled={isSyncing} className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-550 disabled:opacity-50 text-white text-xs font-semibold cursor-pointer transition shadow-sm"
+                    }}
+                    disabled={isSyncing} className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-550 disabled:opacity-50 text-white text-xs font-semibold cursor-pointer transition shadow-sm"
               title="Sincronizar agendamentos diretamente do Google Sheets"
             >
-              <CalendarDays className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`/>
+              <CalendarDays className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
               <span>{isSyncing ? "Sincronizando..." : "Sincronizar Planilha"}</span>
             </button>
           )}
@@ -503,7 +515,7 @@ export default function InstallationsPage({
                       return renderSlotCell(dateStr, slotIdx, inst);
                     });
                   })()}
-                  <button onClick={(e) => { e.stopPropagation(); handleAddExtraSlotClick(dateStr); } className="mt-2 w-full p-2 border border-dashed border-slate-700/50 rounded-lg text-slate-500 hover:text-slate-300 hover:border-slate-500 transition text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
+                  <button onClick={(e) => { e.stopPropagation(); handleAddExtraSlotClick(dateStr); }} className="mt-2 w-full p-2 border border-dashed border-slate-700/50 rounded-lg text-slate-500 hover:text-slate-300 hover:border-slate-500 transition text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3 h-3" /> Slot Extra
                   </button>
@@ -531,7 +543,7 @@ export default function InstallationsPage({
       
         {selectedDayDetails && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelectedDayDetails(null)/>
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelectedDayDetails(null)} />
             <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
@@ -574,7 +586,7 @@ export default function InstallationsPage({
                                  <h4 className="font-bold text-sm text-white">{inst.nomeCliente}</h4>
                                  {inst.observacao && <p className="text-xs font-mono text-slate-400 mt-0.5">{inst.observacao.substring(0, 80)}{inst.observacao.length> 80 ? '...' : ''}</p>}
                                </div>
-                               <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx, inst); } className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-bold text-white transition cursor-pointer"
+                               <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx, inst); }} className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-bold text-white transition cursor-pointer"
                                >
                                  Abrir
                                </button>
@@ -604,7 +616,7 @@ export default function InstallationsPage({
                         ) : (
                           <div className="flex items-center justify-between h-full">
                             <span className="text-sm text-slate-500 italic">Slot Livre</span>
-                            <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx); } className="px-3 py-1.5 border border-slate-700 hover:border-sky-500 hover:text-sky-400 rounded-lg text-xs font-bold text-slate-400 transition cursor-pointer"
+                            <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx); }} className="px-3 py-1.5 border border-slate-700 hover:border-sky-500 hover:text-sky-400 rounded-lg text-xs font-bold text-slate-400 transition cursor-pointer"
                              >
                                Agendar
                              </button>
@@ -623,7 +635,7 @@ export default function InstallationsPage({
       {/* EXTRA SLOT MODAL */}
       {extraSlotModal.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })/>
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })} />
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl relative z-10 w-full max-w-sm">
             <h3 className="text-lg font-bold text-white mb-2">Liberar Slot Extra</h3>
             <p className="text-xs text-slate-400 mb-4">Insira a senha de administrador ou gerente para adicionar um novo slot para o dia {new Date(extraSlotModal.date + "T12:00:00").toLocaleDateString("pt-BR")}.</p>
@@ -634,7 +646,7 @@ export default function InstallationsPage({
               onChange={e => setExtraSlotModal(prev => ({ ...prev, password: e.target.value }))}
               onKeyDown={e => {
                 if (e.key === "Enter") handleConfirmExtraSlot();
-              } className="w-full bg-slate-950 border border-slate-800 text-white p-3 rounded-xl text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 outline-none"
+              }} className="w-full bg-slate-950 border border-slate-800 text-white p-3 rounded-xl text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 outline-none"
               autoFocus
             />
             {extraSlotModal.error && (
@@ -661,7 +673,7 @@ export default function InstallationsPage({
       
         {isModalOpen && selectedDayAndSlot && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setIsModalOpen(false)/>
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
             <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
@@ -749,7 +761,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         >
                           <option value="">Selecione...</option>
                           {vendors.map(v => (
-                            <option key={v} value={v>{v}</option>
+                            <option key={v} value={v}>{v}</option>
                           ))}
                         </select>
                       </div>
@@ -793,7 +805,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         <input type="text"
                           value={formCpf}
                           onChange={e => setFormCpf(e.target.value)}
-                          placeholder="Ex: 000.000.000-00"} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          placeholder="Ex: 000.000.000-00" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
                         />
                       </div>
                       <div>
@@ -805,7 +817,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                           <input type="text"
                             value={formTelefone}
                             onChange={e => setFormTelefone(e.target.value)}
-                            placeholder="Ex: 51988887777"} className="w-full bg-transparent p-2 text-xs text-white focus:outline-none"
+                            placeholder="Ex: 51988887777" className="w-full bg-transparent p-2 text-xs text-white focus:outline-none"
                           />
                         </div>
                       </div>
@@ -816,7 +828,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         <input type="text"
                           value={formEndereco}
                           onChange={e => setFormEndereco(e.target.value)}
-                          placeholder="Rua, Número, Bairro"} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          placeholder="Rua, Número, Bairro" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
                         />
                       </div>
                     </div>
@@ -842,13 +854,13 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                             <input 
                               value={formTelefone}
                               onChange={e => setFormTelefone(e.target.value)}
-                              placeholder="Ex: 51988887777"} className="w-full bg-transparent p-2 text-xs text-white focus:outline-none"
+                              placeholder="Ex: 51988887777" className="w-full bg-transparent p-2 text-xs text-white focus:outline-none"
                             />
                           </div>
                           {formTelefone && formTelefone !== "Consulte no Protocolo" && (
                             <a 
                               href={`https://wa.me/${formTelefone.replace(/\D/g, '').startsWith('55') ? formTelefone.replace(/\D/g, '') : '55' + formTelefone.replace(/\D/g, '')}`}
-                              target="_blank" rel="noreferrer"} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center justify-center transition"
+                              target="_blank" rel="noreferrer" className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg flex items-center justify-center transition"
                               title="Chamar no WhatsApp"
                             >
                               <span className="font-bold text-xs whitespace-nowrap">Chamar</span>
@@ -901,7 +913,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                             onClick={() => {
                               const msg = `Olá, ${liveParsed.name || 'cliente'}! O técnico da MHNET está a caminho da sua residência para realizar o serviço agendado.`;
                               window.open(`https://wa.me/${formTelefone.replace(/\D/g, '').startsWith('55') ? formTelefone.replace(/\D/g, '') : '55' + formTelefone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, "_blank");
-                            } className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-2 rounded-lg whitespace-nowrap transition cursor-pointer flex items-center justify-center"
+                            }} className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-2 rounded-lg whitespace-nowrap transition cursor-pointer flex items-center justify-center"
                           >
                             WhatsApp Aviso
                           </button>
@@ -932,7 +944,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                     >
                       Cancelar
                     </button>
-                    <button type="submit"} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 -lg -sky-950/30 text-xs font-bold text-white transition cursor-pointer"
+                    <button type="submit" className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 shadow-lg shadow-sky-950/30 text-xs font-bold text-white transition cursor-pointer"
                     >
                       <Check className="w-4 h-4" />
                       <span>Confirmar Agendamento</span>
@@ -949,7 +961,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
       
         {viewingAiInst && (
           <div className="fixed inset-0 z-50 flex items-center justify-end p-4">
-            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setViewingAiInst(null)/>
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setViewingAiInst(null)} />
             <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10">
               <div className="space-y-6">
                 <div className="flex items-start justify-between border-b border-slate-800 pb-4">
@@ -1019,7 +1031,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
         message="Tem certeza que deseja excluir permanentemente esta reserva de instalação do calendário?"
         confirmText="Excluir"
         onConfirm={confirmDeleteInstallation}
-        onCancel={() => setInstToDelete(null)/>
+        onCancel={() => setInstToDelete(null)} />
     </div>
   );
 
@@ -1086,4 +1098,5 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
         <span className="text-[8px] font-mono text-slate-600 mt-1">Horário: {getSlotTimeLabel(slotIdx).split(" às ")[0]}</span>
       </button>
     );
-  
+  }
+}

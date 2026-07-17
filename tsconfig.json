@@ -21,7 +21,13 @@
       ]
     },
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "esModuleInterop": true
   },
-  "exclude": ["patch_server.js", "*.cjs", "*.js", "test-*.ts"]
+  "exclude": [
+    "patch_server.js",
+    "*.cjs",
+    "*.js",
+    "test-*.ts"
+  ]
 }

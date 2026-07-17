@@ -31,7 +31,8 @@ const formatPlano = (plano?: string) => {
     result = match[1];
     if (/wifitotal/i.test(plano)) {
       result += " + WIFITotal";
-    
+    }
+  }
   return result;
 };
 
@@ -115,8 +116,8 @@ export default function CobrancasPage({
       if (hasKeywords) {
         headers = firstLineCells.map(h => h.trim().toLowerCase());
         dataStartIdx = 1;
-      
-    
+      }
+    }
     for (let i = dataStartIdx; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
@@ -198,7 +199,8 @@ export default function CobrancasPage({
           const m = parts[1].trim().padStart(2, "0");
           const d = parts[0].trim().padStart(2, "0");
           dataVencimento = `${y}-${m}-${d}`;
-         else if (!dataVencimento) {
+        }
+      } else if (!dataVencimento) {
         dataVencimento = new Date().toISOString().split("T")[0];
       }
       
@@ -208,11 +210,12 @@ export default function CobrancasPage({
       if (!isNaN(dVent.getTime())) {
         const diffTime = Date.now() - dVent.getTime();
         const calculated = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (calculated> 0) {
+        if (calculated > 0) {
           diasAtraso = calculated;
         } else {
           diasAtraso = 0;
-        
+        }
+      }
       
       results.push({
         idContrato,
@@ -222,7 +225,7 @@ export default function CobrancasPage({
         dataVencimento,
         cidade,
         plano,
-        status: diasAtraso> 0 ? "Vencido" : "Pendente",
+        status: diasAtraso > 0 ? "Vencido" : "Pendente",
         diasAtraso,
         observacao: observacao || "Importado da planilha",
         historicoContatos: [],
@@ -234,7 +237,7 @@ export default function CobrancasPage({
         canal,
         dataAtivacao,
         numeroFaturas,
-        acaoEnvio: acaoEnvio || (diasAtraso> 0 ? "Pendente" : "")
+        acaoEnvio: acaoEnvio || (diasAtraso > 0 ? "Pendente" : "")
       });
     }
     setBulkPreview(results);
@@ -259,11 +262,14 @@ export default function CobrancasPage({
         setBulkPreview([]);
         if (onRefreshData) {
           onRefreshData();
-         else {
+        }
+      } else {
         throw new Error(data.message || "Erro desconhecido");
-       catch (e: any) {
+      }
+    } catch (e: any) {
       alert("Falha ao salvar cobranças: " + e.message);
-    ;
+    }
+  };
 
   // Auto-select first item when details or something opens
   const handleOpenDetails = (item: Cobranca) => {
@@ -323,7 +329,8 @@ export default function CobrancasPage({
 
     } catch (e: any) {
       alert("Erro ao registrar ligação: " + e.message);
-    ;
+    }
+  };
 
   const handleSubmitContactLog = async () => {
     if (!selectedItem) return;
@@ -357,9 +364,11 @@ export default function CobrancasPage({
       const fresh = cobrancas.find(x => x.idContrato === selectedItem.idContrato);
       if (fresh) {
         setSelectedItem(fresh);
-       catch (e: any) {
+      }
+    } catch (e: any) {
       alert("Erro ao registrar atendimento: " + e.message);
-    ;
+    }
+  };
 
   // Mark invoice as PAID
   const handleMarkAsPaid = async (item: Cobranca) => {
@@ -389,7 +398,8 @@ export default function CobrancasPage({
       setIsDetailsOpen(false);
     } catch (e: any) {
       alert("Erro ao dar baixa na fatura: " + e.message);
-    ;
+    }
+  };
 
   // Request AI Customized approach message via Gemini API
   const handleRequestAiDraft = async () => {
@@ -403,7 +413,8 @@ export default function CobrancasPage({
       setAiDraftMessage("Olá! Identificamos uma pendência em sua assinatura MHNET. Por favor, regularize via código pix ou boleto bancário.");
     } finally {
       setAiGenerating(false);
-    ;
+    }
+  };
 
   // Launch pre-filled WhatsApp Web link
   const handleOpenWhatsAppChat = (item: Cobranca, customMessage?: string) => {
@@ -473,7 +484,8 @@ export default function CobrancasPage({
       setNewObs("");
     } catch (e: any) {
       alert("Erro ao cadastrar cobrança: " + e.message);
-    ;
+    }
+  };
 
   // Get unique list of cities for dropdown
   const cidadesDisponiveis = Array.from(new Set(cobrancas.map(c => c.cidade || "Outro"))).filter(Boolean);
@@ -567,7 +579,8 @@ export default function CobrancasPage({
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(filteredList.map(c => c.idContrato)));
-    ;
+    }
+  };
 
   const handleToggleRow = (id: string) => {
     const next = new Set(selectedIds);
@@ -640,7 +653,8 @@ export default function CobrancasPage({
       if (onRefreshData) onRefreshData();
     } catch (error: any) {
       alert("Falha ao disparar envio: " + error.message);
-    ;
+    }
+  };
 
   const confirmAndDispatch = async () => {
     setIsConfirmDispatchOpen(false);
@@ -678,19 +692,20 @@ export default function CobrancasPage({
       alert("Falha ao disparar lote: " + error.message);
     } finally {
       setIsDispatching(false);
-    ;
+    }
+  };
 
   if (viewMode === "dashboard") {
     return (
       <CobrancasDashboard 
         cobrancas={cobrancas} 
         onClose={() => setViewMode("lista")} 
-        onOpenDetails={(item) => handleOpenContactLog(item)/>
+        onOpenDetails={(item) => handleOpenContactLog(item)} />
     );
   }
 
   return (
-    <div id="cobrancas-module"} className="cobrancas-page-container space-y-6 font-sans relative">
+    <div id="cobrancas-module" className="cobrancas-page-container space-y-6 font-sans relative">
 
       {/* Modal Confirmar Disparo */}
       {isConfirmDispatchOpen && (
@@ -822,7 +837,7 @@ export default function CobrancasPage({
               }, {} as Record<string, number>)
             ).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([bairro, count]) => (
               <div key={bairro} className="flex justify-between items-center text-xs">
-                <span className="text-slate-800 font-bold truncate pr-2" title={bairro>{bairro}</span>
+                <span className="text-slate-800 font-bold truncate pr-2" title={bairro}>{bairro}</span>
                 <span className="font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">{count}</span>
               </div>
             ))}
@@ -841,7 +856,7 @@ export default function CobrancasPage({
               }, {} as Record<string, number>)
             ).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([plano, count]) => (
               <div key={plano} className="flex justify-between items-center text-xs">
-                <span className="text-sky-100 font-semibold truncate pr-2" title={plano>{plano}</span>
+                <span className="text-sky-100 font-semibold truncate pr-2" title={plano}>{plano}</span>
                 <span className="font-mono text-sky-300 bg-black/20 px-1.5 py-0.5 rounded text-[10px]">{count}</span>
               </div>
             ))}
@@ -857,16 +872,16 @@ export default function CobrancasPage({
           <div className="sm:col-span-4 relative font-sans">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
             <input type="text"
-              placeholder="Pesquisar por Código, Nome..."} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 hover:bg-slate-50 focus:bg-white leading-none transition"
+              placeholder="Pesquisar por Código, Nome..." className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 hover:bg-slate-50 focus:bg-white leading-none transition"
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)/>
+              onChange={e => setSearchTerm(e.target.value)} />
           </div>
 
           <div className="sm:col-span-3 flex items-center gap-2">
             <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
               value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)>
+              onChange={e => setFilterStatus(e.target.value)}>
               <option value="Todos">Status: Todos</option>
               <option value="Pendente">A vencer / Pendente</option>
               <option value="Vencido">Atrasado / Vencido</option>
@@ -878,10 +893,10 @@ export default function CobrancasPage({
           <div className="sm:col-span-3">
             <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
               value={filterCidade}
-              onChange={e => setFilterCidade(e.target.value)>
+              onChange={e => setFilterCidade(e.target.value)}>
               <option value="Todos">Cidade: Todas</option>
               {cidadesDisponiveis.map(c => (
-                <option key={c} value={c>{c}</option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>
@@ -889,7 +904,7 @@ export default function CobrancasPage({
           <div className="sm:col-span-2">
             <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
               value={filterN8N}
-              onChange={e => setFilterN8N(e.target.value)>
+              onChange={e => setFilterN8N(e.target.value)}>
               <option value="Todos">N8N: Todos</option>
               <option value="NaoEnviado">N8N: Não Enviados</option>
               <option value="Enviado">N8N: Enviados</option>
@@ -908,14 +923,15 @@ export default function CobrancasPage({
           <div className="flex items-center gap-3">
             <input type="checkbox"
               id="select-all-cobrancas"
-              checked={selectedIds.size> 0 && selectedIds.size === filteredList.length}
+              checked={selectedIds.size > 0 && selectedIds.size === filteredList.length}
               ref={input => {
                 if (input) {
-                  input.indeterminate = selectedIds.size> 0 && selectedIds.size < filteredList.length;
+                  input.indeterminate = selectedIds.size > 0 && selectedIds.size < filteredList.length;
                 }
+              }}
               onChange={handleToggleSelectAll} className="w-4 h-4 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
             />
-            <label htmlFor="select-all-cobrancas"} className="text-xs font-bold text-slate-700 select-none cursor-pointer">
+            <label htmlFor="select-all-cobrancas" className="text-xs font-bold text-slate-700 select-none cursor-pointer">
               {selectedIds.size> 0 
                 ? `${selectedIds.size} clientes selecionados (de ${filteredList.length} filtrados)` 
                 : `Selecionar todos (${filteredList.length} filtrados)`}
@@ -924,7 +940,8 @@ export default function CobrancasPage({
 
           <div className="flex gap-2">
             <button onClick={handleExportCSV}
-              disabled={filteredList.length === 0} className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 ${
+                  
+                  disabled={filteredList.length === 0} className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 ${
                 filteredList.length> 0
                   ? "bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-200 cursor-pointer"
                   : "bg-slate-100 text-slate-400 cursor-not-allowed"
@@ -936,14 +953,17 @@ export default function CobrancasPage({
                 if (onRefreshData) {
                   onRefreshData();
                   alert("Sincronizando cobranças com a planilha Google Sheets...");
-                 className="px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 cursor-pointer"
+                }
+              }}
+              className="px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Sincronizar Planilha
             </button>
             <button id="btn-disparo-massa"
               onClick={() => setIsConfirmDispatchOpen(true)}
-              disabled={selectedIds.size === 0 || isDispatching} className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2
+                  
+                  disabled={selectedIds.size === 0 || isDispatching} className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2
                 ${selectedIds.size> 0 && !isDispatching
                   ? "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 cursor-pointer" 
                   : "bg-slate-100 text-slate-400 cursor-not-allowed"}`}>
@@ -976,13 +996,10 @@ export default function CobrancasPage({
             
             <div className="relative w-full h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
               <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full"
-               }
-               %` 
-               />
+                style={{ width: `${progressPercent}%` }}
+              />
               {totalEmFila> 0 && (
-                <div className="absolute top-0 left-0 h-full w-full bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                 
-                 />
+                <div className="absolute top-0 left-0 h-full w-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
               )}
             </div>
           </div>
@@ -993,12 +1010,13 @@ export default function CobrancasPage({
             <thead>
               <tr className="bg-slate-50/75 border-b border-slate-100 text-[9.5px] font-black uppercase text-slate-400 select-none tracking-widest">
                 <th className="py-4 px-4 w-10 text-center">
-                  <input type="checkbox"} className="cobrancas-table-header w-3.5 h-3.5 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
-                    checked={selectedIds.size> 0 && selectedIds.size === filteredList.length}
+                  <input type="checkbox" className="cobrancas-table-header w-3.5 h-3.5 text-sky-600 bg-white border-slate-300 rounded cursor-pointer"
+                    checked={selectedIds.size > 0 && selectedIds.size === filteredList.length}
                     ref={input => {
                       if (input) {
-                        input.indeterminate = selectedIds.size> 0 && selectedIds.size < filteredList.length;
+                        input.indeterminate = selectedIds.size > 0 && selectedIds.size < filteredList.length;
                       }
+                    }}
                     onChange={handleToggleSelectAll}
                     title="Selecionar todos os filtrados"
                   />
@@ -1016,9 +1034,10 @@ export default function CobrancasPage({
                 filteredList.map((item, index) => {
                      
                   return (
-                    <tr key={`${item.idContrato}-${index}` className={`hover:bg-slate-50/50 transition duration-100 alignment cursor-pointer ${selectedIds.has(item.idContrato) ? 'bg-sky-50/30' : ''}` onClick={(e) => {
+                    <tr key={`${item.idContrato}-${index}`} className={`hover:bg-slate-50/50 transition duration-100 alignment cursor-pointer ${selectedIds.has(item.idContrato) ? 'bg-sky-50/30' : ''}`} onClick={(e) => {
                         if ((e.target as HTMLElement).closest('input[type="checkbox"], button')) return;
-                        handleOpenDetails(item); }}>
+                        handleOpenDetails(item);
+                      }}>
                       {/* Checkbox */}
                       <td className="py-3 px-4 text-center">
                         <input type="checkbox"
@@ -1032,7 +1051,7 @@ export default function CobrancasPage({
                         <div className="text-[10px] text-slate-400 font-mono font-bold tracking-tight mb-0.5" title="Código / CPF">
                           {item.cpfCnpj || item.idContrato}
                         </div>
-                        <div className="font-extrabold text-slate-800 leading-tight block truncate whitespace-normal max-w-[200px] transform hover:scale-105 hover:text-sky-600 transition-all origin-left cursor-pointer" title={item.nomeCliente>
+                        <div className="font-extrabold text-slate-800 leading-tight block truncate whitespace-normal max-w-[200px] transform hover:scale-105 hover:text-sky-600 transition-all origin-left cursor-pointer" title={item.nomeCliente}>
                           {item.nomeCliente}
                         </div>
                       </td>
@@ -1068,7 +1087,7 @@ export default function CobrancasPage({
                       {/* App / Info */}
                       <td className="py-3 px-4 min-w-[120px]">
                         <div className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5 mb-0.5">
-                          Baixou App: <span className={item.baixouApp === "Sim" ? "text-emerald-600" : "text-amber-600">{item.baixouApp || "Não"}</span>
+                          Baixou App: <span className={item.baixouApp === "Sim" ? "text-emerald-600" : "text-amber-600"}>{item.baixouApp || "Não"}</span>
                         </div>
                         <div className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]" title="Plano">
                           {formatPlano(item.plano)}
@@ -1102,20 +1121,23 @@ export default function CobrancasPage({
                       <td className="py-3 px-4 text-right pr-6 min-w-[150px]">
                         <div className="flex justify-end gap-1.5 font-sans">
                           {/* Manual Dispatch N8N Button */}
-                          <button onClick={() => handleSingleDispatch(item)}
+                          <button 
+                            onClick={() => handleSingleDispatch(item)}
                             disabled={item.statusEnvio === "Enviado" || item.statusEnvio === "Em Fila"}
                             className={`px-2.5 py-1.5 border rounded-lg text-[10.5px] uppercase font-black tracking-wide transition flex items-center gap-1 ${
                               item.statusEnvio === "Enviado" || item.statusEnvio === "Em Fila"
                                 ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
                                 : "bg-slate-50 hover:bg-rose-50 border-slate-200 hover:border-rose-200 text-slate-700 hover:text-rose-600 cursor-pointer"
                             }`}
-                            title={item.statusEnvio === "Enviado" || item.statusEnvio === "Em Fila" ? "Já enviado ao N8N" : "Disparo Manual (N8N)">
+                            title={item.statusEnvio === "Enviado" || item.statusEnvio === "Em Fila" ? "Já enviado ao N8N" : "Disparo Manual (N8N)"}
+                          >
                             <Send className="w-3.5 h-3.5" />
                             <span>Enviar</span>
                           </button>
 
                           {/* Quick WhatsApp push */}
-                          <button onClick={() => handleOpenWhatsAppChat(item)}
+                          <button 
+                            onClick={() => handleOpenWhatsAppChat(item)}
                             className="p-1.5 bg-[#E6FAF1] hover:bg-emerald-100 text-[#00A86B] border border-emerald-250 rounded-lg cursor-pointer transition"
                             title="Cobrar diretamente no WhatsApp (Texto padrão)"
                           >
@@ -1123,7 +1145,8 @@ export default function CobrancasPage({
                           </button>
 
                           {/* Mark paid Quick */}
-                          <button onClick={() => handleMarkAsPaid(item)}
+                          <button 
+                            onClick={() => handleMarkAsPaid(item)}
                             className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg cursor-pointer transition shadow-sm active:scale-90"
                             title="Confirmar pagamento ou baixar"
                           >
@@ -1151,7 +1174,7 @@ export default function CobrancasPage({
         <div className="md:hidden divide-y divide-slate-100 font-sans">
           {filteredList.length> 0 ? (
             filteredList.map((item, index) => (
-              <div key={`${item.idContrato}-${index}` className="p-4 bg-white space-y-3">
+              <div key={`${item.idContrato}-${index}`} className="p-4 bg-white space-y-3">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <div className="text-[10px] text-slate-400 font-mono font-bold tracking-tight mb-0.5">{item.cpfCnpj || item.idContrato}</div>
@@ -1219,7 +1242,7 @@ export default function CobrancasPage({
                 <h3 className="text-lg font-black tracking-tight">{selectedItem.nomeCliente}</h3>
                 <div className="flex items-center gap-3">
                   <p className="text-xs text-slate-400 font-mono font-bold uppercase">Contrato ID: {selectedItem.idContrato} · Telefone: {selectedItem.telefone}</p>
-                  <button onClick={() => { setIsRegistroRapidoOpen(true); setRegistroRapidoAtendeu(null); setRegistroRapidoRelato(""); } className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                  <button onClick={() => { setIsRegistroRapidoOpen(true); setRegistroRapidoAtendeu(null); setRegistroRapidoRelato(""); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold transition-all cursor-pointer"
                   >
                     <Phone className="w-3.5 h-3.5" />
                     Registro Rápido de Ligação
@@ -1272,7 +1295,8 @@ export default function CobrancasPage({
                     </div>
                     
                     <button onClick={handleRequestAiDraft}
-                      disabled={aiGenerating} className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-[10px] uppercase font-black tracking-wide cursor-pointer transition flex items-center gap-1 shadow-md shadow-sky-900/10 disabled:opacity-50"
+                  
+                  disabled={aiGenerating} className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-[10px] uppercase font-black tracking-wide cursor-pointer transition flex items-center gap-1 shadow-md shadow-sky-900/10 disabled:opacity-50"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-200" />
                       <span>{aiGenerating ? "Redigindo..." : "Gerar Roteiro IA"}</span>
@@ -1288,7 +1312,7 @@ export default function CobrancasPage({
                         <button onClick={() => {
                             navigator.clipboard.writeText(aiDraftMessage);
                             alert("Mensagem da IA copiada para a área de transferência! Cole no chat do cliente.");
-                          } className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-[10px] uppercase font-black cursor-pointer transition"
+                          }} className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-[10px] uppercase font-black cursor-pointer transition"
                         >
                           Copiar Texto
                         </button>
@@ -1343,7 +1367,7 @@ export default function CobrancasPage({
                 <button onClick={() => {
                     setIsDetailsOpen(false);
                     handleOpenContactLog(selectedItem);
-                  } className="px-4 py-2 bg-sky-650 hover:bg-sky-600 text-white rounded-xl text-xs font-bold leading-none cursor-pointer transition"
+                  }} className="px-4 py-2 bg-sky-650 hover:bg-sky-600 text-white rounded-xl text-xs font-bold leading-none cursor-pointer transition"
                 >
                   Registrar Contato
                 </button>
@@ -1402,7 +1426,7 @@ export default function CobrancasPage({
                   placeholder="Ex: Cliente disse que teve imprevistos de saúde e que pagará na próxima sexta-feira o boleto."
                   rows={4} className="w-full bg-slate-50 border border-slate-200 focus:border-slate-400 focus:card-modern rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none leading-relaxed transition"
                   value={logDescricao}
-                  onChange={e => setLogDescricao(e.target.value)/>
+                  onChange={e => setLogDescricao(e.target.value)} />
               </div>
 
               <div className="flex items-center gap-2 pt-2">
@@ -1411,7 +1435,7 @@ export default function CobrancasPage({
                   checked={contatoEfetivo}
                   onChange={e => setContatoEfetivo(e.target.checked)} className="rounded border-slate-300 w-4 h-4 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                 />
-                <label htmlFor="contatoEfetivoCheck"} className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                <label htmlFor="contatoEfetivoCheck" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
                   Contato Efetivo? (Atendeu e conversou)
                 </label>
               </div>
@@ -1419,7 +1443,7 @@ export default function CobrancasPage({
                 <label className="text-[10px] font-black uppercase text-slate-400 block pl-0.5">Motivo da Inadimplência (Diagnóstico)</label>
                 <select className="w-full bg-slate-50 border border-slate-200 focus:border-slate-400 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:outline-none transition"
                   value={motivoInadimplencia}
-                  onChange={e => setMotivoInadimplencia(e.target.value)>
+                  onChange={e => setMotivoInadimplencia(e.target.value)}>
                   <option value="">Selecione o Motivo (Opcional)</option>
                   <option value="Esquecimento">Esquecimento</option>
                   <option value="Desemprego/Dificuldade Financeira">Desemprego / Dificuldade Financeira</option>
@@ -1433,9 +1457,9 @@ export default function CobrancasPage({
               {/* Settlement Agreement (Promise) checkbox togglers */}
               <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input type="checkbox"} className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-4 h-4"
+                  <input type="checkbox" className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-4 h-4"
                     checked={prometeuPagamento}
-                    onChange={e => setPrometeuPagamento(e.target.checked)/>
+                    onChange={e => setPrometeuPagamento(e.target.checked)} />
                   <span className="text-xs font-black text-slate-700 uppercase">Houve Promessa de Pagamento?</span>
                 </label>
 
@@ -1443,9 +1467,9 @@ export default function CobrancasPage({
                   <div className="space-y-1">
                     <span className="text-[10px] font-bold text-slate-400 block pl-0.5">Previsão Acordada de Pagamento</span>
                     <input type="text"
-                      placeholder="Ex: 12/06/2026"} className="w-full card-modern border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                      placeholder="Ex: 12/06/2026" className="w-full card-modern border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
                       value={promessaData}
-                      onChange={e => setPromessaData(e.target.value)/>
+                      onChange={e => setPromessaData(e.target.value)} />
                   </div>
                 )}
               </div>
@@ -1490,41 +1514,41 @@ export default function CobrancasPage({
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Contrato Código *</label>
                   <input type="text"
-                    placeholder="Ex: MHN98721"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none uppercase"
+                    placeholder="Ex: MHN98721" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none uppercase"
                     value={newIdContrato}
-                    onChange={e => setNewIdContrato(e.target.value)/>
+                    onChange={e => setNewIdContrato(e.target.value)} />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Telefone de Contato *</label>
                   <input type="text"
-                    placeholder="Ex: (51) 99872-6543"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                    placeholder="Ex: (51) 99872-6543" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
                     value={newTelefone}
-                    onChange={e => setNewTelefone(e.target.value)/>
+                    onChange={e => setNewTelefone(e.target.value)} />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Nome Completo do Cliente *</label>
                 <input type="text"
-                  placeholder="Ex: Clóvis Roberto Born"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                  placeholder="Ex: Clóvis Roberto Born" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
                   value={newNomeCliente}
-                  onChange={e => setNewNomeCliente(e.target.value)/>
+                  onChange={e => setNewNomeCliente(e.target.value)} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Valor da Fatura (R$) *</label>
                   <input type="text"
-                    placeholder="Ex: 119.90"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none text-right font-mono"
+                    placeholder="Ex: 119.90" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none text-right font-mono"
                     value={newValor}
-                    onChange={e => setNewValor(e.target.value)/>
+                    onChange={e => setNewValor(e.target.value)} />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Data Vencimento *</label>
                   <input type="text"
-                    placeholder="Ex: 10/06/2026"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                    placeholder="Ex: 10/06/2026" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
                     value={newDataVencimento}
-                    onChange={e => setNewDataVencimento(e.target.value)/>
+                    onChange={e => setNewDataVencimento(e.target.value)} />
                 </div>
               </div>
 
@@ -1533,7 +1557,7 @@ export default function CobrancasPage({
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Cidade</label>
                   <select className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold cursor-pointer text-slate-705 focus:outline-none"
                     value={newCidade}
-                    onChange={e => setNewCidade(e.target.value)>
+                    onChange={e => setNewCidade(e.target.value)}>
                     <option value="Lajeado">Lajeado</option>
                     <option value="Estrela">Estrela</option>
                     <option value="Arroio do Meio">Arroio do Meio</option>
@@ -1543,9 +1567,9 @@ export default function CobrancasPage({
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Plano</label>
-                  <input type="text"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
+                  <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none"
                     value={newPlano}
-                    onChange={e => setNewPlano(e.target.value)/>
+                    onChange={e => setNewPlano(e.target.value)} />
                 </div>
               </div>
 
@@ -1553,9 +1577,9 @@ export default function CobrancasPage({
                 <label className="text-[10px] font-bold text-slate-400 block pl-0.5">Observações Internas (Opcional)</label>
                 <textarea
                   rows={2}
-                  placeholder="Observações de inadimplência histórica ou facilidades de contato"} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-medium focus:outline-none leading-normal"
+                  placeholder="Observações de inadimplência histórica ou facilidades de contato" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-medium focus:outline-none leading-normal"
                   value={newObs}
-                  onChange={e => setNewObs(e.target.value)/>
+                  onChange={e => setNewObs(e.target.value)} />
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-2 text-right">
@@ -1564,7 +1588,7 @@ export default function CobrancasPage({
                 >
                   Cancelar
                 </button>
-                <button type="submit"} className="px-4 py-2 bg-sky-650 hover:bg-sky-600 text-white rounded-xl text-xs font-bold leading-none cursor-pointer flex items-center gap-1.5"
+                <button type="submit" className="px-4 py-2 bg-sky-650 hover:bg-sky-600 text-white rounded-xl text-xs font-bold leading-none cursor-pointer flex items-center gap-1.5"
                 >
                   <Save className="w-4.5 h-4.5" />
                   <span>Salvar Cobrança</span>
@@ -1591,7 +1615,7 @@ export default function CobrancasPage({
                   setIsBulkImportOpen(false);
                   setBulkText("");
                   setBulkPreview([]);
-                } className="p-1 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-slate-100 hover:text-white transition font-sans text-xs font-bold leading-none"
+                }} className="p-1 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-slate-100 hover:text-white transition font-sans text-xs font-bold leading-none"
               >
                 ✕ Fechar
               </button>
@@ -1618,7 +1642,7 @@ export default function CobrancasPage({
                   onChange={e => {
                     setBulkText(e.target.value);
                     parseBulkPaste(e.target.value);
-                  }/>
+                  }} />
               </div>
 
               {bulkPreview.length> 0 ? (
@@ -1664,7 +1688,7 @@ export default function CobrancasPage({
                   setIsBulkImportOpen(false);
                   setBulkText("");
                   setBulkPreview([]);
-                } className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold leading-none cursor-pointer transition select-none"
+                }} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold leading-none cursor-pointer transition select-none"
               >
                 Cancelar
               </button>
@@ -1720,7 +1744,7 @@ export default function CobrancasPage({
                   <textarea
                     value={registroRapidoRelato}
                     onChange={(e) => setRegistroRapidoRelato(e.target.value)}
-                    placeholder="Descreva o que foi conversado..."} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[100px]"
+                    placeholder="Descreva o que foi conversado..." className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[100px]"
                   />
                   <div className="flex justify-end gap-2 pt-2">
                     <button onClick={() => setRegistroRapidoAtendeu(null)} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition"

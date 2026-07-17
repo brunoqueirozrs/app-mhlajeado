@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Bot, Wifi, WifiOff, RefreshCw, LogOut, Loader2, Award, ClipboardList, 
   MapPin, Users, HelpCircle, Activity, Info, CalendarDays, BookOpen, User, Lock, Sparkles, Coins, Download, Sliders, Link, Calculator, Lightbulb, UserCheck, Store, FileSpreadsheet, Zap
-, Archive, Search, X, FileText } from 'lucide-react';
+, Archive, Search, X, FileText, Sun, Moon } from 'lucide-react';
 
 import { 
   Vendor, Lead, Task, Absence, FttaItem, FttaProspeccao, Competitor, BaseClient, BaseActionLog, Cobranca, CobrancaLog, Installation 
@@ -49,6 +49,20 @@ import { initAuth, getAccessToken, googleSignIn } from "./lib/auth";
 import { createGoogleCalendarEvent, createGoogleTask } from "./lib/googleApi";
 
 export default function App() {
+  // Theme selection state
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    return (localStorage.getItem("theme") as "light" | "dark") || "light";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("theme", theme);
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
   // Authentication & session
   const [globalSearchTerm, setGlobalSearchTerm] = useState("");
   const [loggedUser, setLoggedUser] = useState<string>("");
@@ -334,7 +348,8 @@ export default function App() {
     } finally {
       setLoading(false);
       setIsSyncing(false);
-    ;
+    }
+  };
 
   const loadOfflineLocalStorageDataCache = () => {
     try {
@@ -346,12 +361,18 @@ export default function App() {
       if (cTasks) setTasks(JSON.parse(cTasks));
       if (cAbs) setAbsences(JSON.parse(cAbs));
       if (cCob) setCobrancas(JSON.parse(cCob));
-    } catch (e) {;
+    } catch (e) {
+      console.warn("Erro ao carregar cache offline", e);
+    }
+  };
 
   const saveOfflineCache = (key: string, data: any) => {
     try {
       localStorage.setItem(`cache_${key}`, JSON.stringify(data));
-    } catch (e) {;
+    } catch (e) {
+      console.warn("Erro ao salvar cache", e);
+    }
+  };
 
   useEffect(() => {
     if (loggedUser) {
@@ -415,10 +436,12 @@ export default function App() {
       if (result?.user) {
         const userName = result.user.displayName || result.user.email || "Usuário Vendedor";
         processLoginAction(userName);
-      } catch (e: any) {
+      } 
+    } catch (e: any) {
       console.error(e);
       setLoginError("Erro ao autenticar com o Google. Tente novamente.");
     }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -482,7 +505,8 @@ export default function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newLead)
         });
-      } catch (e) { else {
+      } catch (e) { } 
+    } else {
       // Edit
       updatedLeads = leads.map(l => {
         if (l._linha === payload._linha) {
@@ -498,7 +522,8 @@ export default function App() {
          updatedLeads = updatedLeads.filter(l => l._linha !== payload._linha);
          if (payload.status === "Venda Fechada") {
            alert("Venda Fechada! Lead arquivado com sucesso.");
-         
+         }
+      }
       setLeads(updatedLeads);
       saveOfflineCache("leads", updatedLeads);
 
@@ -509,7 +534,9 @@ export default function App() {
           body: JSON.stringify({ ...payload, ultimaAtualizacao: `${todayStr} ${nowTimeStr}` })
         });
       } catch (e) {
-    // Pull fresh
+        console.error("Erro ao salvar edição de lead no servidor", e);
+      }
+    }
     fetchAllData();
   };
 
@@ -543,7 +570,10 @@ export default function App() {
         body: JSON.stringify({ type: "site", data: ftItem })
       });
       fetchAllData();
-    } catch (e) {;
+    } catch (e) {
+      console.error("Erro ao salvar item FTTA", e);
+    }
+  };
 
   const handleSaveFttaProspKey = async (prosp: Omit<FttaProspeccao, "_linha">) => {
     try {
@@ -553,7 +583,10 @@ export default function App() {
         body: JSON.stringify({ type: "prospeccao", data: prosp })
       });
       fetchAllData();
-    } catch (e) {;
+    } catch (e) {
+      console.error("Erro ao salvar prospecção FTTA", e);
+    }
+  };
 
   // 3. Tasks checklist actions callbacks
 
@@ -589,7 +622,8 @@ export default function App() {
           await createGoogleCalendarEvent(title, dateStr, timeStr);
         }
         await createGoogleTask(title, "Criada automaticamente pelo sistema", dateStr);
-       catch (e) {
+        }
+      } catch (e) {
       console.error("Error creating google task/event", e);
     }
 
@@ -602,7 +636,8 @@ export default function App() {
       const data = await resp.json();
       if (data.webhookStatus === 404 || data.webhookStatus === 500) {
         window.dispatchEvent(new CustomEvent("webhook-error"));
-       catch (e) {}
+        }
+      } catch (e) {}
     fetchAllData();
   };
 
@@ -665,7 +700,8 @@ export default function App() {
           token = result?.accessToken || null;
         } catch (e) {
           console.warn("Pop-up do Google bloqueado ou fechado", e);
-        
+        }
+      }
 
       if (token) {
         // Google Drive upload multipart form
@@ -706,7 +742,8 @@ export default function App() {
            driveLink = "https://drive.google.com/file/d/" + driveData.id;
         } else {
            console.warn("Google Drive upload failed:", await respUpload.text());
-        
+        }
+      }
     }
 
     const payload = {
@@ -749,7 +786,10 @@ export default function App() {
         body: JSON.stringify({ status })
       });
       fetchAllData();
-    } catch (e) {;
+    } catch (e) {
+      console.error("Erro ao atualizar ausência", e);
+    }
+  };
 
   // 5. Portfolio base action registration calls
   const handleRegisterBaseAction = async (payload: Omit<BaseActionLog, "id" | "dataContato">) => {
@@ -817,7 +857,8 @@ export default function App() {
       if (d && d.vendors) {
         setRegisteredVendors(d.vendors);
         setAvailableVendors(d.vendors.map((v: any) => v.nome));
-      
+      }
+    }
   };
 
   const handleUpdateVendor = async (vendor: Vendor) => {
@@ -836,7 +877,8 @@ export default function App() {
       if (d && d.vendors) {
         setRegisteredVendors(d.vendors);
         setAvailableVendors(d.vendors.map((v: any) => v.nome));
-      
+      }
+    }
   };
 
   const handleDeleteVendor = async (id: string) => {
@@ -853,7 +895,8 @@ export default function App() {
       if (d && d.vendors) {
         setRegisteredVendors(d.vendors);
         setAvailableVendors(d.vendors.map((v: any) => v.nome));
-      
+      }
+    }
   };
 
   const handleBulkTransferLeads = async (fromSeller: string, toSeller: string) => {
@@ -888,7 +931,8 @@ export default function App() {
       setCompetitors(d.competitors || []);
     } else {
       throw new Error("Erro ao salvar concorrente no servidor.");
-    ;
+    }
+  };
 
   const handleDeleteCompetitor = async (id: string) => {
     const resp = await fetch(`/api/competitors/${id}`, {
@@ -899,7 +943,8 @@ export default function App() {
       setCompetitors(d.competitors || []);
     } else {
       throw new Error("Erro ao excluir concorrente do servidor.");
-    ;
+    }
+  };
 
   const handleSaveInstallation = async (inst: Installation) => {
     const resp = await fetch("/api/installations", {
@@ -910,14 +955,20 @@ export default function App() {
     if (resp.ok) {
       const d = await resp.json();
       setInstallations(d.installations || []);
-      
       if (d.webhookStatus === 404 || d.webhookStatus === 500) {
         window.dispatchEvent(new CustomEvent("webhook-error"));
-       else {
+      }
+    } else {
       let errorMessage = "Erro desconhecido";
-      try { const d = await resp.json(); errorMessage = d.message || errorMessage; } catch(e) { errorMessage = `Erro do servidor (${resp.status})`; }
+      try { 
+        const d = await resp.json(); 
+        errorMessage = d.message || errorMessage; 
+      } catch (e) { 
+        errorMessage = `Erro do servidor (${resp.status})`; 
+      }
       throw new Error(errorMessage);
-    ;
+    }
+  };
 
   const handleDeleteInstallation = async (id: string) => {
     const resp = await fetch(`/api/installations/${id}`, {
@@ -928,7 +979,8 @@ export default function App() {
       setInstallations(d.installations || []);
     } else {
       throw new Error("Erro ao excluir agendamento de instalação.");
-    ;
+    }
+  };
 
   // 6. Deep sales Gemini AI integrations callbacks:
   const handleGenerateIAPitch = async (client: BaseClient) => {
@@ -995,9 +1047,11 @@ export default function App() {
         const d = await rBase.json();
         setBaseClients(d.clients || []);
         setBaseActions(d.actions || []);
-       catch (e: any) {
+      }
+    } catch (e: any) {
       console.error(e);
-    ;
+    }
+  };
 
   const handleSyncBase = async () => {
     setIsSyncing(true);
@@ -1021,13 +1075,15 @@ export default function App() {
         alert(`Sucesso! ${data.count} clientes importados diretamente da aba Base052026.`);
       } else {
         throw new Error(data.message || "Erro desconhecido durante o sync.");
-       catch (e: any) {
+        }
+      } catch (e: any) {
       console.error(e);
       alert("Erro ao sincronizar base: " + e.message);
     } finally {
       setIsSyncing(false);
       setLoading(false);
-    ;
+    }
+  };
 
   const handleSyncLeads = async () => {
     setIsSyncing(true);
@@ -1051,13 +1107,15 @@ export default function App() {
         alert(`Sucesso! ${data.count} leads importados diretamente da aba Acompanhamento de Lead | Abordagens.`);
       } else {
         throw new Error(data.message || "Erro desconhecido durante o de sync dos leads.");
-       catch (e: any) {
+        }
+      } catch (e: any) {
       console.error(e);
       alert("Erro ao sincronizar leads: " + e.message);
     } finally {
       setIsSyncing(false);
       setLoading(false);
-    ;
+    }
+  };
 
   const handleSyncFtta = async () => {
     setIsSyncing(true);
@@ -1081,13 +1139,15 @@ export default function App() {
         alert(`Sucesso! ${data.sitesCount} edifícios e ${data.prospeccoesCount} prospecções de FTTA importados diretamente das planilhas ("FTTA LAJEADO", "FTTA ESTRELA" e "FTTA PROSPECÇÃO").`);
       } else {
         throw new Error(data.message || "Erro desconhecido durante o de sync do FTTA.");
-       catch (e: any) {
+        }
+      } catch (e: any) {
       console.error(e);
       alert("Erro ao sincronizar FTTA: " + e.message);
     } finally {
       setIsSyncing(false);
       setLoading(false);
-    ;
+    }
+  };
 
   const handleSyncInstallations = async () => {
     setIsSyncing(true);
@@ -1109,13 +1169,15 @@ export default function App() {
         alert(`Sucesso! ${data.count} agendamentos importados diretamente da aba Agenda Instalação.`);
       } else {
         throw new Error(data.message || "Erro desconhecido durante o sync da agenda de instalação.");
-       catch (e: any) {
+        }
+      } catch (e: any) {
       console.error(e);
       alert("Erro ao sincronizar agenda de instalação: " + e.message);
     } finally {
       setIsSyncing(false);
       setLoading(false);
-    ;
+    }
+  };
 
   // RENDER FLOW FOR EXT PARTNER: NO LOGIN NEEDED
   if (isExternalPartnerMode) {
@@ -1140,8 +1202,8 @@ export default function App() {
         <div className="max-w-md w-full text-center space-y-8 z-10 p-4">
           <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
             {/* Spinning gradient border */}
-            <div className="absolute inset-0 rounded-full border-4 border-slate-900 border-t-sky-400 border-r-sky-500 animate-spin" style={{ animationDuration: "1s" }/>
-            <div className="absolute inset-2 rounded-full border-2 border-slate-900 border-b-sky-300 border-l-blue-500 animate-spin" style={{ animationDuration: "0.6s", animationDirection: "reverse" }/>
+            <div className="absolute inset-0 rounded-full border-4 border-slate-900 border-t-sky-400 border-r-sky-500 animate-spin" style={{ animationDuration: "1s" }} />
+            <div className="absolute inset-2 rounded-full border-2 border-slate-900 border-b-sky-300 border-l-blue-500 animate-spin" style={{ animationDuration: "0.6s", animationDirection: "reverse" }} />
             
             <div className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-full flex items-center justify-center shadow-2xl">
               <Sparkles className="w-8 h-8 text-sky-400 animate-pulse" />
@@ -1217,7 +1279,7 @@ export default function App() {
                 >
                   <option value="" disabled>Selecione seu nome...</option>
                   {registeredVendors.map((vendor, idx) => (
-                    <option key={vendor.id || idx} value={vendor.nome>
+                    <option key={vendor.id || idx} value={vendor.nome}>
                       {vendor.nome}
                     </option>
                   ))}
@@ -1228,7 +1290,7 @@ export default function App() {
               </div>
             </div>
 
-            <button type="submit"} className="w-full py-3.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-black tracking-wider uppercase shadow-lg shadow-sky-900/40 active:scale-97 cursor-pointer transition duration-150 flex items-center justify-center gap-2"
+            <button type="submit" className="w-full py-3.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-black tracking-wider uppercase shadow-lg shadow-sky-900/40 active:scale-97 cursor-pointer transition duration-150 flex items-center justify-center gap-2"
             >
               Entrar no Sistema
             </button>
@@ -1240,9 +1302,12 @@ export default function App() {
                   const { outcome } = await deferredPrompt.userChoice;
                   if (outcome === 'accepted') {
                     setDeferredPrompt(null);
-                   else {
+                  }
+                } else {
                   setShowPWAInstructions(true);
-                 className="w-full py-2.5 border border-slate-800 hover:bg-slate-900/60 text-slate-300 rounded-xl text-[10px] font-extrabold uppercase cursor-pointer transition flex items-center justify-center gap-1.5"
+                }
+              }}
+              className="w-full py-2.5 border border-slate-800 hover:bg-slate-900/60 text-slate-300 rounded-xl text-[10px] font-extrabold uppercase cursor-pointer transition flex items-center justify-center gap-1.5"
             >
               <Download className="w-4 h-4 text-sky-400" /> Instalar App
             </button>
@@ -1289,7 +1354,7 @@ export default function App() {
             onNavigateToSellerLeads={(seller) => {
               setLeadsFilterSeller(seller);
               setActiveTab("leads");
-            
+            }}
             onSync={fetchAllData}
             vendors={registeredVendors} />
         );
@@ -1348,7 +1413,7 @@ export default function App() {
             leadsList={leads.map(l => l.nomeLead)}
             onNavigateToLeadDetail={(nome) => {
               setActiveTab("leads");
-            
+            }}
             vendorsList={registeredVendors.map(v => v.nome)}
             isAdmin={userRole === "admin"}
             loggedUser={loggedUser} />
@@ -1370,7 +1435,7 @@ export default function App() {
             onRefreshBase={handleSyncBase}
             onFetchBaseLocal={handleFetchBaseLocal}
             loggedUser={loggedUser}
-            isAdmin={userRole === "admin"/>
+            isAdmin={userRole === "admin"} />
         );
       case "cobrancas":
         return (
@@ -1390,7 +1455,7 @@ export default function App() {
             onAnalyzeWithAI={handleAnalyzeCompetitor}
             onSaveCompetitor={handleSaveCompetitor}
             onDeleteCompetitor={handleDeleteCompetitor}
-            isAdmin={userRole === "admin"/>
+            isAdmin={userRole === "admin"} />
         );
       case "objections":
         return (
@@ -1406,13 +1471,13 @@ export default function App() {
             onUpdateAbsence={handleUpdateAbsence} />
         );
       case "pos_venda":
-        return <PosVendaPage loggedUser={loggedUser!} isAdmin={userRole === "admin"/>;
+        return <PosVendaPage loggedUser={loggedUser!} isAdmin={userRole === "admin"} />;
       case "matriz_objecoes":
-        return <MatrizObjecoesPage loggedUser={loggedUser!} isAdmin={userRole === "admin"/>;
+        return <MatrizObjecoesPage loggedUser={loggedUser!} isAdmin={userRole === "admin"} />;
       case "trade":
-        return <TradePage loggedUser={loggedUser!} isAdmin={userRole === "admin"/>;
+        return <TradePage loggedUser={loggedUser!} isAdmin={userRole === "admin"} />;
       case "leads_frios":
-        return <LeadsFriosTab isAdmin={userRole === "admin"} vendors={availableVendors} loggedUser={loggedUser!/>;
+        return <LeadsFriosTab isAdmin={userRole === "admin"} vendors={availableVendors} loggedUser={loggedUser!} />;
       case "estrategia":
         return (
           <EstrategiaPage loggedUser={loggedUser} />
@@ -1420,7 +1485,7 @@ export default function App() {
       case "materials":
         return (
           <MaterialsPage
-            onBackToDashboard={() => setActiveTab("dashboard")/>
+            onBackToDashboard={() => setActiveTab("dashboard")} />
         );
       case "planos":
         return (
@@ -1458,11 +1523,12 @@ export default function App() {
       case "calculo_multa":
         return (
           <CalculoMultaPage 
-            onBackToDashboard={() => setActiveTab("dashboard")/>
+            onBackToDashboard={() => setActiveTab("dashboard")} />
         );
       default:
         return <div>Não encontrado</div>;
-    ;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#EDF2F7] flex font-sans text-slate-900 leading-normal max-w-[1600px] mx-auto border-x border-slate-200/60 relative shadow-2xl overflow-hidden h-screen">
@@ -1487,7 +1553,8 @@ export default function App() {
                    if (url) window.open(url, '_blank');
                    else alert("URL não configurada no .env!");
                 }).catch(() => alert("Erro ao obter URL"));
-              } className="px-3 py-1.5 bg-white border border-rose-200 text-rose-700 text-xs font-bold rounded hover:bg-rose-100 shadow-sm transition-colors whitespace-nowrap"
+              }}
+              className="px-3 py-1.5 bg-white border border-rose-200 text-rose-700 text-xs font-bold rounded hover:bg-rose-100 shadow-sm transition-colors whitespace-nowrap"
             >
               Testar Conexão
             </button>
@@ -1756,11 +1823,20 @@ export default function App() {
                 </span>
               </div>
             </div>
-            <button onClick={handleLogout} className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-slate-800/60 rounded-lg cursor-pointer transition active:scale-95 shrink-0"
-              title="Sair do expediente"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button 
+                onClick={() => setTheme(theme === "light" ? "dark" : "light")} 
+                className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800/60 rounded-lg cursor-pointer transition active:scale-95 shrink-0"
+                title={theme === "light" ? "Ativar Modo Escuro" : "Ativar Modo Claro"}
+              >
+                {theme === "light" ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5 text-amber-400" />}
+              </button>
+              <button onClick={handleLogout} className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-slate-800/60 rounded-lg cursor-pointer transition active:scale-95 shrink-0"
+                title="Sair do expediente"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1846,6 +1922,14 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")} 
+              className={`p-1.5 border rounded-lg transition cursor-pointer active:scale-95 ${theme === "dark" ? "bg-slate-800 border-slate-700 text-amber-400 hover:text-amber-300" : "bg-slate-50 border-slate-200 text-slate-550 hover:text-slate-750"}`}
+              title={theme === "light" ? "Modo Escuro" : "Modo Claro"}
+            >
+              {theme === "light" ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3 text-amber-500" />}
+            </button>
+
             <div className="text-right">
               <div className="text-[10px] font-bold text-slate-950 leading-none">{loggedUser.split(" ")[0]}</div>
               <span className="text-[8px] font-semibold text-sky-600 uppercase tracking-widest">
@@ -1979,7 +2063,7 @@ export default function App() {
           <button onClick={() => {
               setLeadsFilterSeller(null);
               setActiveTab("leads");
-            
+            }}
             className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
               activeTab === "leads" ? "text-sky-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
             }`}>
@@ -2098,7 +2182,8 @@ export default function App() {
             <button onClick={() => {
                 localStorage.setItem('pwa_banner_dismissed', 'true');
                 setShowPWABanner(false);
-              } className="px-2 py-1.5 text-slate-400 hover:text-white text-[10px] font-bold uppercase"
+              }}
+              className="px-2 py-1.5 text-slate-400 hover:text-white text-[10px] font-bold uppercase"
             >
               Agora não
             </button>
@@ -2110,10 +2195,13 @@ export default function App() {
                     setDeferredPrompt(null);
                     setShowPWABanner(false);
                     localStorage.setItem('pwa_banner_dismissed', 'true');
-                   else {
+                  }
+                } else {
                   setShowPWAInstructions(true);
                   setShowPWABanner(false);
-                 className="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-[10px] font-bold uppercase hover:bg-sky-500 shadow shadow-sky-900/50"
+                }
+              }}
+              className="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-[10px] font-bold uppercase hover:bg-sky-500 shadow shadow-sky-900/50"
             >
               Instalar
             </button>
@@ -2126,11 +2214,11 @@ export default function App() {
           setIsAiChatOpen(true);
           setUnreadAiTips(0);
           setIsBadgePulsing(false);
-        } className={`fixed bottom-16 right-4 lg:bottom-6 lg:right-6 w-12 h-12 bg-gradient-to-tr from-sky-600 to-sky-800 text-white rounded-2xl shadow-xl hover:scale-110 hover:-translate-y-1 active:scale-95 transition-all duration-300 ease-out flex items-center justify-center border border-sky-500/50 hover:shadow-sky-900/10 z-[99999] cursor-pointer ${isBadgePulsing ? 'animate-ping' : 'animate-pulse-light'}`}
+        }} className={`fixed bottom-16 right-4 lg:bottom-6 lg:right-6 w-12 h-12 bg-gradient-to-tr from-sky-600 to-sky-800 text-white rounded-2xl shadow-xl hover:scale-110 hover:-translate-y-1 active:scale-95 transition-all duration-300 ease-out flex items-center justify-center border border-sky-500/50 hover:shadow-sky-900/10 z-[99999] cursor-pointer ${isBadgePulsing ? 'animate-ping' : 'animate-pulse-light'}`}
         title="Assistente Comercial IA"
       >
         <Bot className="w-6 h-6 stroke-[2.2]" />
-        {unreadAiTips> 0 && (
+        {unreadAiTips > 0 && (
           <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-[9px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-slate-900 shadow-md">
             {unreadAiTips}
           </span>

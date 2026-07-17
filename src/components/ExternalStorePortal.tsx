@@ -37,16 +37,18 @@ interface ExternalStorePortalProps {
 // Helper to parse pasted protocol text string
 function parseProtocolText(raw: string) {
   if (!raw) return { protocol: "", name: "" };
-  
+
   const protMatch = raw.match(/Protocolo\s+(\d+)/i);
   const protocol = protMatch ? protMatch[1] : "";
   
   const parts = raw.split(" - ");
   let name = "";
-  if (parts.length> 0) {
+  if (parts.length > 0) {
     const rawName = parts[parts.length - 1].trim();
     if (rawName && !rawName.toUpperCase().includes("PROTOCOLO") && !rawName.toUpperCase().includes("ATIVAÇÃO")) {
       name = rawName;
+    }
+  }
     
   return { 
     protocol: protocol || "Pendente", 
@@ -149,7 +151,8 @@ export default function ExternalStorePortal({
       setFormCidade("Lajeado");
       setSelectedDayAndSlot({ date: dateStr, slot: slotIdx });
       setIsModalOpen(true);
-    ;
+    }
+  };
 
   // Extra Slot Modal
   const [extraSlotModal, setExtraSlotModal] = useState({ isOpen: false, date: "", password: "", error: "" });
@@ -184,7 +187,8 @@ export default function ExternalStorePortal({
       setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" });
     } else {
       setExtraSlotModal(prev => ({ ...prev, error: "Senha incorreta. Tente novamente." }));
-    ;
+    }
+  };
 
 
   const handleSaveModalSubmit = async (e: React.FormEvent) => {
@@ -230,14 +234,16 @@ export default function ExternalStorePortal({
       setProtocolRawInput("");
     } catch (e: any) {
       alert("Erro ao salvar: " + e.message);
-    ;
+    }
+  };
 
   const handleDeleteClick = async (id: string) => {
     if (confirm("Deseja realmente desmarcar este agendamento comercial?")) {
       await onDeleteInstallation(id);
       setIsModalOpen(false);
       setCurrentInstallation(null);
-    ;
+    }
+  };
 
   const handleCopyBroadcast = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -252,7 +258,8 @@ export default function ExternalStorePortal({
       case 3: return "Slot 3 (Tarde - Espaço 1)";
       case 4: return "Slot 4 (Tarde - Espaço 2)";
       default: return `Slot ${slot} (Extra)`;
-    ;
+    }
+  };
 
   const getSlotTimeLabel = (slot: number) => {
     switch (slot) {
@@ -261,7 +268,8 @@ export default function ExternalStorePortal({
       case 3: return "13:30 às 15:30";
       case 4: return "15:30 às 17:30";
       default: return "A combinar";
-    ;
+    }
+  };
 
   const getStatusColor = (status: Installation["status"]) => {
     switch (status) {
@@ -270,7 +278,8 @@ export default function ExternalStorePortal({
       case "Cancelada": return "bg-rose-500/10 text-rose-400 border border-rose-500/20";
       case "Reagendada": return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
       default: return "bg-slate-500/10 text-slate-355 border border-slate-500/10";
-    ;
+    }
+  };
 
   const liveParsed = parseProtocolText(protocolRawInput);
 
@@ -298,9 +307,11 @@ export default function ExternalStorePortal({
         const swapPayload2 = { ...targetInst, dataAgendamento: draggedInst.dataAgendamento, slotIndex: draggedInst.slotIndex, horario: getSlotTimeLabel(draggedInst.slotIndex!) };
         await onSaveInstallation(swapPayload1);
         await onSaveInstallation(swapPayload2);
-       catch (err) {
+      }
+    } catch (err) {
       console.error("Drop err:", err);
-    ;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
@@ -452,7 +463,7 @@ export default function ExternalStorePortal({
                         return renderSlotCard(dateStr, slotIdx, matched);
                       });
                     })()}
-                    <button onClick={(e) => { e.stopPropagation(); handleAddExtraSlotClick(dateStr); } className="mt-2 w-full p-2 border border-dashed border-slate-700/50 rounded-lg text-slate-400 hover:text-slate-200 hover:border-slate-500 hover:bg-slate-800 transition text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
+                    <button onClick={(e) => { e.stopPropagation(); handleAddExtraSlotClick(dateStr); }} className="mt-2 w-full p-2 border border-dashed border-slate-700/50 rounded-lg text-slate-400 hover:text-slate-200 hover:border-slate-500 hover:bg-slate-800 transition text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3 h-3" /> Slot Extra
                     </button>
@@ -468,7 +479,7 @@ export default function ExternalStorePortal({
       
         {selectedDayDetails && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelectedDayDetails(null)/>
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelectedDayDetails(null)} />
             <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
@@ -511,7 +522,7 @@ export default function ExternalStorePortal({
                                  <h4 className="font-bold text-sm text-white">{inst.nomeCliente}</h4>
                                  {inst.observacao && <p className="text-xs font-mono text-slate-400 mt-0.5">{inst.observacao.substring(0, 80)}{inst.observacao.length> 80 ? '...' : ''}</p>}
                                </div>
-                               <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx, inst); } className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-bold text-white transition cursor-pointer"
+                               <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx, inst); }} className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-bold text-white transition cursor-pointer"
                                >
                                  Abrir
                                </button>
@@ -540,7 +551,7 @@ export default function ExternalStorePortal({
                         ) : (
                           <div className="flex items-center justify-between h-full">
                             <span className="text-sm text-slate-500 italic">Slot Livre</span>
-                            <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx); } className="px-3 py-1.5 border border-slate-700 hover:border-sky-500 hover:text-sky-400 rounded-lg text-xs font-bold text-slate-400 transition cursor-pointer"
+                            <button onClick={() => { setSelectedDayDetails(null); handleSlotClick(selectedDayDetails, slotIdx); }} className="px-3 py-1.5 border border-slate-700 hover:border-sky-500 hover:text-sky-400 rounded-lg text-xs font-bold text-slate-400 transition cursor-pointer"
                              >
                                Agendar
                              </button>
@@ -559,7 +570,7 @@ export default function ExternalStorePortal({
       {/* EXTRA SLOT MODAL */}
       {extraSlotModal.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })/>
+          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setExtraSlotModal({ isOpen: false, date: "", password: "", error: "" })} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <h3 className="text-lg font-bold text-white mb-2">Liberar Slot Extra</h3>
             <p className="text-xs text-slate-400 mb-4">Insira a senha de administrador (Gerente) para adicionar um novo slot para o dia {new Date(extraSlotModal.date + "T12:00:00").toLocaleDateString("pt-BR")}.</p>
@@ -570,7 +581,7 @@ export default function ExternalStorePortal({
               onChange={e => setExtraSlotModal(prev => ({ ...prev, password: e.target.value }))}
               onKeyDown={e => {
                 if (e.key === "Enter") handleConfirmExtraSlot();
-              } className="w-full bg-slate-950 border border-slate-800 text-white p-3 rounded-xl text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 outline-none"
+              }} className="w-full bg-slate-950 border border-slate-800 text-white p-3 rounded-xl text-sm focus:border-sky-500 focus:ring-1 focus:ring-sky-500/50 outline-none"
               autoFocus
             />
             {extraSlotModal.error && (
@@ -597,7 +608,7 @@ export default function ExternalStorePortal({
       
         {isModalOpen && selectedDayAndSlot && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setIsModalOpen(false)/>
+            <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
             <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
@@ -672,7 +683,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                     >
                       <option value="">Selecione...</option>
                       {vendors.map(v => (
-                        <option key={v} value={v>{v}</option>
+                        <option key={v} value={v}>{v}</option>
                       ))}
                     </select>
                   </div>
@@ -709,7 +720,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                     >
                       Voltar
                     </button>
-                    <button type="submit"} className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white transition cursor-pointer"
+                    <button type="submit" className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white transition cursor-pointer"
                     >
                       Salvar Agendamento
                     </button>
@@ -766,4 +777,5 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
         <span className="text-[7.5px] font-mono text-slate-600 mt-0.5">{getSlotTimeLabel(slotIdx).split(" às ")[0]}</span>
       </button>
     );
-  
+  }
+}
