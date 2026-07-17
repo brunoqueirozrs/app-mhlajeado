@@ -4,48 +4,76 @@
     "dataAbertura": "",
     "setor": "ENGENHARIA",
     "motivo": "-",
-    "id": "fallback-7-Protocolo15574181AMPLIAOESTRELARSNOVAMORADABRUNOGARCIAQUEIROZ"
+    "id": "fallback-7-Protocolo15574181AMPLIAOESTRELARSNOVAMORADABRUNOGARCIAQUEIROZ",
+    "vendedor": "Não Informado",
+    "timestamp": "",
+    "observacoes": "",
+    "status": "Pendentes"
   },
   {
     "protocolo": "Protocolo 15558070 - INSERÇÃO DE CTO - LAJEADO/RS - BRUNO GARCIA QUEIROZ",
     "dataAbertura": "",
     "setor": "ENGENHARIA",
     "motivo": "-",
-    "id": "fallback-6-Protocolo15558070INSERODECTOLAJEADORSBRUNOGARCIAQUEIROZ"
+    "id": "fallback-6-Protocolo15558070INSERODECTOLAJEADORSBRUNOGARCIAQUEIROZ",
+    "vendedor": "Não Informado",
+    "timestamp": "",
+    "observacoes": "",
+    "status": "Pendentes"
   },
   {
     "protocolo": "15341126",
     "dataAbertura": "",
     "setor": "FROTAS",
     "motivo": "Documentos Elisiane",
-    "id": "fallback-5-15341126"
+    "id": "fallback-5-15341126",
+    "vendedor": "Não Informado",
+    "timestamp": "",
+    "observacoes": "",
+    "status": "Pendentes"
   },
   {
     "protocolo": "15317914",
     "dataAbertura": "",
     "setor": "MARKTING",
     "motivo": "FLAyer 500WT",
-    "id": "fallback-4-15317914"
+    "id": "fallback-4-15317914",
+    "vendedor": "Não Informado",
+    "timestamp": "",
+    "observacoes": "",
+    "status": "Pendentes"
   },
   {
     "protocolo": "Protocolo 15004955",
     "dataAbertura": "",
     "setor": "FROTAS",
     "motivo": "Material do Victor",
-    "id": "fallback-3-Protocolo15004955"
+    "id": "fallback-3-Protocolo15004955",
+    "vendedor": "Não Informado",
+    "timestamp": "",
+    "observacoes": "",
+    "status": "Pendentes"
   },
   {
     "protocolo": "Protocolo 14974732 - SOLICITAÇÃO CONTRATAÇÃO VAGA ESTACIONAMENTO | LAJEADO/RS - BRUNO GARCIA QUEIROZ (email enviado)",
     "dataAbertura": "",
     "setor": "FROTAS",
     "motivo": "-",
-    "id": "fallback-2-Protocolo14974732SOLICITAOCONTRATAOVAGAESTACIONAMENTOLAJEADORSBRUNOGARCIAQUEIROZemailenviado"
+    "id": "fallback-2-Protocolo14974732SOLICITAOCONTRATAOVAGAESTACIONAMENTOLAJEADORSBRUNOGARCIAQUEIROZemailenviado",
+    "vendedor": "Não Informado",
+    "timestamp": "",
+    "observacoes": "",
+    "status": "Pendentes"
   },
   {
     "protocolo": "14965132",
     "dataAbertura": "",
     "setor": "MARKTING",
     "motivo": "Flayer 700mb",
-    "id": "fallback-1-14965132"
+    "id": "fallback-1-14965132",
+    "vendedor": "Não Informado",
+    "timestamp": "",
+    "observacoes": "",
+    "status": "Pendentes"
   }
 ]

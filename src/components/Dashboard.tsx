@@ -231,7 +231,8 @@ export default function Dashboard({
   };
 
   // 1. Calculate stats
-  const myLeads = isAdmin ? leads : leads.filter(l => matchSeller(l.vendedor, loggedUser));
+  const myLeadsRaw = isAdmin ? leads : leads.filter(l => matchSeller(l.vendedor, loggedUser));
+  const myLeads = myLeadsRaw.filter(l => l.status !== "Frio");
   const totalLeads = myLeads.length;
   const closedSales = myLeads.filter(l => l.status === "Venda Fechada").length;
   const conversionRate = totalLeads > 0 ? Math.round((closedSales / totalLeads) * 100) : 0;
@@ -257,7 +258,7 @@ export default function Dashboard({
     : Array.from(new Set([...INITIAL_VENDORS, ...leads.map(l => l.vendedor).filter(Boolean)]));
   
   const rankingVendedores = activeSellers.map(v => {
-    const vLeads = leads.filter(l => l.vendedor === v);
+    const vLeads = leads.filter(l => l.vendedor === v && l.status !== "Frio");
     const vSales = vLeads.filter(l => l.status === "Venda Fechada").length;
     const vTotal = vLeads.length;
     return { name: v, sales: vSales, totalLeads: vTotal };

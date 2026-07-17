@@ -812,7 +812,7 @@ async function syncBaseClientsFromGoogleSheet() {
   }
 }
 
-function mapLeadStatus(sheetStatus: string): 'Novo' | 'Agendado' | 'Negociação' | 'Venda Fechada' | 'Sem Interesse' {
+function mapLeadStatus(sheetStatus: string): 'Novo' | 'Agendado' | 'Negociação' | 'Venda Fechada' | 'Sem Interesse' | 'Frio' {
   const s = String(sheetStatus || "").toLowerCase();
   if (s.includes("venda") || s.includes("fechad") || s.includes("inscrito") || s.includes("inscrição") || s.includes("fechou")) {
     return 'Venda Fechada';
@@ -825,6 +825,9 @@ function mapLeadStatus(sheetStatus: string): 'Novo' | 'Agendado' | 'Negociação
   }
   if (s.includes("negoc") || s.includes("andamento") || s.includes("conversando") || s.includes("follow")) {
     return 'Negociação';
+  }
+  if (s.includes("frio")) {
+    return 'Frio';
   }
   return 'Novo';
 }
@@ -936,6 +939,10 @@ async function syncLeadsFromGoogleSheet() {
       }
 
       const status = mapLeadStatus(tabulacao);
+      
+      // If the lead was marked as Frio, it belongs to the Leads Frios base and should be hidden from the active funnel
+      if (status === "Frio") continue;
+      
       const valorPlanoStr = valorPlanoRaw || valorPlanoRaw2 || "";
 
       let interesse: 'Alto' | 'Médio' | 'Baixo' = "Médio";
@@ -1987,6 +1994,9 @@ app.post("/api/n8n-proxy", async (req, res) => {
   if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
 
   try {
+    if (finalUrl.includes("localhost") || finalUrl.includes("sua-url-ngrok")) {
+        throw new Error("A URL do n8n não está configurada ou aponta para localhost. Configure-a nas variáveis de ambiente.");
+    }
     const fetchRes = await fetch(finalUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -2517,7 +2527,7 @@ app.post("/api/pos-vendas/:id", (req, res) => {
       ? (process.env.N8N_TEST_POS_VENDA_WEBHOOK_URL || "http://localhost:5678/webhook-test/pos-venda") 
       : (process.env.N8N_POS_VENDA_WEBHOOK_URL || "http://localhost:5678/webhook/pos-venda");
       
-    if (webhookUrl) {
+    if (webhookUrl && !webhookUrl.includes("localhost")) {
       fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -2571,6 +2581,7 @@ app.post("/api/pos-vendas/:id", (req, res) => {
         c.nome.toLowerCase() === updates.nome.toLowerCase()
       );
 
+      let modifiedClient = null;
       if (existingIndex !== -1) {
         baseClients[existingIndex] = {
            ...baseClients[existingIndex],
@@ -2581,9 +2592,10 @@ app.post("/api/pos-vendas/:id", (req, res) => {
            dataAtivacao: updates.dataInstalacao,
            endereco: updates.endereco
         };
+        modifiedClient = baseClients[existingIndex];
       } else {
         const idContrato = `MHN_POS_${Math.floor(Math.random()*100000)}`;
-        baseClients.push({
+        const newClient = {
           idContrato,
           nome: updates.nome,
           plano: updates.plano,
@@ -2595,9 +2607,15 @@ app.post("/api/pos-vendas/:id", (req, res) => {
           dataAtivacao: updates.dataInstalacao,
           consultorOrigem: updates.vendedora || "Pós Vendas",
           cidade: "Indefinido"
-        });
+        };
+        baseClients.push(newClient);
+        modifiedClient = newClient;
       }
       writeJSONDb("baseClients.json", baseClients);
+      // Only append new rows to sheet
+      if (modifiedClient && existingIndex === -1) {
+        writeBaseClientToGoogleSheet(modifiedClient).catch(e => console.error(e));
+      }
     }
   }
 
@@ -4896,7 +4914,11 @@ app.post("/api/n8n/webhook-pos-venda", async (req, res) => {
   } catch (error: any) {
     historyItem.status = 'error';
     historyItem.error = error.message;
-    res.json({ success: false, message: error.message });
+    if (webhookUrl.includes("localhost") || webhookUrl.includes("sua-url-ngrok")) {
+        res.json({ success: false, message: "URL do n8n não configurada corretamente no .env (não utilize localhost no Cloud Run)" });
+    } else {
+        res.json({ success: false, message: error.message });
+    }
   }
 });
 
@@ -4910,6 +4932,40 @@ try {
   }
 } catch (e) {}
 
+async function writeBaseClientToGoogleSheet(client: any) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const mappedItem = {
+      "Consultor": client.consultorOrigem || "",
+      "Cliente": client.nome || "",
+      "Telefone": client.telefoneExterno || "",
+      "ID Contrato / Código": client.idContrato || "",
+      "Cidade": client.cidade || "",
+      "Plano Atual": client.plano || "",
+      "Valor": client.valor || "",
+      "Situação Atual": client.status || "",
+      "Data Ativação": client.dataAtivacao || ""
+    };
+
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify({
+        route: "appendRow",
+        payload: {
+          sheetName: "Base052026",
+          item: mappedItem
+        }
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+  } catch (e) {
+    console.warn("Could not save to Base052026 GAS:", e);
+  }
+}
+
 async function syncInternalProtocolsFromGoogleSheet() {
   if (Date.now() - lastInternalProtocolsSyncTime < 300000) return; // 5 mins cache
   
@@ -4921,19 +4977,26 @@ async function syncInternalProtocolsFromGoogleSheet() {
     if (res.ok) {
       const csvText = await res.text();
       if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
-    const rows = parseCSV(csvText);
-      let queue = [];
+      const rows = parseCSV(csvText);
+      let queue: any[] = [];
       if (rows.length >= 2) {
         for (let i = 1; i < rows.length; i++) {
           const row = rows[i];
           if (!row[0] && !row[1] && !row[2]) continue;
           
+          const id = row[4] || ('fallback-' + i + '-' + (row[0] || '').replace(/[^a-zA-Z0-9]/g, ''));
+          const localItem = internalProtocols.find(p => p.id === id) || ({} as any);
+
           queue.push({
-            protocolo: row[0] || "-",
-            dataAbertura: row[1] || "",
-            setor: row[2] || "-",
-            motivo: row[3] || "-",
-            id: row[4] || ('fallback-' + i + '-' + (row[0] || '').replace(/[^a-zA-Z0-9]/g, ''))
+            protocolo: row[0] || localItem.protocolo || "-",
+            dataAbertura: row[1] || localItem.dataAbertura || "",
+            setor: row[2] || localItem.setor || "-",
+            motivo: row[3] || localItem.motivo || "-",
+            id: id,
+            vendedor: row[5] || localItem.vendedor || "Não Informado",
+            timestamp: row[6] || localItem.timestamp || "",
+            observacoes: row[7] || localItem.observacoes || "",
+            status: row[8] || localItem.status || "Pendentes"
           });
         }
       }
@@ -4956,35 +5019,37 @@ async function syncInternalProtocolsFromGoogleSheet() {
       lastInternalProtocolsSyncTime = Date.now();
       console.log("[SYNC] Protocolos Internos sincronizados. Itens:", internalProtocols.length);
     }
-  } catch(e) {
+  } catch(e: any) {
     console.warn("Falha ao buscar Protocolos Internos:", e.message);
   }
 }
-
 syncInternalProtocolsFromGoogleSheet();
 
-async function writeInternalProtocolToGoogleSheet(item: any) {
+async function writeInternalProtocolToGoogleSheet(item: any, action: "append" | "update" = "append") {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
     const mappedItem = {
-      "Protocolo": item.protocolo,
-      "Data Abertura": item.dataAbertura,
-      "Setor": item.setor,
-      "Motivo": item.motivo,
+      "Protocolo": item.protocolo || "-",
+      "Data Abertura": item.dataAbertura || "-",
+      "Setor": item.setor || "-",
+      "Motivo": item.motivo || "-",
       "ID": item.id,
       "Vendedor": item.vendedor || "-",
-      "Timestamp": item.timestamp || "-"
+      "Timestamp": item.timestamp || "-",
+      "Observações": item.observacoes || "",
+      "Status": item.status || "Pendentes"
     };
 
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
       body: JSON.stringify({
-        route: "appendRow",
+        route: action === "update" ? "updateRow" : "appendRow",
         payload: {
           sheetName: "Protocolos Internos",
-          item: mappedItem
+          item: mappedItem,
+          id: item.id
         }
       }),
       signal: controller.signal
@@ -5056,8 +5121,7 @@ app.put("/api/sheets/internal-protocols/:id", async (req, res) => {
     if (index !== -1) {
       internalProtocols[index] = { ...internalProtocols[index], ...req.body };
       writeJSONDb("internalProtocols.json", internalProtocols);
-      // We should ideally update Google Sheet as well, but for now local is fine
-      // writeInternalProtocolToGoogleSheet(internalProtocols[index], "update");
+      writeInternalProtocolToGoogleSheet(internalProtocols[index], "update").catch(e => console.error(e));
       res.json({ success: true, item: internalProtocols[index] });
     } else {
       res.status(404).json({ error: "Not found" });
