@@ -480,7 +480,7 @@ export default function ExternalStorePortal({
         {selectedDayDetails && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelectedDayDetails(null)} />
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10 p-6 md:p-8">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-lg bg-sky-500/10 text-sky-400">
@@ -609,7 +609,7 @@ export default function ExternalStorePortal({
         {isModalOpen && selectedDayAndSlot && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10 p-6 md:p-8">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-lg bg-sky-500/15 text-sky-400">
@@ -666,7 +666,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                     </label>
                     <select
                       value={formCidade}
-                      onChange={e => setFormCidade(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                      onChange={e => setFormCidade(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500 transition-colors"
                     >
                       <option value="Lajeado">Lajeado</option>
                           <option value="Estrela">Estrela</option>
@@ -679,7 +679,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                     </label>
                     <select
                       value={formVendedor}
-                      onChange={e => setFormVendedor(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                      onChange={e => setFormVendedor(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500 transition-colors"
                     >
                       <option value="">Selecione...</option>
                       {vendors.map(v => (
@@ -694,7 +694,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                     </label>
                     <select
                       value={formStatus}
-                      onChange={e => setFormStatus(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                      onChange={e => setFormStatus(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500 transition-colors"
                     >
                       <option value="Pendente">Pendente</option>
                       <option value="Confirmada">Confirmada</option>

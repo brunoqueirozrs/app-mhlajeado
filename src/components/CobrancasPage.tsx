@@ -1560,9 +1560,9 @@ export default function CobrancasPage({
                     onChange={e => setNewCidade(e.target.value)}>
                     <option value="Lajeado">Lajeado</option>
                     <option value="Estrela">Estrela</option>
-                    <option value="Arroio do Meio">Arroio do Meio</option>
-                    <option value="Teutônia">Teutônia</option>
-                    <option value="Bom Retiro do Sul">Bom Retiro do Sul</option>
+                    
+                    
+                    
                   </select>
                 </div>
                 <div className="space-y-1">

@@ -544,7 +544,7 @@ export default function InstallationsPage({
         {selectedDayDetails && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setSelectedDayDetails(null)} />
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative z-10 p-6 md:p-8">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-lg bg-sky-500/10 text-sky-400">
@@ -674,7 +674,7 @@ export default function InstallationsPage({
         {isModalOpen && selectedDayAndSlot && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10 p-6 md:p-8">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="p-2 rounded-lg bg-sky-500/10 text-sky-400">
@@ -757,7 +757,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         </label>
                         <select
                           value={formVendedor}
-                          onChange={e => setFormVendedor(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          onChange={e => setFormVendedor(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500 transition-colors"
                         >
                           <option value="">Selecione...</option>
                           {vendors.map(v => (
@@ -773,7 +773,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         </label>
                         <select
                           value={formCidade}
-                          onChange={e => setFormCidade(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          onChange={e => setFormCidade(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500 transition-colors"
                         >
                           <option value="Lajeado">Lajeado</option>
                           <option value="Estrela">Estrela</option>
@@ -786,7 +786,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         </label>
                         <select
                           value={formStatus}
-                          onChange={e => setFormStatus(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          onChange={e => setFormStatus(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500 transition-colors"
                         >
                           <option value="Pendente">Pendente</option>
                           <option value="Confirmada">Confirmada</option>
@@ -805,14 +805,14 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         <input type="text"
                           value={formCpf}
                           onChange={e => setFormCpf(e.target.value)}
-                          placeholder="Ex: 000.000.000-00" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          placeholder="Ex: 000.000.000-00" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500 transition-colors"
                         />
                       </div>
                       <div>
                         <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
                           Telefone do Cliente
                         </label>
-                        <div className="flex bg-slate-950 border border-slate-800 rounded-lg focus-within:border-sky-500 overflow-hidden">
+                        <div className="flex bg-slate-950 border-2 border-slate-700 rounded-xl focus-within:border-sky-500 overflow-hidden transition-colors">
                           <span className="px-2 text-xs text-slate-500 bg-slate-900/50 border-r border-slate-800 flex items-center justify-center">+55</span>
                           <input type="text"
                             value={formTelefone}
@@ -828,7 +828,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                         <input type="text"
                           value={formEndereco}
                           onChange={e => setFormEndereco(e.target.value)}
-                          placeholder="Rua, Número, Bairro" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                          placeholder="Rua, Número, Bairro" className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-sky-500 transition-colors"
                         />
                       </div>
                     </div>
@@ -849,7 +849,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                           Telefone do Cliente
                         </label>
                         <div className="flex gap-2">
-                          <div className="flex w-full bg-slate-950 border border-slate-800 rounded-lg focus-within:border-amber-500 overflow-hidden">
+                          <div className="flex w-full bg-slate-950 border-2 border-slate-700 rounded-xl focus-within:border-amber-500 overflow-hidden transition-colors">
                             <span className="px-2 text-xs text-slate-500 bg-slate-900/50 border-r border-slate-800 flex items-center justify-center">+55</span>
                             <input 
                               value={formTelefone}
@@ -877,7 +877,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                          </label>
                          <input
                            value={formEndereco}
-                           onChange={e => setFormEndereco(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                           onChange={e => setFormEndereco(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500 transition-colors"
                          />
                       </div>
                       <div>
@@ -887,7 +887,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                          <input
                            value={formCoordenadas}
                            placeholder="-29.xxxx, -51.xxxx"
-                           onChange={e => setFormCoordenadas(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                           onChange={e => setFormCoordenadas(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500 transition-colors"
                          />
                       </div>
                     </div>
@@ -899,7 +899,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
                       <div className="flex gap-2">
                         <select
                           value={formAtividade}
-                          onChange={e => setFormAtividade(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                          onChange={e => setFormAtividade(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500 transition-colors"
                         >
                           <option value="">Selecione...</option>
                           <option value="Deslocamento">Deslocamento (Avisar Cliente)</option>
@@ -962,7 +962,7 @@ Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cl
         {viewingAiInst && (
           <div className="fixed inset-0 z-50 flex items-center justify-end p-4">
             <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setViewingAiInst(null)} />
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative z-10 p-6 md:p-8">
               <div className="space-y-6">
                 <div className="flex items-start justify-between border-b border-slate-800 pb-4">
                   <div className="space-y-1">

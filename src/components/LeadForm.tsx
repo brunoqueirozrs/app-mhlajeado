@@ -188,7 +188,7 @@ export default function LeadForm({
               id="form-nome"
               type="text"
               
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold focus:bg-white focus:ring-0"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:bg-white"
               placeholder="Ex: Pedro de Souza"
               value={nome}
               onChange={e => setNome(e.target.value)}
@@ -200,7 +200,7 @@ export default function LeadForm({
             <input
               id="form-whats"
               type="tel"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold focus:bg-white"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:bg-white"
               placeholder="Ex: 51 98888-7777"
               value={telefone}
               onChange={e => setPhone(e.target.value)}
@@ -219,7 +219,7 @@ export default function LeadForm({
             <input
               id="form-street"
               type="text"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:bg-white"
               placeholder="Nome da rua de campo..."
               value={endereco}
               onChange={e => setEndereco(e.target.value)}
@@ -232,7 +232,7 @@ export default function LeadForm({
               <input
                 id="form-num"
                 type="text"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:bg-white"
                 placeholder="Ex: 275"
                 value={numero}
                 onChange={e => setNumero(e.target.value)}
@@ -244,7 +244,7 @@ export default function LeadForm({
               <input
                 id="form-compl"
                 type="text"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:bg-white"
                 placeholder="Ex: Ap 302"
                 value={complemento}
                 onChange={e => setComplemento(e.target.value)}
@@ -257,7 +257,7 @@ export default function LeadForm({
               <label className="text-[10px] font-extrabold uppercase text-slate-400">Cidade</label>
               <select
                 id="form-city"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-extrabold text-sky-95"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-extrabold text-sky-950 cursor-pointer"
                 value={cidade}
                 onChange={e => {
                   setCidade(e.target.value);
@@ -266,7 +266,7 @@ export default function LeadForm({
               >
                 <option value="Lajeado">Lajeado</option>
                 <option value="Estrela">Estrela</option>
-                <option value="Outra">Outra</option>
+                
               </select>
             </div>
 
@@ -288,7 +288,7 @@ export default function LeadForm({
                 <input
                   id="form-bairro"
                   type="text"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:bg-white"
                   placeholder="Ex: Universitário"
                   value={bairro}
                   onChange={e => setBairro(e.target.value)}
@@ -320,7 +320,7 @@ export default function LeadForm({
             <input
               id="form-provider"
               type="text"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:bg-white"
               placeholder="Ex: Vero, Claro, Oi, Net..."
               value={provedor}
               onChange={e => setProvedor(e.target.value)}
@@ -333,7 +333,7 @@ export default function LeadForm({
               <input
                 id="form-prev-plano"
                 type="text"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:bg-white"
                 placeholder="Ex: 300Mb"
                 value={planoAtual}
                 onChange={e => setPlanoAtual(e.target.value)}
@@ -345,7 +345,7 @@ export default function LeadForm({
               <input
                 id="form-prev-val"
                 type="text"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:bg-white"
                 placeholder="Ex: 99.90"
                 value={valorPlano}
                 onChange={e => setValorPlano(e.target.value)}
@@ -421,7 +421,7 @@ export default function LeadForm({
           <div className="space-y-1">
             <textarea
               id="form-obs-textarea"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-semibold focus:bg-white"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:bg-white"
               rows={3}
               placeholder="Digite observações adicionais sobre o renegociado cliente..."
               value={obs}
