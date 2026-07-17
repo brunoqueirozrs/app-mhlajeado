@@ -682,7 +682,7 @@ async function syncBaseClientsFromGoogleSheet() {
   isSyncingBaseClients = true;
   console.log("[SYNC] Buscando e analisando dinamicamente a aba Base052026 do Google Sheets...");
   try {
-    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Base052026");
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Base052026") + "&_rnd=" + Date.now();
     
     // Use AbortSignal.timeout which covers the entire request including reading the body
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
@@ -850,7 +850,7 @@ async function syncLeadsFromGoogleSheet() {
   isSyncingLeads = true;
   console.log("[SYNC] Buscando e analisando Planilha de Acompanhamento de Lead | Abordagens...");
   try {
-    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Acompanhamento de Lead | Abordagens");
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Acompanhamento de Lead | Abordagens") + "&_rnd=" + Date.now();
     
     // Use AbortSignal.timeout which covers the entire request including reading the body
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
@@ -1147,7 +1147,7 @@ async function syncFttaFromGoogleSheet() {
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
 
     // 1. Fetch FTTA LAJEADO
-    const lajeadoUrl = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("FTTA LAJEADO");
+    const lajeadoUrl = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("FTTA LAJEADO") + "&_rnd=" + Date.now();
     const lRes = await fetch(lajeadoUrl, { signal });
     if (!lRes.ok) throw new Error(`FTTA LAJEADO responded with code ${lRes.status}`);
     const lCsv = await lRes.text();
@@ -1155,7 +1155,7 @@ async function syncFttaFromGoogleSheet() {
     const lajeadoSites = parseFttaSites(lRows, "Lajeado");
 
     // 2. Fetch FTTA ESTRELA
-    const estrelaUrl = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("FTTA ESTRELA");
+    const estrelaUrl = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("FTTA ESTRELA") + "&_rnd=" + Date.now();
     const eRes = await fetch(estrelaUrl, { signal });
     if (!eRes.ok) throw new Error(`FTTA ESTRELA responded with code ${eRes.status}`);
     const eCsv = await eRes.text();
@@ -1163,7 +1163,7 @@ async function syncFttaFromGoogleSheet() {
     const estrelaSites = parseFttaSites(eRows, "Estrela");
 
     // 3. Fetch FTTA PROSPECÇÃO
-    const prospUrl = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("FTTA PROSPECÇÃO");
+    const prospUrl = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("FTTA PROSPECÇÃO") + "&_rnd=" + Date.now();
     const pRes = await fetch(prospUrl, { signal });
     if (!pRes.ok) throw new Error(`FTTA PROSPECÇÃO responded with code ${pRes.status}`);
     const pCsv = await pRes.text();
@@ -1346,7 +1346,7 @@ async function syncLeadsFriosFromGoogleSheet() {
     let allLeads: any[] = [];
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
     
-    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("BaseLeadsFrios_Unificada");
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("BaseLeadsFrios_Unificada") + "&_rnd=" + Date.now();
     
     try {
       const res = await fetch(url, { signal });
@@ -1428,7 +1428,7 @@ async function syncCobrancasFromGoogleSheet() {
   console.log("[SYNC] Buscando e analisando aba acao_cobranca do Google Sheets dinamicamente...");
   try {
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
-    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("acao_cobranca");
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("acao_cobranca") + "&_rnd=" + Date.now();
     const res = await fetch(url, { signal });
     if (!res.ok) throw new Error(`acao_cobranca responded with code ${res.status}`);
     
@@ -1546,7 +1546,7 @@ async function syncInstallationsFromGoogleSheet() {
   isSyncingInstallations = true;
   console.log("[SYNC] Buscando e analisando Google Sheets: aba Agenda Instalação...");
   try {
-    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Agenda Instalação");
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Agenda Instalação") + "&_rnd=" + Date.now();
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
 
     const sheetsResponse = await fetch(url, { signal });
@@ -1590,7 +1590,7 @@ async function syncVendorsFromGoogleSheet() {
   isSyncingVendors = true;
   console.log("[SYNC] Buscando e analisando Google Sheets: aba Vendedores...");
   try {
-    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Vendedores");
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Vendedores") + "&_rnd=" + Date.now();
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
     const sheetsResponse = await fetch(url, { signal });
 
@@ -2305,7 +2305,7 @@ try {
 
 app.get("/api/matriz-objecoes", async (req, res) => {
   const sheetName = "Matriz Objeções";
-  const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName);
+  const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName) + "&_rnd=" + Date.now();
   
   try {
     const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
@@ -2409,7 +2409,7 @@ Objeção do cliente inserida pelo vendedor: "${input}"`;
 // Pos Vendas Endpoints
 app.get("/api/pos-vendas/:sheetName", async (req, res) => {
   const sheetName = req.params.sheetName;
-  const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName);
+  const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName) + "&_rnd=" + Date.now();
   
   try {
     const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
@@ -4971,7 +4971,7 @@ async function syncInternalProtocolsFromGoogleSheet() {
   
   try {
     const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
-    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Protocolos Internos");
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Protocolos Internos") + "&_rnd=" + Date.now();
     
     const res = await fetch(url, { signal });
     if (res.ok) {
@@ -5161,7 +5161,7 @@ async function syncInstallationQueueFromGoogleSheet() {
   
   try {
     const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
-    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Fila de Monitoramento");
+    const url = "https://docs.google.com/spreadsheets/d/19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w/gviz/tq?tqx=out:csv&headers=1&sheet=" + encodeURIComponent("Fila de Monitoramento") + "&_rnd=" + Date.now();
     
     const res = await fetch(url, { signal });
     if (res.ok) {
