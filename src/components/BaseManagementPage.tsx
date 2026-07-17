@@ -1395,27 +1395,6 @@ export default function BaseManagementPage({
       {/* SUBTAB: CLIENTS BASE LISTING */}
       {activeSubTab === "clientes" && (
         <div className="space-y-4 ">
-          {/* Sheet Sync Row */}
-          <div className="bg-gradient-to-r from-sky-900 via-sky-850 to-sky-950 text-white rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 font-sans">
-            <div>
-              <div className="text-[10px] font-black uppercase tracking-wider text-sky-200">Sincronização de Dados</div>
-              <h4 className="text-sm font-black tracking-tight mt-0.5">Base de Upgrades & Retenção (Base052026)</h4>
-              <p className="text-[10.5px] text-sky-100/80 leading-snug font-semibold mt-0.5">A sincronização neste painel é <strong>manual</strong>. Clique no botão ao lado para buscar os dados mais recentes da aba <code className="bg-sky-950 px-1 py-0.5 rounded text-[10px] font-mono">Base052026</code> da planilha no Google Sheets.</p>
-            </div>
-            <button
-              onClick={async () => {
-                try {
-                  await onRefreshBase();
-                } catch (e: any) {
-                  alert("Erro ao sincronizar base: " + e.message);
-                }
-              }}
-              className="flex items-center justify-center gap-1.5 px-4 py-2.5 card-modern hover:bg-sky-50 text-sky-950 text-xs font-black rounded-xl shadow cursor-pointer transition active:scale-95 shrink-0 self-start sm:self-auto"
-            >
-              <RefreshCw className="w-3.5 h-3.5 animate-pulse" />
-              <span>Sincronizar Planilha</span>
-            </button>
-          </div>
 
           {/* Base KPIs overview tiles */}
           <div className={`grid grid-cols-2 ${isAdmin ? "md:grid-cols-5" : "md:grid-cols-4"} gap-2`}>
