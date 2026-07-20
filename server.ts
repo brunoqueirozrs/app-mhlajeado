@@ -111,7 +111,42 @@ function logGeminiFallback(action: string, error: any) {
 }
 
 // Universal AI content generator with Fallbacks (Gemini -> Groq -> OpenRouter)
+
+class RequestQueue {
+  private queue: (() => void)[] = [];
+  private activeCount = 0;
+  private readonly maxConcurrent = 3;
+
+  async acquire(): Promise<void> {
+    if (this.activeCount < this.maxConcurrent) {
+      this.activeCount++;
+      return Promise.resolve();
+    }
+    return new Promise(resolve => {
+      this.queue.push(resolve);
+    });
+  }
+
+  release(): void {
+    if (this.queue.length > 0) {
+      const resolve = this.queue.shift();
+      if (resolve) resolve();
+    } else {
+      this.activeCount--;
+    }
+  }
+
+  getMetrics() {
+    return { active: this.activeCount, queued: this.queue.length };
+  }
+}
+const aiQueue = new RequestQueue();
+
 async function safeGenerateContent(options: any): Promise<{ text: string }> {
+  const reqId = Math.random().toString(36).substring(7);
+  console.log(`[AI Queue] Request ${reqId} waiting. Metrics:`, aiQueue.getMetrics());
+  await aiQueue.acquire();
+  console.log(`[AI Queue] Request ${reqId} started. Metrics:`, aiQueue.getMetrics());
   const contents = options.contents;
   const systemInstruction = options.config?.systemInstruction;
   const responseMimeType = options.config?.responseMimeType;
@@ -275,6 +310,9 @@ async function safeGenerateContent(options: any): Promise<{ text: string }> {
     }
 
     throw new Error("Todas as IAs falharam (Gemini, Groq e OpenRouter). Erro original: " + err.message);
+  } finally {
+    aiQueue.release();
+    console.log(`[AI Queue] Request ${reqId} completed. Metrics:`, aiQueue.getMetrics());
   }
 }
 

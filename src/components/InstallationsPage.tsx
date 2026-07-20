@@ -719,14 +719,11 @@ export default function InstallationsPage({
                       </label>
                       <textarea
                         rows={4}
-                        placeholder="Cole aqui o texto do protocolo exemplo:
-Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cliente - NATALIA REGINA DE BORTOLI"
+                        placeholder=""
                         value={protocolRawInput}
                         onChange={e => setProtocolRawInput(e.target.value)} className="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition leading-relaxed resize-none"
                       />
-                      <p className="text-[10px] text-slate-500 mt-1">
-                        Não é necessário digitar nome ou outros campos. Nosso motor inteligente analisa a string e cria as notificações.
-                      </p>
+                      
                     </div>
 
                     {/* AUTOMATED LIVE EXTRACTION RESULTS */}

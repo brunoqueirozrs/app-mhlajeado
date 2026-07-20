@@ -636,8 +636,7 @@ export default function ExternalStorePortal({
                   </label>
                   <textarea
                     rows={4}
-                    placeholder="Exemplo de conteúdo copiado do MHNET:
-Protocolo 15462138 - O&M - Ativação FTTH / O&M - Ativação/Instalação de Cliente - NATALIA REGINA DE BORTOLI"
+                    placeholder=""
                     value={protocolRawInput}
                     onChange={e => setProtocolRawInput(e.target.value)} className="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 placeholder-slate-650 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition leading-relaxed resize-none"
                   />

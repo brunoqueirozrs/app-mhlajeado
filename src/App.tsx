@@ -1277,9 +1277,9 @@ export default function App() {
                   value={loginTerm}
                   onChange={(e) => setLoginTerm(e.target.value)} className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition font-medium appearance-none"
                 >
-                  <option value="" disabled>Selecione seu nome...</option>
+                  <option value="" disabled className="bg-sky-900 text-slate-300">Selecione seu nome...</option>
                   {registeredVendors.map((vendor, idx) => (
-                    <option key={vendor.id || idx} value={vendor.nome}>
+                    <option key={vendor.id || idx} value={vendor.nome} className="bg-sky-900 text-white font-bold">
                       {vendor.nome}
                     </option>
                   ))}
@@ -1313,20 +1313,9 @@ export default function App() {
             </button>
           </form>
 
-          <div className="sep h-[1px] bg-slate-800/60" />
+          
 
-          {/* Slogans listings */}
-          <div className="text-[10px] text-slate-400 space-y-2 leading-relaxed">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="font-bold">Conexão direta com Planilhas Google</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-              <span className="font-bold">Argumentação com inteligente IA Gemini</span>
-            </div>
           </div>
-        </div>
 
         {/* Footer */}
         <div className="text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none mb-4 z-10"
@@ -2231,6 +2220,32 @@ export default function App() {
         onClose={() => setIsAiChatOpen(false)}
         onSendChatMessage={handleSendChatMessage} />
 
+
+
+      {/* PWA Instructions Modal */}
+      {showPWAInstructions && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[999999] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative text-center space-y-4">
+            <button onClick={() => setShowPWAInstructions(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <div className="mx-auto w-12 h-12 bg-sky-500/20 text-sky-400 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            </div>
+            <h3 className="text-lg font-bold text-white">Instalar Aplicativo</h3>
+            <div className="text-sm text-slate-400 space-y-2 text-left bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+              <p className="font-semibold text-slate-300">Como instalar no seu celular:</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li><strong>No iOS (Safari):</strong> Toque no ícone de Compartilhar e selecione "Adicionar à Tela de Início".</li>
+                <li><strong>No Android (Chrome):</strong> Toque no menu (3 pontos) e selecione "Instalar aplicativo" ou "Adicionar à tela inicial".</li>
+              </ul>
+            </div>
+            <button onClick={() => setShowPWAInstructions(false)} className="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-sm font-bold transition">
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
