@@ -49,5 +49,22 @@
     "equipeLoja": "",
     "dataCriacao": "09/07/2026, 13:13:36",
     "slotIndex": 1
+  },
+  {
+    "id": "test",
+    "nomeCliente": "Test 2",
+    "telefone": "Consulte no Protocolo",
+    "endereco": "Endereço no Protocolo",
+    "cidade": "Lajeado",
+    "vendedorResponsavel": "Não informado",
+    "gerenteResponsavel": "Bruno Garcia Queiroz",
+    "planoEscolhido": "Instalação FTTH MHNET",
+    "dataAgendamento": "",
+    "horario": "08:30 às 10:30",
+    "status": "Pendente",
+    "observacao": "",
+    "equipeLoja": "",
+    "dataCriacao": "17/07/2026 16:13:16",
+    "slotIndex": 1
   }
 ]

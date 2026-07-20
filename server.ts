@@ -8,6 +8,28 @@ import nodemailer from "nodemailer";
 
 dotenv.config();
 
+// System Logger for Admin Debug Panel
+const adminLogs: Array<{timestamp: string, level: string, message: string}> = [];
+function addSystemLog(level: string, message: string) {
+  adminLogs.push({ timestamp: new Date().toISOString(), level, message });
+  if (adminLogs.length > 500) adminLogs.shift();
+}
+const originalConsoleLog = console.log;
+console.log = function(...args) {
+  originalConsoleLog.apply(console, args);
+  addSystemLog('info', args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+}
+const originalConsoleWarn = console.warn;
+console.warn = function(...args) {
+  originalConsoleWarn.apply(console, args);
+  addSystemLog('warn', args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+}
+const originalConsoleError = console.error;
+console.error = function(...args) {
+  originalConsoleError.apply(console, args);
+  addSystemLog('error', args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+}
+
 // Global fetch override for PAUSE_ALL_N8N_WEBHOOKS
 const originalFetch = global.fetch;
 global.fetch = async (url: any, options?: any) => {
@@ -53,6 +75,24 @@ global.fetch = async (url: any, options?: any) => {
 };
 
 const app = express();
+
+app.get("/api/admin/logs", (req, res) => {
+  res.json({ logs: adminLogs });
+});
+app.get("/api/admin/env", (req, res) => {
+  const safeEnv: Record<string, string> = {};
+  for (const k in process.env) {
+    const val = process.env[k];
+    if (val && val.length > 8) {
+       safeEnv[k] = val.substring(0, 4) + '...' + val.substring(val.length - 4);
+    } else if (val) {
+       safeEnv[k] = '***';
+    } else {
+       safeEnv[k] = '';
+    }
+  }
+  res.json({ env: safeEnv });
+});
 const PORT = 3000;
 
 app.use(express.json({ limit: "50mb" }));
@@ -1953,6 +1993,28 @@ app.post("/api/env/n8n/toggle-all", async (req, res) => {
     fs.writeFileSync(envPath, envContent.trim() + '\n');
   }
   res.json({ success: true });
+});
+
+
+app.post("/api/env/n8n/update-url", async (req, res) => {
+  const { key, url } = req.body;
+  if (!key || !url) return res.status(400).json({ error: "Invalid parameters" });
+  
+  process.env[key] = url;
+  
+  const envPath = path.join(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) fs.writeFileSync(envPath, '');
+  
+  let envContent = fs.readFileSync(envPath, 'utf8');
+  const regex = new RegExp(`^${key}=.*`, 'm');
+  if (regex.test(envContent)) {
+    envContent = envContent.replace(regex, `${key}="${url}"`);
+  } else {
+    envContent += `\n${key}="${url}"\n`;
+  }
+  
+  fs.writeFileSync(envPath, envContent);
+  res.json({ success: true, message: `${key} updated` });
 });
 
 app.post("/api/env/n8n/toggle", async (req, res) => {

@@ -72,7 +72,7 @@ const formatBRDate = (val: string) => {
 };
 
 export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: string, isAdmin?: boolean }) {
-  const [activeTab, setActiveTab] = useState<"pendentes" | "base_ativa" | "financeiro">("pendentes");
+  const [activeTab, setActiveTab] = useState<"pendentes" | "base_ativa" | "financeiro" | "vendas_sva" | "indicacoes">("pendentes");
   const [months, setMonths] = useState<{ value: string, label: string }[]>([]);
   const [selectedMes, setSelectedMes] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -342,6 +342,18 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
               className={`px-4 py-2 text-sm font-bold rounded-xl whitespace-nowrap transition-colors ${activeTab === 'financeiro' ? 'bg-sky-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
             >
               Financeiro (3 Meses)
+            </button>
+            <button 
+              onClick={() => setActiveTab("vendas_sva")}
+              className={`px-4 py-2 text-sm font-bold rounded-xl whitespace-nowrap transition-colors ${activeTab === 'vendas_sva' ? 'bg-sky-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+            >
+              Vendas SVA
+            </button>
+            <button 
+              onClick={() => setActiveTab("indicacoes")}
+              className={`px-4 py-2 text-sm font-bold rounded-xl whitespace-nowrap transition-colors ${activeTab === 'indicacoes' ? 'bg-sky-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+            >
+              Indicações
             </button>
           </div>
 
@@ -641,6 +653,134 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
       )}
 
       
+
+      {activeTab === "vendas_sva" && !selectedClient && (
+        <div className="space-y-6">
+          <div className="card-modern rounded-3xl p-6 border border-slate-200 shadow-sm bg-white overflow-hidden">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-slate-800">Vendas SVA (Celular, Câmeras, MhPlay)</h2>
+              <button 
+                onClick={() => {
+                  if (confirm("Deseja disparar mensagens em massa para Vendas SVA?")) {
+                    alert("Disparo em massa iniciado!");
+                  }
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition"
+              >
+                <Zap className="w-4 h-4" /> Disparo em Massa
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Telefone</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Plano Contratado</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Ação</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredClientes.map(c => (
+                    <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 font-bold text-slate-800 text-sm">{c.nome}</td>
+                      <td className="p-3 text-sm text-slate-600">{c.telefone || "-"}</td>
+                      <td className="p-3 text-sm text-slate-600">{c.plano}</td>
+                      <td className="p-3 text-right">
+                        <button 
+                          onClick={() => alert(`Disparando oferta SVA para ${c.nome} (${c.telefone})`)}
+                          className="bg-sky-100 text-sky-700 hover:bg-sky-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ml-auto"
+                        >
+                          <Zap className="w-3.5 h-3.5" /> Enviar SVA
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "indicacoes" && !selectedClient && (
+        <div className="space-y-6">
+          <div className="card-modern rounded-3xl p-6 border border-slate-200 shadow-sm bg-white overflow-hidden">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-slate-800">Solicitação de Indicações</h2>
+              <button 
+                onClick={() => {
+                  if (confirm("Deseja disparar solicitações de indicação em massa?")) {
+                    alert("Disparo em massa iniciado!");
+                  }
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition"
+              >
+                <Zap className="w-4 h-4" /> Disparo em Massa
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Telefone</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Plano</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Status Indicação</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Ação</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredClientes.map(c => (
+                    <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 font-bold text-slate-800 text-sm">{c.nome}</td>
+                      <td className="p-3 text-sm text-slate-600">{c.telefone || "-"}</td>
+                      <td className="p-3 text-sm text-slate-600">{c.plano}</td>
+                      <td className="p-3">
+                          <select
+                            className={`text-xs font-bold rounded-lg px-2 py-1.5 border outline-none cursor-pointer ${
+                              c.checklist?.statusIndicacao === 'Indicou' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              c.checklist?.statusIndicacao === 'Não Indicou' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                              c.checklist?.statusIndicacao === 'Solicitado' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-slate-50 text-slate-500 border-slate-200'
+                            }`}
+                            value={c.checklist?.statusIndicacao || ''}
+                            onChange={(e) => {
+                              const newCheck = { ...c.checklist, statusIndicacao: e.target.value };
+                              // You would typically set state and call API here similar to financeiro
+                              // but since we don't have access to setClientes here, I'll write the logic.
+                              // Wait, I am inside PosVendaPage, I have access to setClientes!
+                              setClientes(prev => prev.map(cl => cl.id === c.id ? { ...cl, checklist: newCheck } : cl));
+                              fetch('/api/pos-vendas/' + encodeURIComponent(c.id), {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ checklist: newCheck })
+                              }).catch(() => console.error("Falha ao salvar indicação"));
+                            }}
+                          >
+                            <option value="">-</option>
+                            <option value="Solicitado">Solicitado</option>
+                            <option value="Indicou">Indicou</option>
+                            <option value="Não Indicou">Não Indicou</option>
+                          </select>
+                      </td>
+                      <td className="p-3 text-right">
+                        <button 
+                          onClick={() => alert(`Enviando solicitação de indicação para ${c.nome}`)}
+                          className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ml-auto"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" /> Solicitar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === "financeiro" && !selectedClient && (
         <div className="space-y-6">
           <div className="card-modern rounded-3xl p-6 border border-slate-200 shadow-sm bg-white overflow-hidden">

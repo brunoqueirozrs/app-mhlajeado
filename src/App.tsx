@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { 
+import { Terminal, 
   Bot, Wifi, WifiOff, RefreshCw, LogOut, Loader2, Award, ClipboardList, 
   MapPin, Users, HelpCircle, Activity, Info, CalendarDays, BookOpen, User, Lock, Sparkles, Coins, Download, Sliders, Link, Calculator, Lightbulb, UserCheck, Store, FileSpreadsheet, Zap
 , Archive, Search, X, FileText, Sun, Moon } from 'lucide-react';
@@ -38,6 +38,7 @@ import VendedoresPage from "./components/VendedoresPage";
 import InstallationsPage from "./components/InstallationsPage";
 import ExternalStorePortal from "./components/ExternalStorePortal";
 import { AdminN8NPage } from "./components/AdminN8NPage";
+import AdminLogsPage from "./components/AdminLogsPage";
 import CalculoMultaPage from "./components/CalculoMultaPage";
 import PosVendaPage from "./components/PosVendaPage";
 import MatrizObjecoesPage from "./components/MatrizObjecoesPage";
@@ -1347,6 +1348,8 @@ export default function App() {
             onSync={fetchAllData}
             vendors={registeredVendors} />
         );
+      case "admin_logs":
+        return <AdminLogsPage />;
       case "leads":
         return (
           <LeadsPage
@@ -1724,6 +1727,15 @@ export default function App() {
                   }`}>
                   <Link className="w-4 h-4 shrink-0 text-white" />
                   <span>Integrações N8N</span>
+                </button>
+                <button onClick={() => setActiveTab("admin_logs")}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                    activeTab === "admin_logs" 
+                      ? "bg-gradient-to-r from-rose-600 to-rose-500 text-white font-bold shadow-md shadow-rose-900/20" 
+                      : "text-white hover:bg-slate-900"
+                  }`}>
+                  <Terminal className="w-4 h-4 shrink-0 text-white" />
+                  <span>Depuração & Logs IA</span>
                 </button>
               </div>
             )}

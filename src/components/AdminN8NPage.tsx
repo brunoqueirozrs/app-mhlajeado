@@ -1,5 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { Link, CheckCircle, Search, Settings, Webhook, Zap, RefreshCw, History, Cpu, Activity, Database, Cable, Star, Server, Copy, Check, AlertTriangle } from 'lucide-react';
+import { Link, Edit2, Save, X, CheckCircle, Search, Settings, Webhook, Zap, RefreshCw, History, Cpu, Activity, Database, Cable, Star, Server, Copy, Check, AlertTriangle } from 'lucide-react';
+
+
+const EditableEnvUrl = ({ envKey, initialValue, onSave }: { envKey: string, initialValue: string, onSave: (key: string, url: string) => Promise<void> }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [val, setVal] = useState(initialValue || "");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => { setVal(initialValue || ""); }, [initialValue]);
+
+  const handleSave = async () => {
+    setLoading(true);
+    await onSave(envKey, val);
+    setLoading(false);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-2 flex-1">
+        <input 
+          type="text" 
+          value={val} 
+          onChange={e => setVal(e.target.value)}
+          className="flex-1 bg-white border border-slate-300 rounded px-2 py-1 text-xs text-slate-800"
+          placeholder="https://..."
+        />
+        <button onClick={handleSave} disabled={loading} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded">
+          <Save className="w-4 h-4" />
+        </button>
+        <button onClick={() => { setIsEditing(false); setVal(initialValue || ""); }} disabled={loading} className="p-1 text-rose-500 hover:bg-rose-50 rounded">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 group flex-1">
+      <span className="text-slate-800 break-all">{initialValue || "(vazio)"}</span>
+      <button onClick={() => setIsEditing(true)} className="p-1 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+        <Edit2 className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+};
 
 export const AdminN8NPage = () => {
   const [template1, setTemplate1] = useState(() => localStorage.getItem('n8n_template1') || "Olá, *{{ $json.body.nomeCliente }}*! Tudo bem? Aqui é da MHNET Lajeado/Estrela. 🚀\n\nPassando para confirmar que o agendamento da sua instalação está marcadíssimo! \n\n📅 *Data:* {{ $json.body.dataAgendamento }}\n⏰ *Horário:* {{ $json.body.horario }}\n📌 *Endereço:* {{ $json.body.endereco }}\n\nInstruções importantes:\n- Tenha alguém maior de 18 anos no local.\n- Deixe o local da instalação desobstruído.\n- Fique atento ao telefone, nosso técnico ligará avisando quando estiver a caminho.\n\nQualquer dúvida, estamos à disposição!");
@@ -23,6 +68,20 @@ export const AdminN8NPage = () => {
   const [envConfig, setEnvConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+    const updateEnvUrl = async (key: string, url: string) => {
+    try {
+      const res = await fetch("/api/env/n8n/update-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, url })
+      });
+      if (res.ok) {
+        fetchEnvConfig(); // reload
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
   const fetchEnvConfig = () => {
     setLoading(true);
     fetch("/api/env/n8n")
@@ -815,11 +874,11 @@ export const AdminN8NPage = () => {
                 <div className="space-y-2 text-[11px] font-mono">
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_WEBHOOK_URL" initialValue={envConfig.N8N_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_TEST_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_TEST_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_TEST_WEBHOOK_URL" initialValue={envConfig.N8N_TEST_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                 </div>
               </div>
@@ -847,11 +906,11 @@ export const AdminN8NPage = () => {
                 <div className="space-y-2 text-[11px] font-mono">
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_NEW_TASK_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_NEW_TASK_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_NEW_TASK_WEBHOOK_URL" initialValue={envConfig.N8N_NEW_TASK_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_TEST_NEW_TASK_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_TEST_NEW_TASK_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_TEST_NEW_TASK_WEBHOOK_URL" initialValue={envConfig.N8N_TEST_NEW_TASK_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                 </div>
               </div>
@@ -879,11 +938,11 @@ export const AdminN8NPage = () => {
                 <div className="space-y-2 text-[11px] font-mono">
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_OVERDUE_TASKS_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_OVERDUE_TASKS_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_OVERDUE_TASKS_WEBHOOK_URL" initialValue={envConfig.N8N_OVERDUE_TASKS_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_TEST_OVERDUE_TASKS_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_TEST_OVERDUE_TASKS_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_TEST_OVERDUE_TASKS_WEBHOOK_URL" initialValue={envConfig.N8N_TEST_OVERDUE_TASKS_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                 </div>
               </div>
@@ -911,11 +970,11 @@ export const AdminN8NPage = () => {
                 <div className="space-y-2 text-[11px] font-mono">
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_LEAD_INACTIVITY_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_LEAD_INACTIVITY_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_LEAD_INACTIVITY_WEBHOOK_URL" initialValue={envConfig.N8N_LEAD_INACTIVITY_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_TEST_LEAD_INACTIVITY_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_TEST_LEAD_INACTIVITY_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_TEST_LEAD_INACTIVITY_WEBHOOK_URL" initialValue={envConfig.N8N_TEST_LEAD_INACTIVITY_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                 </div>
               </div>
@@ -943,11 +1002,11 @@ export const AdminN8NPage = () => {
                 <div className="space-y-2 text-[11px] font-mono">
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_UPGRADE_BASE_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_UPGRADE_BASE_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_UPGRADE_BASE_WEBHOOK_URL" initialValue={envConfig.N8N_UPGRADE_BASE_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_TEST_UPGRADE_BASE_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_TEST_UPGRADE_BASE_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_TEST_UPGRADE_BASE_WEBHOOK_URL" initialValue={envConfig.N8N_TEST_UPGRADE_BASE_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                 </div>
               </div>
@@ -975,11 +1034,11 @@ export const AdminN8NPage = () => {
                 <div className="space-y-2 text-[11px] font-mono">
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_POS_VENDA_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_POS_VENDA_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_POS_VENDA_WEBHOOK_URL" initialValue={envConfig.N8N_POS_VENDA_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_TEST_POS_VENDA_WEBHOOK_URL:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_TEST_POS_VENDA_WEBHOOK_URL || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_TEST_POS_VENDA_WEBHOOK_URL" initialValue={envConfig.N8N_TEST_POS_VENDA_WEBHOOK_URL} onSave={updateEnvUrl} />
                   </div>
                 </div>
               </div>
@@ -1007,11 +1066,11 @@ export const AdminN8NPage = () => {
                 <div className="space-y-2 text-[11px] font-mono">
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_WEBHOOK_URL_COBRANCAS:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_WEBHOOK_URL_COBRANCAS || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_WEBHOOK_URL_COBRANCAS" initialValue={envConfig.N8N_WEBHOOK_URL_COBRANCAS} onSave={updateEnvUrl} />
                   </div>
                   <div className="grid grid-cols-[1fr_2fr] gap-2">
                     <span className="text-slate-500">N8N_TEST_WEBHOOK_URL_COBRANCAS:</span>
-                    <span className="text-slate-800 break-all">{envConfig.N8N_TEST_WEBHOOK_URL_COBRANCAS || "(vazio)"}</span>
+                    <EditableEnvUrl envKey="N8N_TEST_WEBHOOK_URL_COBRANCAS" initialValue={envConfig.N8N_TEST_WEBHOOK_URL_COBRANCAS} onSave={updateEnvUrl} />
                   </div>
                 </div>
               </div>
