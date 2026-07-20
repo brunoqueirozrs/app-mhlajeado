@@ -190,7 +190,7 @@ export default function LeadsPage({
     setIsMoving(true);
     try {
       const dataTransferencia = new Date().toLocaleDateString("pt-BR");
-      const updatedObservacao = `Movido para Leads frios por ${loggedUser} na data ${dataTransferencia}. ${selectedLead.observacao || ""}`.trim();
+      const updatedObservacao = `[Vindo do Funil PAP] Movido para Leads Frios por ${loggedUser} na data ${dataTransferencia}. ${selectedLead.observacao || ""}`.trim();
       const leadWithUpdatedLog = { ...selectedLead, observacao: updatedObservacao };
 
       const res = await fetch("/api/leads-frios/move", {

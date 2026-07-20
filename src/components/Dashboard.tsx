@@ -10,6 +10,7 @@ import {
   TrendingUp, Users, MapPin, Clock, CalendarDays, Zap, Sparkles, RefreshCw, Send, AlertTriangle, X, List, FileSpreadsheet,
   ClipboardList, FileText, CheckCircle, Coins
 } from "lucide-react";
+import { Database, Mail, Map, Cloud, Car, Navigation, Briefcase } from "lucide-react";
 import { Lead, Task, Vendor } from "../types";
 import { INITIAL_VENDORS } from "../data";
 
@@ -1006,10 +1007,13 @@ export default function Dashboard({
         </div>
       </div>
 
+
       {/* 6. PLAYBOOK E AJUDA PROCESSOS */}
       <div className="space-y-3">
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1 select-none">Recursos e Processos</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        
+        {/* Playbook and Help */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mb-4">
           <a
             href="https://sites.google.com/view/playbook-vendas-digitais/planos-varejo-apenas-cpf?authuser=0"
             target="_blank"
@@ -1024,6 +1028,7 @@ export default function Dashboard({
               <div className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Planos Varejo</div>
             </div>
           </a>
+
           <a
             href="https://docs.google.com/document/d/1XJerfC5kThE2EBPChlvWvIJO1SFNUW5YGNp0B0c30K0/edit?tab=t.tdusduyigo5t"
             target="_blank"
@@ -1038,6 +1043,67 @@ export default function Dashboard({
               <div className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">Documentação de Apoio</div>
             </div>
           </a>
+        </div>
+
+        {/* Shortcuts */}
+        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2 ml-1">Sistemas & Ferramentas</h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <a href="https://sig.mhnet.com.br/" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm text-center">
+            <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">
+              <Database className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-700">SIG</span>
+          </a>
+          <a href="https://erp.mhnet.com.br/" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm text-center">
+            <div className="w-8 h-8 rounded-full bg-violet-50 text-violet-600 flex items-center justify-center mb-2">
+              <Briefcase className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-700">ERP - VOALLE</span>
+          </a>
+          <a href="https://email.mhnet.com.br/" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm text-center">
+            <div className="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-2">
+              <Mail className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-700">Webmail</span>
+          </a>
+          <a href="https://authentication-03.ozmap.com/realms/f63d08e4-4e63-4042-a726-98f3cfe78050/protocol/openid-connect/auth?client_id=ozmap&redirect_uri=https%3A%2F%2Fmhnet.ozmap.com.br%3A9994%2Fapi%2Fv2%2Fauth%2Fcallback&response_type=code&scope=openid%20profile%20email&state=%7B%22redirectTo%22%3A%22%2F%22%2C%22module%22%3A%22OZmap%22%7D&extraData=%7B%22userID%22%3A%22f63d08e4-4e63-4042-a726-98f3cfe78050%22%2C%22accountPlan%22%3A%22corporative%22%2C%22demo%22%3Afalse%2C%22administrative%22%3Afalse%2C%22planName%22%3A%22OZMAP%20300.000%20A%20400.000%22%2C%22version%22%3A%221.44.7%22%7D" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm text-center">
+            <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
+              <Map className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-700">OZmap</span>
+          </a>
+          <a href="https://work.optidata.cloud/login" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm text-center">
+            <div className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center mb-2">
+              <Cloud className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-700">Optidata</span>
+          </a>
+          
+          {isAdmin && (
+            <>
+              <a href="https://sistema.rhgestor.com.br/login" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm text-center border-l-2 border-l-rose-400">
+                <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mb-2">
+                  <Users className="w-4 h-4" />
+                </div>
+                <span className="text-[11px] font-bold text-slate-700">RH Gestor</span>
+                <span className="text-[8px] text-slate-400 mt-0.5">Admin</span>
+              </a>
+              <a href="https://app.dotelematics.com/sign-in" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm text-center border-l-2 border-l-rose-400">
+                <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-2">
+                  <Car className="w-4 h-4" />
+                </div>
+                <span className="text-[11px] font-bold text-slate-700">Rastreador</span>
+                <span className="text-[8px] text-slate-400 mt-0.5">Admin</span>
+              </a>
+              <a href="https://ponto.mhnet.com.br/gestaoponto-frontend/login" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm text-center border-l-2 border-l-rose-400">
+                <div className="w-8 h-8 rounded-full bg-cyan-50 text-cyan-600 flex items-center justify-center mb-2">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <span className="text-[11px] font-bold text-slate-700">Ponto</span>
+                <span className="text-[8px] text-slate-400 mt-0.5">Admin</span>
+              </a>
+            </>
+          )}
         </div>
       </div>
 

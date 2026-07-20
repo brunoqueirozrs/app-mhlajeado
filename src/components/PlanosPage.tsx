@@ -78,7 +78,7 @@ export default function PlanosPage() {
   const fetchPlanos = async () => {
     try {
       setIsLoading(true);
-      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Planos&t=${Date.now()}`;
+      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=1090545017&t=${Date.now()}`;
       const res = await fetch(url, { cache: "no-store" });
       
       if (!res.ok) throw new Error("Falha ao carregar a planilha");

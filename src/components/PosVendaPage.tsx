@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { 
-  CheckSquare, Check, X, AlertTriangle, 
+  CheckCircle, CheckSquare, Check, X, AlertTriangle, 
   MessageSquare, UserCheck, Calendar, Search, 
   Filter, ChevronRight, Phone, MapPin, 
-  Wifi, Smartphone, ThumbsUp, HelpCircle, RefreshCw, Zap, Loader2
+  Wifi, Smartphone, ThumbsUp, HelpCircle, RefreshCw, Zap, Loader2, AlertCircle
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import ConfirmModal from "./ConfirmModal";
@@ -27,6 +27,8 @@ interface ClientPosVenda {
   dataConclusao?: string;
   checklist?: any;
   observacoes?: string;
+  statusSva?: string;
+  statusIndicacaoEnvio?: string;
 }
 
 const checklistsDefault = {
@@ -77,6 +79,12 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
   const [selectedMes, setSelectedMes] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [clientes, setClientes] = useState<ClientPosVenda[]>([]);
+  const [sendingSvaState, setSendingSvaState] = useState<Record<string, { status: "loading" | "success" | "error", message?: string }>>({});
+  const [selectedSvaIds, setSelectedSvaIds] = useState<Set<string>>(new Set());
+  const [isDispatchingSva, setIsDispatchingSva] = useState(false);
+  const [selectedIndicacoesIds, setSelectedIndicacoesIds] = useState<Set<string>>(new Set());
+  const [isDispatchingIndicacoes, setIsDispatchingIndicacoes] = useState(false);
+  const [sendingIndicacoesState, setSendingIndicacoesState] = useState<Record<string, { status: "loading" | "success" | "error", message?: string }>>({});
   const [selectedClient, setSelectedClient] = useState<ClientPosVenda | null>(null);
   const [checklist, setChecklist] = useState<any>(checklistsDefault);
   const [vendedoraFilter, setVendedoraFilter] = useState(isAdmin ? "Todas" : (loggedUser || "Todas"));
@@ -84,6 +92,236 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
   const [confirmState, setConfirmState] = useState<{isOpen: boolean; title: string; message: string; onConfirm: () => void;}>({
     isOpen: false, title: "", message: "", onConfirm: () => {}
   });
+
+
+
+  
+  const handleSendIndicacao = async (client: ClientPosVenda) => {
+    if (sendingIndicacoesState[client.id]?.status === 'loading') return;
+    setSendingIndicacoesState(prev => ({ ...prev, [client.id]: { status: 'loading' } }));
+    
+    try {
+      const res = await fetch("/api/n8n/webhook-indicacoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          cliente: { 
+            nome: client.nome, 
+            telefone: client.telefone, 
+            plano: client.plano 
+          } 
+        })
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || "Erro na comunicação com o servidor.");
+      }
+      
+      setSendingIndicacoesState(prev => ({ ...prev, [client.id]: { status: 'success' } }));
+      
+      setTimeout(() => {
+        setSendingIndicacoesState(prev => {
+          const newState = { ...prev };
+          delete newState[client.id];
+          return newState;
+        });
+      }, 3000);
+      
+    } catch (e: any) {
+      const errMsg = e.message || "Erro desconhecido";
+      setSendingIndicacoesState(prev => ({ ...prev, [client.id]: { status: 'error', message: errMsg } }));
+      
+      setTimeout(() => {
+        setSendingIndicacoesState(prev => {
+          const newState = { ...prev };
+          delete newState[client.id];
+          return newState;
+        });
+      }, 5000);
+    }
+  };
+
+  const handleBulkSendIndicacao = async () => {
+    if (selectedIndicacoesIds.size === 0) return;
+    const selectedClients = clientes.filter(c => selectedIndicacoesIds.has(c.id));
+    setIsDispatchingIndicacoes(true);
+    
+    setSendingIndicacoesState(prev => {
+      const newState = { ...prev };
+      selectedClients.forEach(c => {
+        newState[c.id] = { status: 'loading' };
+      });
+      return newState;
+    });
+
+    try {
+      const res = await fetch("/api/pos-vendas/disparar-indicacoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientes: selectedClients })
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || "Erro na comunicação com o servidor.");
+      }
+      
+      setSendingIndicacoesState(prev => {
+        const newState = { ...prev };
+        selectedClients.forEach(c => {
+          newState[c.id] = { status: 'success' };
+        });
+        return newState;
+      });
+      
+      setSelectedIndicacoesIds(new Set());
+      
+      setTimeout(() => {
+        setSendingIndicacoesState(prev => {
+          const newState = { ...prev };
+          selectedClients.forEach(c => delete newState[c.id]);
+          return newState;
+        });
+        if (selectedMes) fetchData(selectedMes);
+      }, 3000);
+      
+    } catch (e: any) {
+      const errMsg = e.message || "Erro desconhecido";
+      setSendingIndicacoesState(prev => {
+        const newState = { ...prev };
+        selectedClients.forEach(c => {
+          newState[c.id] = { status: 'error', message: errMsg };
+        });
+        return newState;
+      });
+      
+      setTimeout(() => {
+        setSendingIndicacoesState(prev => {
+          const newState = { ...prev };
+          selectedClients.forEach(c => delete newState[c.id]);
+          return newState;
+        });
+      }, 5000);
+    } finally {
+      setIsDispatchingIndicacoes(false);
+    }
+  };
+
+const handleBulkSendSva = async () => {
+    if (selectedSvaIds.size === 0) return;
+    const selectedClients = clientes.filter(c => selectedSvaIds.has(c.id));
+    setIsDispatchingSva(true);
+    
+    // Set individual loading states for better UX
+    setSendingSvaState(prev => {
+      const newState = { ...prev };
+      selectedClients.forEach(c => {
+        newState[c.id] = { status: 'loading' };
+      });
+      return newState;
+    });
+
+    try {
+      const res = await fetch("/api/pos-vendas/disparar-sva", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientes: selectedClients })
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || "Erro na comunicação com o servidor.");
+      }
+      
+      // Mark as success and clear selection
+      setSendingSvaState(prev => {
+        const newState = { ...prev };
+        selectedClients.forEach(c => {
+          newState[c.id] = { status: 'success' };
+        });
+        return newState;
+      });
+      
+      setSelectedSvaIds(new Set());
+      
+      // Auto-clear success state
+      setTimeout(() => {
+        setSendingSvaState(prev => {
+          const newState = { ...prev };
+          selectedClients.forEach(c => delete newState[c.id]);
+          return newState;
+        });
+        if (selectedMes) fetchData(selectedMes); // Refresh to get statusEnvio
+      }, 3000);
+      
+    } catch (e: any) {
+      const errMsg = e.message || "Erro desconhecido";
+      setSendingSvaState(prev => {
+        const newState = { ...prev };
+        selectedClients.forEach(c => {
+          newState[c.id] = { status: 'error', message: errMsg };
+        });
+        return newState;
+      });
+      
+      setTimeout(() => {
+        setSendingSvaState(prev => {
+          const newState = { ...prev };
+          selectedClients.forEach(c => delete newState[c.id]);
+          return newState;
+        });
+      }, 5000);
+    } finally {
+      setIsDispatchingSva(false);
+    }
+  };
+
+  const handleSendSva = async (client: ClientPosVenda) => {
+    if (sendingSvaState[client.id]?.status === 'loading') return;
+    setSendingSvaState(prev => ({ ...prev, [client.id]: { status: 'loading' } }));
+    
+    try {
+      const res = await fetch("/api/n8n/webhook-vendas-sva", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          cliente: { 
+            nome: client.nome, 
+            telefone: client.telefone, 
+            plano: client.plano 
+          } 
+        })
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || "Erro na comunicação com o servidor.");
+      }
+      
+      setSendingSvaState(prev => ({ ...prev, [client.id]: { status: 'success' } }));
+      
+      // Auto-clear success state after 3 seconds
+      setTimeout(() => {
+        setSendingSvaState(prev => {
+          const newState = { ...prev };
+          delete newState[client.id];
+          return newState;
+        });
+      }, 3000);
+      
+    } catch (e: any) {
+      const errMsg = e.message || "Erro desconhecido";
+      setSendingSvaState(prev => ({ ...prev, [client.id]: { status: 'error', message: errMsg } }));
+      
+      // Auto-clear error state after 5 seconds
+      setTimeout(() => {
+        setSendingSvaState(prev => {
+          const newState = { ...prev };
+          delete newState[client.id];
+          return newState;
+        });
+      }, 5000);
+    }
+  };
 
   const requestConfirm = (title: string, message: string, onConfirm: () => void) => {
     setConfirmState({ isOpen: true, title, message, onConfirm });
@@ -161,7 +399,7 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
       async () => {
         setN8nSending(true);
         try {
-          const res = await fetch("/api/n8n/webhook-pos-venda", {
+          const res = await fetch("/api/n8n/webhook-vendas-sva", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -301,6 +539,17 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
             </div>
             
             <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div 
+                className="group relative flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-amber-600 cursor-help flex-shrink-0"
+                title="Filtros no Google Sheets: Se alguém usar um 'Filtro' comum na planilha, os dados ocultados não aparecerão aqui. Use sempre 'Visualizações de Filtro' (Filter Views)!"
+              >
+                <AlertCircle className="w-5 h-5" />
+                <div className="pointer-events-none absolute bottom-full mb-2 w-64 bg-slate-800 text-white text-xs p-3 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 left-1/2 -translate-x-1/2 text-center">
+                  <p className="font-bold mb-1">Filtros no Google Sheets</p>
+                  <p>O sistema importa apenas o que está visível. Se um filtro comum for ativado na planilha base, os clientes vão sumir daqui.</p>
+                  <p className="mt-2 text-amber-300 font-bold">Dica: Oriente a equipe a usar "Visualizações de Filtro". Elas não afetam o sistema!</p>
+                </div>
+              </div>
               <select 
                 className="bg-white border border-slate-200 rounded-xl px-4 py-2 outline-none font-bold text-slate-600 shadow-sm min-w-[200px]"
                 value={vendedoraFilter}
@@ -661,38 +910,105 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
               <h2 className="text-xl font-black text-slate-800">Vendas SVA (Celular, Câmeras, MhPlay)</h2>
               <button 
                 onClick={() => {
-                  if (confirm("Deseja disparar mensagens em massa para Vendas SVA?")) {
-                    alert("Disparo em massa iniciado!");
+                  if (selectedSvaIds.size === 0) {
+                    alert("Selecione pelo menos um cliente para disparar.");
+                    return;
                   }
+                  requestConfirm("Disparo em Massa (SVA)", `Deseja enviar SVA para ${selectedSvaIds.size} clientes selecionados?`, handleBulkSendSva);
                 }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition"
+                disabled={isDispatchingSva || selectedSvaIds.size === 0}
+                className={`${isDispatchingSva || selectedSvaIds.size === 0 ? 'bg-emerald-600/50 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'} text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition`}
               >
-                <Zap className="w-4 h-4" /> Disparo em Massa
+                {isDispatchingSva ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                {isDispatchingSva ? 'Disparando...' : `Disparo em Massa (${selectedSvaIds.size})`}
               </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="p-3 w-10 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
+                        checked={filteredClientes.length > 0 && selectedSvaIds.size === filteredClientes.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedSvaIds(new Set(filteredClientes.map(c => c.id)));
+                          } else {
+                            setSelectedSvaIds(new Set());
+                          }
+                        }}
+                      />
+                    </th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Telefone</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Plano Contratado</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Confirmação de Envio</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Ação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredClientes.map(c => (
-                    <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={c.id} className={`hover:bg-slate-50 transition-colors ${selectedSvaIds.has(c.id) ? 'bg-sky-50/50' : ''}`}>
+                      <td className="p-3 text-center">
+                        <input 
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
+                          checked={selectedSvaIds.has(c.id)}
+                          onChange={(e) => {
+                            const newSet = new Set(selectedSvaIds);
+                            if (e.target.checked) newSet.add(c.id);
+                            else newSet.delete(c.id);
+                            setSelectedSvaIds(newSet);
+                          }}
+                        />
+                      </td>
                       <td className="p-3 font-bold text-slate-800 text-sm">{c.nome}</td>
                       <td className="p-3 text-sm text-slate-600">{c.telefone || "-"}</td>
                       <td className="p-3 text-sm text-slate-600">{c.plano}</td>
+                      <td className="p-3 text-center">
+                        {c.statusSva ? (
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                            c.statusSva.toLowerCase().includes('fila') ? 'bg-amber-100 text-amber-700' :
+                            c.statusSva.toLowerCase().includes('enviado') || c.statusSva.toLowerCase().includes('sucesso') ? 'bg-emerald-100 text-emerald-700' :
+                            c.statusSva.toLowerCase().includes('erro') || c.statusSva.toLowerCase().includes('falha') ? 'bg-rose-100 text-rose-700' :
+                            'bg-slate-100 text-slate-600'
+                          }`}>
+                            {c.statusSva}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 text-xs">-</span>
+                        )}
+                      </td>
                       <td className="p-3 text-right">
-                        <button 
-                          onClick={() => alert(`Disparando oferta SVA para ${c.nome} (${c.telefone})`)}
-                          className="bg-sky-100 text-sky-700 hover:bg-sky-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ml-auto"
-                        >
-                          <Zap className="w-3.5 h-3.5" /> Enviar SVA
-                        </button>
+                        <div className="flex flex-col items-end gap-1 ml-auto">
+                          <button 
+                            onClick={() => handleSendSva(c)}
+                            disabled={sendingSvaState[c.id]?.status === 'loading' || sendingSvaState[c.id]?.status === 'success'}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                              sendingSvaState[c.id]?.status === 'loading' ? 'bg-sky-100/50 text-sky-700/50 cursor-not-allowed' : 
+                              sendingSvaState[c.id]?.status === 'success' ? 'bg-emerald-100 text-emerald-700' :
+                              sendingSvaState[c.id]?.status === 'error' ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' :
+                              'bg-sky-100 text-sky-700 hover:bg-sky-200'
+                            }`}
+                          >
+                            {sendingSvaState[c.id]?.status === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 
+                             sendingSvaState[c.id]?.status === 'success' ? <CheckCircle className="w-3.5 h-3.5 animate-in zoom-in" /> :
+                             sendingSvaState[c.id]?.status === 'error' ? <AlertTriangle className="w-3.5 h-3.5" /> :
+                             <Zap className="w-3.5 h-3.5" />}
+                             
+                            {sendingSvaState[c.id]?.status === 'loading' ? 'Enviando...' : 
+                             sendingSvaState[c.id]?.status === 'success' ? 'Enviado!' :
+                             sendingSvaState[c.id]?.status === 'error' ? 'Tentar Novamente' :
+                             'Enviar SVA'}
+                          </button>
+                          {sendingSvaState[c.id]?.status === 'error' && (
+                            <span className="text-[9px] font-bold text-rose-500 animate-in fade-in">
+                              Motivo: {sendingSvaState[c.id]?.message}
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

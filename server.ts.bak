@@ -84,7 +84,7 @@ async function getExportUrl(spreadsheetId: string, sheetName: string): Promise<s
   
   if (!gidsCache[spreadsheetId][sheetName.trim().toLowerCase()]) {
     const htmlUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/htmlview`;
-    try {
+    
       const res = await fetch(htmlUrl);
       const text = await res.text();
       const regex = /items\.push\(\{(.*?)\}\)/g;
@@ -175,7 +175,7 @@ function logGeminiFallback(action: string, error: any) {
     cleanMsg = "Créditos da Chave de API Gemini Esgotados";
   } else {
     if (cleanMsg.startsWith("{") && cleanMsg.endsWith("}")) {
-      try {
+      
         const parsed = JSON.parse(cleanMsg);
         cleanMsg = parsed.error?.message || parsed.message || "Erro de API formatado";
       } catch (e) {
@@ -228,7 +228,7 @@ async function safeGenerateContent(options: any): Promise<{ text: string }> {
   const responseMimeType = options.config?.responseMimeType;
 
   // Try Gemini
-  try {
+  
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents,
@@ -269,7 +269,7 @@ async function safeGenerateContent(options: any): Promise<{ text: string }> {
 
     // Try Deepseek First
     const deepseekKey = "sk-29c455d1e84d43b99fff66ee0ceea19b";
-    try {
+    
       console.log(`[IA] Tentando fallback com Deepseek...`);
       const dsRes = await fetch("https://api.deepseek.com/chat/completions", {
         method: "POST",
@@ -296,7 +296,7 @@ async function safeGenerateContent(options: any): Promise<{ text: string }> {
 
     // Try OpenRouter as secondary fallback
     const openRouterKey = "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";
-    try {
+    
       const orModels = [
         "openrouter/free",
         "google/gemma-4-31b-it:free",
@@ -336,7 +336,7 @@ async function safeGenerateContent(options: any): Promise<{ text: string }> {
       : "gsk_SvUd9Ju08wr5xkXDAOz1WGdyb3FYpcCZE7p5uL25VaagXv96";
 
     if (groqKey) {
-      try {
+      
         const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"];
         for (const model of groqModels) {
           console.log(`[IA] Tentando fallback com Groq (${model})...`);
@@ -452,7 +452,7 @@ function resolveN8nWebhookUrl(
        ngrokUrl = ngrokUrl.split("->")[0].trim();
     }
     if (!ngrokUrl.includes("localhost") && !ngrokUrl.includes("127.0.0.1") && !ngrokUrl.includes("sua-url-ngrok")) {
-      try {
+      
         const parsedNgrok = new URL(ngrokUrl);
         const parsedLocal = new URL(url);
         parsedLocal.protocol = parsedNgrok.protocol;
@@ -497,7 +497,7 @@ if (!fs.existsSync(DB_DIR)) {
 function readJSONDb(filename: string, fallback: any) {
   const filePath = path.join(DB_DIR, filename);
   if (fs.existsSync(filePath)) {
-    try {
+    
       return JSON.parse(fs.readFileSync(filePath, "utf-8"));
     } catch (e) {
       console.error(`Erro ao ler ${filename}:`, e);
@@ -508,7 +508,7 @@ function readJSONDb(filename: string, fallback: any) {
 
 function writeJSONDb(filename: string, data: any) {
   const filePath = path.join(DB_DIR, filename);
-  try {
+  
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
   } catch (e) {
     console.error(`Erro ao gravar ${filename}:`, e);
@@ -795,7 +795,7 @@ async function syncBaseClientsFromGoogleSheet() {
 
   isSyncingBaseClients = true;
   console.log("[SYNC] Buscando e analisando dinamicamente a aba Base052026 do Google Sheets...");
-  try {
+  
     const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Base052026");
     
     // Use AbortSignal.timeout which covers the entire request including reading the body
@@ -963,7 +963,7 @@ async function syncLeadsFromGoogleSheet() {
 
   isSyncingLeads = true;
   console.log("[SYNC] Buscando e analisando Planilha de Acompanhamento de Lead | Abordagens...");
-  try {
+  
     const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Acompanhamento de Lead | Abordagens");
     
     // Use AbortSignal.timeout which covers the entire request including reading the body
@@ -1261,7 +1261,7 @@ async function syncFttaFromGoogleSheet() {
 
   isSyncingFtta = true;
   console.log("[SYNC] Buscando e analisando abas FTTA do Google Sheets dinamicamente...");
-  try {
+  
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
 
     // 1. Fetch FTTA LAJEADO
@@ -1456,13 +1456,13 @@ async function syncLeadsFriosFromGoogleSheet() {
   }
   isSyncingLeadsFrios = true;
   console.log("[SYNC] Buscando e analisando aba BaseLeadsFrios_Unificada...");
-  try {
+  
     let allLeads: any[] = [];
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
     
     const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "BaseLeadsFrios_Unificada");
     
-    try {
+    
       const res = await fetch(url, { signal });
       if (res.ok) {
         const csvText = await res.text();
@@ -1540,7 +1540,7 @@ async function syncCobrancasFromGoogleSheet() {
 
   isSyncingCobrancas = true;
   console.log("[SYNC] Buscando e analisando aba acao_cobranca do Google Sheets dinamicamente...");
-  try {
+  
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
     const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "acao_cobranca");
     const res = await fetch(url, { signal });
@@ -1659,7 +1659,7 @@ async function syncInstallationsFromGoogleSheet() {
 
   isSyncingInstallations = true;
   console.log("[SYNC] Buscando e analisando Google Sheets: aba Agenda Instalação...");
-  try {
+  
     const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Agenda Instalação");
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
 
@@ -1703,7 +1703,7 @@ async function syncVendorsFromGoogleSheet() {
 
   isSyncingVendors = true;
   console.log("[SYNC] Buscando e analisando Google Sheets: aba Vendedores...");
-  try {
+  
     const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Vendedores");
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
     const sheetsResponse = await fetch(url, { signal });
@@ -1767,7 +1767,7 @@ async function syncVendorsFromGoogleSheet() {
 
 // Background utility to write or update the Google Sheet via GAS (Google Apps Script) proxy or Sheets API endpoint
 async function writeInstallationToGoogleSheet(inst: any, action: "save" | "delete") {
-  try {
+  
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
@@ -1790,9 +1790,9 @@ async function writeInstallationToGoogleSheet(inst: any, action: "save" | "delet
 
     if (response.ok) {
       const text = await response.text();
-      try {
+      
         let data;
-      try {
+      
         data = JSON.parse(text);
       } catch (err) {
         console.error("Failed to parse JSON from Apps Script. Response was:", text.substring(0, 100));
@@ -1812,7 +1812,7 @@ async function writeInstallationToGoogleSheet(inst: any, action: "save" | "delet
 
 // Background utility to write or update a Lead via GAS proxy
 async function writeLeadToGoogleSheet(lead: any, action: "save" | "delete") {
-  try {
+  
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
@@ -1868,7 +1868,7 @@ async function writeLeadToGoogleSheet(lead: any, action: "save" | "delete") {
 
 // Background utility to bulk transfer Leads via GAS proxy
 async function writeBulkTransferToGoogleSheet(fromSeller: string, toSeller: string) {
-  try {
+  
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(APPS_SCRIPT_URL, {
@@ -1891,7 +1891,7 @@ async function writeBulkTransferToGoogleSheet(fromSeller: string, toSeller: stri
 
 // Background utility to write a Base Action via GAS proxy
 async function writeBaseActionToGoogleSheet(actionObj: any) {
-  try {
+  
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
     const response = await fetch(APPS_SCRIPT_URL, {
@@ -1935,7 +1935,7 @@ app.get("/api/config/status", (req, res) => {
     }
 
     if (key === "N8N_WEBHOOK_URL") {
-      try {
+      
         new URL(value);
       } catch (e) {
         invalidFormatKeys.push(key);
@@ -1968,7 +1968,7 @@ app.post("/api/n8n/test", async (req, res) => {
   const { url, type } = req.body;
   if (!url) return res.status(400).json({ error: "No URL provided" });
   
-  try {
+  
     const payload = {
       test: true,
       timestamp: new Date().toISOString(),
@@ -2195,7 +2195,7 @@ app.post("/api/n8n-proxy", async (req, res) => {
   n8nHistory.unshift(historyItem);
   if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
 
-  try {
+  
     if (finalUrl.includes("localhost") || finalUrl.includes("sua-url-ngrok")) {
         throw new Error("A URL do n8n não está configurada ou aponta para localhost. Configure-a nas variáveis de ambiente.");
     }
@@ -2209,7 +2209,7 @@ app.post("/api/n8n-proxy", async (req, res) => {
     
     // Some n8n webhooks might return ok with no body or non-JSON body
     let json = {};
-    try {
+    
       if (fetchRes.headers.get("content-type")?.includes("application/json")) {
         json = await fetchRes.json();
       } else {
@@ -2247,7 +2247,7 @@ app.get("/api/vendors", async (req, res) => {
 });
 
 app.post("/api/vendors/sync", async (req, res) => {
-  try {
+  
     lastVendorsSyncTime = 0; // force renew
     await syncVendorsFromGoogleSheet();
     res.json({ status: "success", count: vendors.length, vendors });
@@ -2426,7 +2426,7 @@ app.get("/api/ftta", async (req, res) => {
 });
 
 async function writeFttaToGoogleSheet(type: string, data: any) {
-  try {
+  
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
@@ -2486,7 +2486,7 @@ app.get("/api/matriz-objecoes", async (req, res) => {
   const sheetName = "Matriz Objeções";
   const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", sheetName);
   
-  try {
+  
     const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
     const sheetsResponse = await fetch(url, { signal });
     if (!sheetsResponse.ok) {
@@ -2554,7 +2554,7 @@ app.post("/api/gemini/copilot-objecoes", async (req, res) => {
   const { input, objecoes } = req.body;
   if (!input) return res.status(400).json({ error: "Input is required" });
   
-  try {
+  
     if (!process.env.GEMINI_API_KEY) throw new Error("No API Key");
     
     const prompt = `Você é o "Mhnet Sales Copilot", um assistente de inteligência artificial especializado em apoiar a equipe de vendas da Mhnet Telecom. Seu objetivo é ajudar o vendedor a contornar objeções de clientes de forma empática, persuasiva e técnica, utilizando estritamente a base de conhecimento oficial da empresa.
@@ -2590,7 +2590,7 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
   const sheetName = req.params.sheetName;
   const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", sheetName);
   
-  try {
+  
     const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
     const sheetsResponse = await fetch(url, { signal });
     if (!sheetsResponse.ok) {
@@ -2710,7 +2710,7 @@ app.post("/api/pos-vendas/disparar-indicacoes", async (req, res) => {
      ? (process.env.N8N_TEST_WEBHOOK_URL_INDICACOES || "http://localhost:5678/webhook-test/indicacoes") 
      : (process.env.N8N_WEBHOOK_URL_INDICACOES || "http://localhost:5678/webhook/indicacoes");
 
-  try {
+  
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2746,7 +2746,7 @@ app.post("/api/pos-vendas/disparar-sva", async (req, res) => {
      ? (process.env.N8N_TEST_WEBHOOK_URL_VENDAS_SVA || "http://localhost:5678/webhook-test/vendas-sva") 
      : (process.env.N8N_WEBHOOK_URL_VENDAS_SVA || "http://localhost:5678/webhook/vendas-sva");
 
-  try {
+  
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2774,7 +2774,7 @@ app.post("/api/pos-vendas/:id", (req, res) => {
   writeJSONDb("posVendas.json", posVendasData);
   
   // Enviar para webhook e Apps Script para manter sincronizado o espelho do Fechamento
-  try {
+  
     const sheetName = id.split("-").slice(0, -1).join("-");
     const rowIndex = id.split("-").pop();
     
@@ -2900,7 +2900,7 @@ app.post("/api/tasks", async (req, res) => {
 
   let webhookStatus = null;
   // Trigger n8n webhook for new task
-          try {
+  
     const n8nTasksUrl = resolveN8nWebhookUrl(
       process.env.N8N_NEW_TASK_WEBHOOK_URL,
       process.env.N8N_WEBHOOK_URL,
@@ -2916,7 +2916,7 @@ app.post("/api/tasks", async (req, res) => {
 
       console.log(`[n8n] Nova Tarefa Criada: ${task.descricao}. Enviando webhook para ${n8nTasksUrl}...`);
       
-      try {
+      
         const response = await fetch(n8nTasksUrl, {
           method: "POST",
           headers: { 
@@ -2995,7 +2995,7 @@ app.post("/api/absences", async (req, res) => {
   let emailError = null;
 
   // Send email via nodemailer
-  try {
+  
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.gmail.com",
       port: Number(process.env.SMTP_PORT) || 587,
@@ -3285,7 +3285,7 @@ app.post("/api/base/actions", (req, res) => {
 });
 
 app.post("/api/base/sync", async (req, res) => {
-  try {
+  
     lastBaseSyncTime = 0; // force renew
     await syncBaseClientsFromGoogleSheet();
     res.json({ status: "success", count: baseClients.length });
@@ -3365,7 +3365,7 @@ app.post("/api/base/batch", (req, res) => {
 });
 
 app.post("/api/leads/sync", async (req, res) => {
-  try {
+  
     lastLeadsSyncTime = 0; // force renew
     await syncLeadsFromGoogleSheet();
     res.json({ status: "success", count: leads.length });
@@ -3375,7 +3375,7 @@ app.post("/api/leads/sync", async (req, res) => {
 });
 
 app.post("/api/ftta/sync", async (req, res) => {
-  try {
+  
     lastFttaSyncTime = 0; // force renew
     await syncFttaFromGoogleSheet();
     res.json({ 
@@ -3438,7 +3438,7 @@ app.post("/api/cobrancas/disparar-n8n", async (req, res) => {
     ? (process.env.N8N_TEST_WEBHOOK_URL_COBRANCAS || "https://lake-elective-scoured.ngrok-free.dev/webhook-test/cobranca")
     : (process.env.N8N_WEBHOOK_URL_COBRANCAS || "https://lake-elective-scoured.ngrok-free.dev/webhook/cobranca"); 
 
-  try {
+  
     console.log(`[DEBUG n8n Cobranças] URL Alvo: ${n8nUrl} (Modo Teste: ${isTest})`);
     console.log(`[DEBUG n8n Cobranças] Payload (${clientes.length} clientes):`, JSON.stringify({ clientes }, null, 2));
 
@@ -3514,7 +3514,7 @@ app.post("/api/gemini/generateCobrancaMessage", async (req, res) => {
     return res.status(400).json({ status: "error", message: "Client is required" });
   }
 
-  try {
+  
     const prompt = `Gere uma mensagem amigável, educada e altamente persuasiva para envio via WhatsApp para este cliente com pendência financeira:
 - Nome: ${client.nomeCliente || "Cliente"}
 - Plano de Internet: ${client.plano || "MHNET Fibra"}
@@ -3556,7 +3556,7 @@ app.post("/api/proxy", async (req, res) => {
   if (!route) {
     return res.status(400).json({ status: "error", message: "Route is required" });
   }
-  try {
+
   
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 25000);
@@ -3575,11 +3575,11 @@ app.post("/api/proxy", async (req, res) => {
     if (!gasResponse.ok) {
       throw new Error(`Google Apps Script returned status ${gasResponse.status}`);
     }
-    try {
+
     const text = await gasResponse.text();
     
       let data;
-      try {
+      
         data = JSON.parse(text);
       } catch (err) {
         console.error("Failed to parse JSON from Apps Script. Response was:", text.substring(0, 100));
@@ -3605,7 +3605,7 @@ app.post("/api/gemini/combatObjection", async (req, res) => {
     return res.status(400).json({ status: "error", message: "Objection is required" });
   }
 
-  try {
+  
     const prompt = `Um cliente em Lajeado/Estrela argumentou a seguinte objeção: "${objection}".
 Gere uma contramedida persuasiva e empática em até 4 linhas para desarmar a objeção e reatar a negociação.`;
 
@@ -3636,7 +3636,7 @@ Gere uma contramedida persuasiva e empática em até 4 linhas para desarmar a ob
 app.post("/api/gemini/analyzeBaseChurn", async (req, res) => {
   const { topCancelamentos, topDesistencias, totalCancelamentos, totalDesistencias } = req.body;
 
-  try {
+  
     const prompt = `Atue como um analista de dados e estrategista de retenção (Customer Success) para a MHNET Fibra (Provedor de Internet Regional no Rio Grande do Sul).
 
 Temos os seguintes dados de CHURN e DESISTÊNCIA da nossa base de clientes:
@@ -3680,7 +3680,7 @@ A análise dos dados indica que os principais motivos de desligamento de cliente
 app.post("/api/gemini/generateApproach", async (req, res) => {
   const { nomeLead, provedor, planoAtual, valorPlano, observacao, cidade, bairro, status, objecao } = req.body;
 
-  try {
+  
     const prompt = `Analise os seguintes dados gerais de um lead do Vale do Taquari/RS (Lajeado, Estrela e região) para formular uma estratégia e roteiro de venda matador.
 Nome do Lead: ${nomeLead || "Não informado"}
 Endereço / Localização: ${bairro || "Bairro não informado"} em ${cidade || "Cidade não informada"}
@@ -3730,7 +3730,7 @@ const generateMessageAndPitchHandler = async (req: any, res: any) => {
     return res.status(400).json({ status: "error", message: "Client data is required" });
   }
 
-  try {
+  
     const prompt = `Gere uma abordagem de WhatsApp personalizada de upgrade/retenção para o seguinte cliente:
 - Nome: ${targetClient.nome || targetClient.nomeLead || "Cliente"}
 - Plano atual: ${targetClient.plano || targetClient.provedor || "Nível Básico"}
@@ -3772,7 +3772,7 @@ app.post("/api/gemini/generatePitch", generateMessageAndPitchHandler);
 
 // Coach tip generation
 app.post("/api/gemini/coach", async (req, res) => {
-  try {
+  
     const prompt = "Dê uma frase motivacional curta, poderosa e inspiradora para um vendedor de internet no porta a porta de campo hoje. Máximo 2 linhas.";
     const response = await safeGenerateContent({
       model: "gemini-2.5-flash",
@@ -3798,7 +3798,7 @@ app.post("/api/gemini/coach", async (req, res) => {
 app.post("/api/gemini/analyzeSentiment", async (req, res) => {
   const { text } = req.body;
   if (!text) return res.json({ status: "success", text: "Nenhuma observação ainda." });
-  try {
+  
     const prompt = `Analise o seguinte texto de observação de um vendedor sobre um lead (cliente prospect) de provedor de internet:
 "${text}"
 
@@ -3819,7 +3819,7 @@ Ação Sugerida: [Uma linha curta de conselho].`;
 
 app.post("/api/gemini/combatObjectionTrio", async (req, res) => {
   const { objection, provedor, planoAtual, valorPlano } = req.body;
-  try {
+  
     const prompt = `O cliente de internet (provedor atual: ${provedor || "não informado"}, pagando R$${valorPlano || "não informado"}) levantou a seguinte objeção: "${objection}".
 Gere EXATAMENTE 3 opções curtas de resposta para o vendedor PAP da MHNET usar no WhatsApp ou presencial. O formato obrigatório é JSON:
 [
@@ -3848,7 +3848,7 @@ Gere EXATAMENTE 3 opções curtas de resposta para o vendedor PAP da MHNET usar 
 
 app.post("/api/gemini/leadSummary", async (req, res) => {
   const { lead } = req.body;
-  try {
+  
     const prompt = `Analise os dados deste lead de internet fibra da MHNET:
 Nome: ${lead.nomeLead || ""}
 Cidade/Bairro: ${lead.cidade || ""} - ${lead.bairro || ""}
@@ -3878,7 +3878,7 @@ app.post("/api/gemini/generatePlanosPitch", async (req, res) => {
     return res.status(400).json({ status: "error", message: "Planos array is required" });
   }
 
-  try {
+  
     if (!process.env.GEMINI_API_KEY) {
       logGeminiFallback("PlanosPitch", new Error("No API Key"));
       return res.json({ status: "success", text: "Aqui estão as opções de planos que selecionei para você: " + planos.map((p: any) => p.nome).join(", ") });
@@ -3915,7 +3915,7 @@ app.post("/api/gemini/suggestBasePlanos", async (req, res) => {
     return res.status(400).json({ status: "error", message: "valorAtual is required" });
   }
 
-  try {
+  
     if (!process.env.GEMINI_API_KEY) {
       logGeminiFallback("SuggestPlanos", new Error("No API Key"));
       return res.json({ status: "success", suggestions: [] });
@@ -3957,7 +3957,7 @@ Formato OBRIGATÓRIO de saída é APENAS UM ARRAY JSON com 3 objetos, nada mais,
     text = text.replace(/```json/g, "").replace(/```/g, "").trim();
     
     let json = [];
-    try {
+    
       json = JSON.parse(text);
     } catch(e) {
       console.error("[SuggestPlanos] Erro ao analisar a resposta da IA", text);
@@ -3977,7 +3977,7 @@ app.post("/api/gemini/chat", async (req, res) => {
     return res.status(400).json({ status: "error", message: "Message is required" });
   }
 
-  try {
+  
     // Basic chat utility, pass full context
     const rawContents = [];
     if (history && Array.isArray(history) && history.length > 0) {
@@ -4042,7 +4042,7 @@ app.post("/api/gemini/analyzeCompetitor", async (req, res) => {
     return res.status(400).json({ status: "error", message: "Competitor name is required" });
   }
 
-  try {
+  
     const prompt = question 
       ? `Sobre o concorrente ${name} em Lajeado/RS: ${question}. Lembre que nossa vantagem da MHNET vs ele é: ${mhnetVantagem || "atendimento local, sem multa escondida"}`
       : `Crie um argumento de vendas/comparativo matador contra o concorrente ${name}. Cite 2 desvantagens típicas dele (como suporte lento de callcenter e taxas ocultas) e 2 vantagens da MHNET (suporte no mesmo dia e técnicos locais). Máximo 5 linhas.`;
@@ -4126,7 +4126,7 @@ Gere informações precisas, realistas e úteis no formato JSON com a seguinte e
   "cons": ["ponto fraco realista 1", "ponto fraco realista 2", "ponto fraco realista 3"]
 }
 IMPORTANTE: Retorne APENAS o objeto JSON puro e válido, sem formatações de markdown como \`\`\`json ou explicações externas. Garanta que todas as aspas estejam escapadas corretamente e que seja um JSON perfeitamente parseável.`;
-  try {
+
     const response = await safeGenerateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
@@ -4149,7 +4149,7 @@ IMPORTANTE: Retorne APENAS o objeto JSON puro e válido, sem formatações de ma
     cleanText = cleanText.trim();
 
     let data;
-      try {
+      
         data = JSON.parse(cleanText);
       } catch (err) {
         console.error("Failed to parse JSON from Apps Script. Response was:", cleanText.substring(0, 100));
@@ -4243,7 +4243,7 @@ app.post("/api/installations", async (req, res) => {
   const dataCriacaoValue = inst.dataCriacao || new Date().toLocaleString("pt-BR");
 
   let aiAlert = "";
-  try {
+  
     const prompt = `Gere uma notificação/alerta de agendamento de instalação de internet MHNET para o vendedor: "${inst.vendedorResponsavel || "Não informado"}" e Gerente: "${inst.gerenteResponsavel || "Não informado"}".
 Dados da Instalação:
 Cliente: ${inst.nomeCliente}
@@ -4299,8 +4299,8 @@ _Vamos acompanhar juntos o sucesso desta ativação!_ MHNET Fibra Lajeado/Estrel
 
   // Background write-back to Google Sheet tab "Agenda Instalação"
   writeInstallationToGoogleSheet(updatedInst, "save").catch(e => console.error("[SYNC] Erro de gravação em POST de instalações:", e));
+
   let webhookStatus = null;
-  try {
   // Trigger n8n webhook
   
     let n8nUrl = resolveN8nWebhookUrl(
@@ -4317,7 +4317,7 @@ _Vamos acompanhar juntos o sucesso desta ativação!_ MHNET Fibra Lajeado/Estrel
     }
 
     if (n8nUrl && !n8nUrl.includes("localhost:5678") && !n8nUrl.includes("sua-url-ngrok")) {
-      try {
+      
         const response = await fetch(n8nUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -4362,7 +4362,7 @@ Fique de olho no acompanhamento pós-venda!`
 
   // Adicionar automaticamente à fila de monitoramento caso seja um novo agendamento
   if (existingIdx === -1) {
-    try {
+    
       const newQueueItem = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
         cliente: updatedInst.nomeCliente || "-",
@@ -4387,7 +4387,7 @@ Fique de olho no acompanhamento pós-venda!`
 });
 
 app.post("/api/installations/sync", async (req, res) => {
-  try {
+  
     lastInstallationsSyncTime = 0; // force renew
     await syncInstallationsFromGoogleSheet();
     res.json({ status: "success", count: installations.length, installations });
@@ -4401,7 +4401,7 @@ app.post("/api/leads-frios/move", async (req, res) => {
   const { lead, user } = req.body;
   if (!lead || !user) return res.status(400).json({ status: "error", message: "Missing data" });
 
-  try {
+  
     // 1. Remove from Acompanhamento de Lead | Abordagens (Local + GAS)
     leads = leads.filter(l => String(l._linha) !== String(lead._linha));
     
@@ -4447,7 +4447,7 @@ app.post("/api/leads-frios/move", async (req, res) => {
     lastLeadsFriosSyncTime = Date.now(); // Prevent immediate sync that would pull stale CSV data
 
     // Try to append to GAS BaseLeadsFrios_Unificada
-    try {
+    
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 12000);
       
@@ -4501,7 +4501,7 @@ app.get("/api/leads-frios", async (req, res) => {
 });
 
 app.post("/api/leads-frios/sync", async (req, res) => {
-  try {
+  
     lastLeadsFriosSyncTime = 0;
     await syncLeadsFriosFromGoogleSheet();
     res.json({ status: "success", count: leadsFrios.length, leads: leadsFrios });
@@ -4520,7 +4520,7 @@ app.post("/api/gemini/analyze-lead", async (req, res) => {
     });
   }
 
-  try {
+  
     const prompt = `Você é um especialista em vendas porta a porta (PAP) da MHNET Telecom.
 O usuário está visualizando os dados de um lead frio que foi prospectado anteriormente mas não converteu, e deseja saber a melhor abordagem.
 
@@ -4583,7 +4583,7 @@ app.post("/api/gemini/generateRouteBriefing", async (req, res) => {
     });
   }
 
-  try {
+  
     const prompt = `Você é o estrategista de campo da MHNET Telecom em Lajeado e Estrela.
     O vendedor atual é: ${loggedUser}.
     A segunda-feira da semana requisitada é: ${weekMonday || "uma data recente"}.
@@ -4684,7 +4684,7 @@ Sempre estruture:
 **Indicadores para Monitorar**`;
 
 app.post("/api/agente/consulta", async (req, res) => {
-  try {
+  
     const { sessionId, mensagem, ferramenta } = req.body;
     if (!sessionId || !mensagem) {
       return res.status(400).json({ error: "sessionId e mensagem são obrigatórios." });
@@ -4701,7 +4701,7 @@ app.post("/api/agente/consulta", async (req, res) => {
       return res.json({ resposta: fallbackResponse, provedor: "fallback", totalTurnos: sessao.historico.length / 2 });
     }
 
-    try {
+    
       const response = await safeGenerateContent({
         model: "gemini-2.5-flash",
         contents: sessao.historico,
@@ -4769,7 +4769,7 @@ setInterval(() => {
   if (process.env.PAUSE_OVERDUE_TASKS_JOB === "true") {
     return;
   }
-  try {
+  
     const now = new Date();
     const currentYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const currentH = now.getHours();
@@ -4881,7 +4881,7 @@ setInterval(async () => {
      console.log("[n8n] Tarefa de leads inativos já em andamento, ignorando nova execução.");
      return;
   }
-  try {
+  
   isProcessingInactiveLeads = true;
   
     let webhookUrl = resolveN8nWebhookUrl(
@@ -4946,7 +4946,7 @@ setInterval(async () => {
         // Generate AI Suggestion
         let iaMessage = "Não foi possível gerar dica no momento.";
         if (!aiRateLimitHit) {
-          try {
+          
             await new Promise(r => setTimeout(r, 4500));
             const prompt = `Atue como um gerente de vendas. O lead ${lead.nomeLead} está parado há ${avisoToTrigger >= 24 && avisoToTrigger <= 48 ? avisoToTrigger + ' horas' : avisoToTrigger + ' dias'} sem fechar.
 Bairro: ${lead.bairro}
@@ -4994,7 +4994,7 @@ Crie uma mensagem muito curta (max 3 linhas) com uma dica de abordagem criativa 
           console.warn(`[n8n WARNING] O vendedor "${payload.vendedor}" não possui telefone configurado na aba "Vendedores". O n8n (WAHA) pode falhar com erro 500 ao tentar enviar mensagem para "@c.us".`);
         }
         if (!webhookUrl.includes("localhost:5678")) {
-          try {
+          
             await fetch(webhookUrl, {
               method: "POST",
               headers: { 
@@ -5043,7 +5043,7 @@ app.post("/api/n8n/webhook-competitors", async (req, res) => {
   n8nHistory.unshift(historyItem);
   if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
 
-  try {
+  
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -5094,7 +5094,7 @@ app.post("/api/n8n/webhook-upgrade", async (req, res) => {
   n8nHistory.unshift(historyItem);
   if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
 
-  try {
+  
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -5153,7 +5153,7 @@ app.post("/api/n8n/webhook-vendas-sva", async (req, res) => {
   n8nHistory.unshift(historyItem);
   if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
   
-  try {
+  
     fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -5190,7 +5190,7 @@ app.post("/api/n8n/webhook-indicacoes", async (req, res) => {
   n8nHistory.unshift(historyItem);
   if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
   
-  try {
+  
     fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -5224,7 +5224,7 @@ app.post("/api/n8n/webhook-pos-venda", async (req, res) => {
   n8nHistory.unshift(historyItem);
   if (n8nHistory.length > MAX_HISTORY) n8nHistory.pop();
 
-  try {
+  
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -5263,7 +5263,7 @@ let lastInternalProtocolsSyncTime = 0;
 
 
 async function writeBaseClientToGoogleSheet(client: any) {
-  try {
+  
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
     const mappedItem = {
@@ -5299,7 +5299,7 @@ async function writeBaseClientToGoogleSheet(client: any) {
 async function syncInternalProtocolsFromGoogleSheet() {
   if (Date.now() - lastInternalProtocolsSyncTime < 300000) return; // 5 mins cache
   
-  try {
+  
     const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
     const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Protocolos Internos");
     
@@ -5356,7 +5356,7 @@ async function syncInternalProtocolsFromGoogleSheet() {
 syncInternalProtocolsFromGoogleSheet();
 
 async function writeInternalProtocolToGoogleSheet(item: any, action: "append" | "update" = "append") {
-  try {
+  
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
     const mappedItem = {
@@ -5391,7 +5391,7 @@ async function writeInternalProtocolToGoogleSheet(item: any, action: "append" | 
 }
 
 app.get("/api/sheets/internal-protocols", async (req, res) => {
-  try {
+  
     await syncInternalProtocolsFromGoogleSheet();
     res.json(internalProtocols);
   } catch (e) {
@@ -5400,7 +5400,7 @@ app.get("/api/sheets/internal-protocols", async (req, res) => {
 });
 
 app.post("/api/sheets/internal-protocols", async (req, res) => {
-  try {
+  
     // Implemente uma função de verificação no módulo de Protocolos Internos para garantir que cada registro salve um timestamp em formato DD/MM/AAAA e que o nome do vendedor esteja sendo enviado ao n8n
     const timestampDDMMYYYY = req.body.timestamp || new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
     const vendedor = req.body.vendedor || "Não Informado";
@@ -5424,7 +5424,7 @@ app.post("/api/sheets/internal-protocols", async (req, res) => {
         webhookUrl += webhookUrl.includes("webhook/") || webhookUrl.includes("webhook-test/") ? "protocolo-interno" : "/webhook/protocolo-interno";
       }
       
-      try {
+      
         fetch(webhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -5445,7 +5445,7 @@ app.post("/api/sheets/internal-protocols", async (req, res) => {
 });
 
 app.put("/api/sheets/internal-protocols/:id", async (req, res) => {
-  try {
+  
     const id = req.params.id;
     const index = internalProtocols.findIndex(p => p.id === id);
     if (index !== -1) {
@@ -5462,7 +5462,7 @@ app.put("/api/sheets/internal-protocols/:id", async (req, res) => {
 });
 
 app.delete("/api/sheets/internal-protocols/:id", async (req, res) => {
-  try {
+  
     const id = req.params.id;
     const index = internalProtocols.findIndex(p => p.id === id);
     if (index !== -1) {
@@ -5484,7 +5484,7 @@ let lastInstallationQueueSyncTime = 0;
 async function syncInstallationQueueFromGoogleSheet() {
   if (Date.now() - lastInstallationQueueSyncTime < 300000) return; // 5 mins cache
   
-  try {
+  
     const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
     const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Fila de Monitoramento");
     
@@ -5529,7 +5529,7 @@ async function syncInstallationQueueFromGoogleSheet() {
 syncInstallationQueueFromGoogleSheet();
 
 app.get("/api/installations-queue", async (req, res) => {
-  try {
+  
     await syncInstallationQueueFromGoogleSheet();
     
     // Check for delayed items
@@ -5572,7 +5572,7 @@ app.get("/api/installations-queue", async (req, res) => {
   }
 });
 async function writeInstallationQueueToGoogleSheet(item: any, action: "save" | "update") {
-  try {
+  
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
@@ -5602,7 +5602,7 @@ async function writeInstallationQueueToGoogleSheet(item: any, action: "save" | "
 }
 
 app.post("/api/installations-queue", async (req, res) => {
-  try {
+  
     const newItem = {
       ...req.body,
       id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
@@ -5621,7 +5621,7 @@ app.post("/api/installations-queue", async (req, res) => {
   }
 });
 app.post("/api/installations-queue/:id/finalize", async (req, res) => {
-  try {
+  
     const id = req.params.id;
     const { observacaoFinal } = req.body || {};
     const index = localInstallationQueue.findIndex(q => q.id === id);
@@ -5642,7 +5642,7 @@ app.post("/api/installations-queue/:id/finalize", async (req, res) => {
 });
 
 app.delete("/api/installations-queue/:id", async (req, res) => {
-  try {
+  
     const id = req.params.id;
     const index = localInstallationQueue.findIndex(q => q.id === id);
     if (index !== -1) {
@@ -5668,7 +5668,7 @@ app.post("/api/ai/diagnostico-cobranca", async (req, res) => {
   const { stats } = req.body;
   if (!stats) return res.status(400).json({ error: "No stats provided." });
 
-  try {
+  
     const prompt = `Atue como um Especialista de Recuperação de Crédito e Retenção de Telecom (ISP). Analise os seguintes dados do painel de cobranças:
 - Total Devedores: ${stats.totalDevedores}
 - Média Dias Atraso: ${stats.mediaDiasAtraso}
