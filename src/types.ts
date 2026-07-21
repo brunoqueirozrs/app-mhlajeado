@@ -241,3 +241,58 @@ export interface TradeAction {
   dataRegistro: string;
 }
 
+
+// --- GESTÃO DE PESSOAS ---
+
+export interface DiscQuestion {
+  bloco: number;
+  opcoes: { fator: "D" | "I" | "S" | "C"; frase: string }[];
+}
+
+export interface DiscResult {
+  id: string;
+  vendorId: string;
+  data: string;
+  d: number;
+  i: number;
+  s: number;
+  c: number;
+  perfilPrimario: "D" | "I" | "S" | "C";
+  perfilSecundario: "D" | "I" | "S" | "C";
+  perfilAnimal: "Tubarão" | "Águia" | "Gato" | "Lobo";
+  rawAdaptado?: { d: number, i: number, s: number, c: number };
+  rawIntimo?: { d: number, i: number, s: number, c: number };
+  rawNatural?: { d: number, i: number, s: number, c: number };
+}
+
+export interface PDI {
+  id: string;
+  vendorId: string;
+  competencia: string;
+  situacaoAtual: number; // 1 a 5
+  meta: string;
+  acaoCombinada: string;
+  prazo: string;
+  status: "nao_iniciado" | "em_andamento" | "concluido";
+  evidencia?: string;
+  dataCriacao: string;
+  dataAtualizacao: string;
+}
+
+export interface RaioX {
+  id: string;
+  vendorId: string;
+  data: string;
+  resumoIa: string;
+  pontosFortes: string[];
+  pontosAtencao: { ponto: string; sugestao: string }[];
+  recomendacoesPdi: string;
+}
+
+export interface CoachConversation {
+  id: string;
+  vendorId: string;
+  data: string;
+  mensagem: string;
+  respostaIa: string;
+}

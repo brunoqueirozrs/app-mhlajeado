@@ -10,7 +10,7 @@ import {
   TrendingUp, Users, MapPin, Clock, CalendarDays, Zap, Sparkles, RefreshCw, Send, AlertTriangle, X, List, FileSpreadsheet,
   ClipboardList, FileText, CheckCircle, Coins
 } from "lucide-react";
-import { Database, Mail, Map, Cloud, Car, Navigation, Briefcase } from "lucide-react";
+import { Database, Mail, Map as MapIcon, Cloud, Car, Navigation, Briefcase } from "lucide-react";
 import { Lead, Task, Vendor } from "../types";
 import { INITIAL_VENDORS } from "../data";
 
@@ -84,7 +84,7 @@ export default function Dashboard({
         if (resCurrent.ok && resForecast.ok) {
           // Process forecast to get next 3 days at roughly midday
           const today = new Date().toISOString().split('T')[0];
-          const dailyForecasts = new Map();
+          const dailyForecasts = new Map<string, { temp: number; icon: string; dayOfWeek: string; }>();
           
           for (const item of forecastData.list) {
             const dateText = item.dt_txt.split(' ')[0];
@@ -763,6 +763,17 @@ export default function Dashboard({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
           
           <button 
+            onClick={() => navigateTo("gestao_pessoas")} 
+            className="card-modern border border-slate-200/80 rounded-[22px] p-4 flex flex-col items-start gap-4 cursor-pointer shadow-sm  hover:border-slate-300  active:translate-y-0 text-left transition duration-200"
+          >
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center"><Users className="w-5 h-5 stroke-[2.2]" /></div>
+            <div>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">RH Estratégico</span>
+              <div className="text-xs font-extrabold text-slate-800 tracking-tight leading-tight mt-0.5">{isAdmin ? "Gestão de Pessoas" : "Meu RH Estratégico"}</div>
+            </div>
+          </button>
+          
+          <button 
             onClick={() => navigateTo("leads")} 
             className="card-modern border border-slate-200/80 rounded-[22px] p-4 flex flex-col items-start gap-4 cursor-pointer shadow-sm  hover:border-slate-300  active:translate-y-0 text-left transition duration-200"
           >
@@ -1068,7 +1079,7 @@ export default function Dashboard({
           </a>
           <a href="https://authentication-03.ozmap.com/realms/f63d08e4-4e63-4042-a726-98f3cfe78050/protocol/openid-connect/auth?client_id=ozmap&redirect_uri=https%3A%2F%2Fmhnet.ozmap.com.br%3A9994%2Fapi%2Fv2%2Fauth%2Fcallback&response_type=code&scope=openid%20profile%20email&state=%7B%22redirectTo%22%3A%22%2F%22%2C%22module%22%3A%22OZmap%22%7D&extraData=%7B%22userID%22%3A%22f63d08e4-4e63-4042-a726-98f3cfe78050%22%2C%22accountPlan%22%3A%22corporative%22%2C%22demo%22%3Afalse%2C%22administrative%22%3Afalse%2C%22planName%22%3A%22OZMAP%20300.000%20A%20400.000%22%2C%22version%22%3A%221.44.7%22%7D" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm text-center">
             <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
-              <Map className="w-4 h-4" />
+              <MapIcon className="w-4 h-4" />
             </div>
             <span className="text-[11px] font-bold text-slate-700">OZmap</span>
           </a>
