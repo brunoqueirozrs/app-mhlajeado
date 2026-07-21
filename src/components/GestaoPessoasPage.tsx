@@ -31,6 +31,9 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
   // Form PDI
   const [isAddingPdi, setIsAddingPdi] = useState(false);
   const [newPdi, setNewPdi] = useState<Partial<PDI>>({});
+  const [isGeneratingDiscAnalysis, setIsGeneratingDiscAnalysis] = useState(false);
+  const [discAnalysisResult, setDiscAnalysisResult] = useState<string | null>(null);
+
 
   // If not admin, the user can only see their own profile.
   const loggedVendor = vendors.find(v => v.nome === loggedUser);
@@ -58,7 +61,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
       setPdis([{
         id: "p1", vendorId: selectedVendor.id, competencia: "Fechamento de Vendas",
         situacaoAtual: 3, meta: "Chegar na taxa de conversão de 15%", acaoCombinada: "Role-play 1x por semana com o coordenador",
-        prazo: "2024-12-31", status: "em_andamento", dataCriacao: new Date().toISOString()
+        prazo: "2024-12-31", status: "em_andamento", dataCriacao: new Date().toISOString(), dataAtualizacao: new Date().toISOString()
       }]);
       setCompetencias([{
         id: "c1", vendorId: selectedVendor.id, data: new Date().toISOString(),
@@ -430,8 +433,6 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                             )}
                           </div>
                         </div>
-
-                      ) : (
                       </>) : (
                         <div className="p-12 flex flex-col items-center justify-center text-center">
                           <Activity className="w-12 h-12 text-slate-200 mb-4" />

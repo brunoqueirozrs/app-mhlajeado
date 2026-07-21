@@ -298,6 +298,7 @@ export interface CompetenciaAvaliacao {
     autoavaliacao: number;
     gestor: number;
     ia: number;
+    baseline?: number;
   }[];
 }
 
