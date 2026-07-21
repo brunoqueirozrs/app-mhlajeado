@@ -289,6 +289,29 @@ export interface RaioX {
   recomendacoesPdi: string;
 }
 
+export interface CompetenciaAvaliacao {
+  id: string;
+  vendorId: string;
+  data: string;
+  competencias: {
+    nome: string;
+    autoavaliacao: number;
+    gestor: number;
+    ia: number;
+  }[];
+}
+
+export interface PerfilComercial {
+  id: string;
+  vendorId: string;
+  data: string;
+  gargaloPrincipal: string;
+  taxaConversaoMedia: number;
+  ticketMedio: number;
+  pontosFortesCampo: string[];
+  areasMelhoriaCampo: string[];
+}
+
 export interface CoachConversation {
   id: string;
   vendorId: string;
