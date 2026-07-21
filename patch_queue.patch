@@ -1,0 +1,14 @@
+--- src/components/InstallationsQueuePage.tsx
++++ src/components/InstallationsQueuePage.tsx
+@@ -10,12 +10,14 @@
+   PhoneCall,
+   AlertTriangle,
+   Trash2,
+-  X,
++  X,
++  Plus,
+ } from "lucide-react";
++import { INITIAL_VENDORS } from "../data";
+ 
+ const formatDataDisplay = (val: string) => {
+   if (!val) return "";

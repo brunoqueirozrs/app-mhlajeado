@@ -33,6 +33,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
   const [newPdi, setNewPdi] = useState<Partial<PDI>>({});
   const [isGeneratingDiscAnalysis, setIsGeneratingDiscAnalysis] = useState(false);
   const [discAnalysisResult, setDiscAnalysisResult] = useState<string | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
 
   // If not admin, the user can only see their own profile.
@@ -53,18 +54,18 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
 
   useEffect(() => {
     // Popula mocks iniciais se vazio
-    if (selectedVendor && discResults.length === 0) {
-      setDiscResults([{
-        id: "1", vendorId: selectedVendor.id, data: new Date().toISOString(),
-        d: 12, i: 18, s: 5, c: 3, perfilPrimario: "I", perfilSecundario: "D", perfilAnimal: "Águia"
-      }]);
-      setPdis([{
-        id: "p1", vendorId: selectedVendor.id, competencia: "Fechamento de Vendas",
+    if (vendors.length > 0 && discResults.length === 0) {
+      setDiscResults(vendors.map((v, i) => ({
+        id: `disc_${i}`, vendorId: v.id, data: new Date().toISOString(),
+        d: 20 + (i * 5) % 80, i: 30 + (i * 7) % 70, s: 15 + (i * 3) % 85, c: 25 + (i * 11) % 75, perfilPrimario: "I", perfilSecundario: "D", perfilAnimal: "Águia"
+      })));
+      setPdis(vendors.map((v, i) => ({
+        id: `pdi_${i}`, vendorId: v.id, competencia: "Fechamento de Vendas",
         situacaoAtual: 3, meta: "Chegar na taxa de conversão de 15%", acaoCombinada: "Role-play 1x por semana com o coordenador",
         prazo: "2024-12-31", status: "em_andamento", dataCriacao: new Date().toISOString(), dataAtualizacao: new Date().toISOString()
-      }]);
-      setCompetencias([{
-        id: "c1", vendorId: selectedVendor.id, data: new Date().toISOString(),
+      })));
+      setCompetencias(vendors.map((v, i) => ({
+        id: `comp_${i}`, vendorId: v.id, data: new Date().toISOString(),
         competencias: [
           { nome: "Comunicação", autoavaliacao: 5, gestor: 4, ia: 4, baseline: 4 },
           { nome: "Resiliência", autoavaliacao: 4, gestor: 3, ia: 3, baseline: 4 },
@@ -72,17 +73,17 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
           { nome: "Organização", autoavaliacao: 4, gestor: 4, ia: 5, baseline: 4 },
           { nome: "Prospecção", autoavaliacao: 5, gestor: 5, ia: 4, baseline: 4 },
         ]
-      }]);
-      setPerfilComerciais([{
-        id: "pc1", vendorId: selectedVendor.id, data: new Date().toISOString(),
+      })));
+      setPerfilComerciais(vendors.map((v, i) => ({
+        id: `pc_${i}`, vendorId: v.id, data: new Date().toISOString(),
         gargaloPrincipal: "Conversão na etapa de Quebra de Objeções",
         taxaConversaoMedia: 8.5,
         ticketMedio: 120,
         pontosFortesCampo: ["Abertura carismática", "Conhecimento técnico do plano"],
         areasMelhoriaCampo: ["Contorno de objeção sobre preço", "Urgência de fechamento"]
-      }]);
+      })));
     }
-  }, [selectedVendor]);
+  }, [vendors]);
 
   const vendorDisc = selectedVendor ? discResults.find(d => d.vendorId === selectedVendor.id) : null;
   const vendorPdis = selectedVendor ? pdis.filter(p => p.vendorId === selectedVendor.id) : [];
@@ -244,6 +245,29 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
     }
   };
 
+  const handlePrintPdf = async () => {
+    const element = document.getElementById("pdf-dashboard-content");
+    if (!element) return;
+    
+    setIsGeneratingPdf(true);
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const opt = {
+        margin:       10,
+        filename:     `relatorio_completo_${selectedVendor?.nome.replace(/\s+/g, '_') || 'colaborador'}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   
   const renderDisc = () => (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
@@ -325,87 +349,95 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                           </div>
                         </div>
                       ) : vendorDisc ? (<>
-                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                          <div className="w-full space-y-6 pt-4">
-                            <div className="flex flex-col gap-2">
-                              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Dominância</span>
-                              <div className="relative w-full bg-slate-100 h-5 rounded-md mt-4">
-                                <div className="bg-red-500 h-full rounded-md transition-all duration-1000" style={{ width: `${Math.max(1, vendorDisc.d)}%` }} />
-                                <div className="absolute top-[-26px] bg-slate-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm transform -translate-x-1/2 transition-all duration-1000" style={{ left: `${Math.max(1, vendorDisc.d)}%` }}>
-                                  {vendorDisc.d}%
-                                  <div className="absolute bottom-[-4px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-slate-800" />
-                                </div>
-                              </div>
+                        <div className="p-6 border-b border-slate-100 flex flex-col gap-8">
+                          {/* PERFIL E AÇÕES */}
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="text-2xl font-black text-slate-800 mb-1">Perfil: {vendorDisc.perfilAnimal}</h4>
+                              <p className="text-slate-600 text-sm">
+                                Predominância em {vendorDisc.perfilPrimario} e secundário em {vendorDisc.perfilSecundario}.
+                              </p>
                             </div>
-    
-                            <div className="flex flex-col gap-2">
-                              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Influência</span>
-                              <div className="relative w-full bg-slate-100 h-5 rounded-md mt-4">
-                                <div className="bg-yellow-400 h-full rounded-md transition-all duration-1000" style={{ width: `${Math.max(1, vendorDisc.i)}%` }} />
-                                <div className="absolute top-[-26px] bg-slate-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm transform -translate-x-1/2 transition-all duration-1000" style={{ left: `${Math.max(1, vendorDisc.i)}%` }}>
-                                  {vendorDisc.i}%
-                                  <div className="absolute bottom-[-4px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-slate-800" />
-                                </div>
-                              </div>
-                            </div>
-    
-                            <div className="flex flex-col gap-2">
-                              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Estabilidade</span>
-                              <div className="relative w-full bg-slate-100 h-5 rounded-md mt-4">
-                                <div className="bg-green-500 h-full rounded-md transition-all duration-1000" style={{ width: `${Math.max(1, vendorDisc.s)}%` }} />
-                                <div className="absolute top-[-26px] bg-slate-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm transform -translate-x-1/2 transition-all duration-1000" style={{ left: `${Math.max(1, vendorDisc.s)}%` }}>
-                                  {vendorDisc.s}%
-                                  <div className="absolute bottom-[-4px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-slate-800" />
-                                </div>
-                              </div>
-                            </div>
-    
-                            <div className="flex flex-col gap-2">
-                              <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Conformidade</span>
-                              <div className="relative w-full bg-slate-100 h-5 rounded-md mt-4">
-                                <div className="bg-blue-600 h-full rounded-md transition-all duration-1000" style={{ width: `${Math.max(1, vendorDisc.c)}%` }} />
-                                <div className="absolute top-[-26px] bg-slate-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm transform -translate-x-1/2 transition-all duration-1000" style={{ left: `${Math.max(1, vendorDisc.c)}%` }}>
-                                  {vendorDisc.c}%
-                                  <div className="absolute bottom-[-4px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-slate-800" />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="text-2xl font-black text-slate-800 mb-2">Perfil: {vendorDisc.perfilAnimal}</h4>
-                            <p className="text-slate-600 text-sm mb-6">
-                              Predominância em {vendorDisc.perfilPrimario} e secundário em {vendorDisc.perfilSecundario}.
-                            </p>
                             <button onClick={() => setIsTakingTest(true)} className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 text-sm font-bold rounded-xl transition-colors">
                               Refazer Teste
                             </button>
                           </div>
-                        </div>
 
-                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex flex-col md:flex-row gap-6">
-                          <div className="w-full md:w-1/3 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col items-center">
-                            <h5 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Radar Comportamental</h5>
-                            <div className="w-full h-48">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[
-                                  { subject: 'Dominância (D)', value: vendorDisc.d, baseline: 50 },
-                                  { subject: 'Influência (I)', value: vendorDisc.i, baseline: 50 },
-                                  { subject: 'Estabilidade (S)', value: vendorDisc.s, baseline: 50 },
-                                  { subject: 'Conformidade (C)', value: vendorDisc.c, baseline: 50 },
-                                ]}>
-                                  <PolarGrid />
-                                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} />
-                                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                  <Tooltip wrapperClassName="text-xs rounded-xl shadow-lg border-slate-200" contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'}} />
-                                  <RechartsRadar name="Baseline (Ideal)" dataKey="baseline" stroke="#94a3b8" fill="none" strokeDasharray="3 3" />
-                                  <RechartsRadar name="Perfil" dataKey="value" stroke="#4f46e5" fill="#6366f1" fillOpacity={0.4} />
-                                  <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-                                </RadarChart>
-                              </ResponsiveContainer>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                            <div className="w-full space-y-6 pt-4">
+                              <div className="flex flex-col gap-2">
+                                <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Dominância</span>
+                                <div className="relative w-full bg-slate-100 h-5 rounded-md mt-4">
+                                  <div className="bg-red-500 h-full rounded-md transition-all duration-1000" style={{ width: `${Math.max(1, vendorDisc.d)}%` }} />
+                                  <div className="absolute top-[-26px] bg-slate-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm transform -translate-x-1/2 transition-all duration-1000" style={{ left: `${Math.max(1, vendorDisc.d)}%` }}>
+                                    {vendorDisc.d}%
+                                    <div className="absolute bottom-[-4px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-slate-800" />
+                                  </div>
+                                </div>
+                              </div>
+    
+                              <div className="flex flex-col gap-2">
+                                <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Influência</span>
+                                <div className="relative w-full bg-slate-100 h-5 rounded-md mt-4">
+                                  <div className="bg-yellow-400 h-full rounded-md transition-all duration-1000" style={{ width: `${Math.max(1, vendorDisc.i)}%` }} />
+                                  <div className="absolute top-[-26px] bg-slate-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm transform -translate-x-1/2 transition-all duration-1000" style={{ left: `${Math.max(1, vendorDisc.i)}%` }}>
+                                    {vendorDisc.i}%
+                                    <div className="absolute bottom-[-4px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-slate-800" />
+                                  </div>
+                                </div>
+                              </div>
+    
+                              <div className="flex flex-col gap-2">
+                                <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Estabilidade</span>
+                                <div className="relative w-full bg-slate-100 h-5 rounded-md mt-4">
+                                  <div className="bg-emerald-500 h-full rounded-md transition-all duration-1000" style={{ width: `${Math.max(1, vendorDisc.s)}%` }} />
+                                  <div className="absolute top-[-26px] bg-slate-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm transform -translate-x-1/2 transition-all duration-1000" style={{ left: `${Math.max(1, vendorDisc.s)}%` }}>
+                                    {vendorDisc.s}%
+                                    <div className="absolute bottom-[-4px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-slate-800" />
+                                  </div>
+                                </div>
+                              </div>
+    
+                              <div className="flex flex-col gap-2">
+                                <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Conformidade</span>
+                                <div className="relative w-full bg-slate-100 h-5 rounded-md mt-4">
+                                  <div className="bg-blue-500 h-full rounded-md transition-all duration-1000" style={{ width: `${Math.max(1, vendorDisc.c)}%` }} />
+                                  <div className="absolute top-[-26px] bg-slate-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm transform -translate-x-1/2 transition-all duration-1000" style={{ left: `${Math.max(1, vendorDisc.c)}%` }}>
+                                    {vendorDisc.c}%
+                                    <div className="absolute bottom-[-4px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-slate-800" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* RADAR COMPORTAMENTAL */}
+                            <div className="w-full bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col items-center">
+                              <h5 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Radar Comportamental</h5>
+                              <div className="w-full h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[
+                                    { subject: 'Dominância (D)', value: vendorDisc.d, baseline: 50 },
+                                    { subject: 'Influência (I)', value: vendorDisc.i, baseline: 50 },
+                                    { subject: 'Estabilidade (S)', value: vendorDisc.s, baseline: 50 },
+                                    { subject: 'Conformidade (C)', value: vendorDisc.c, baseline: 50 },
+                                  ]}>
+                                    <PolarGrid />
+                                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} />
+                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                    <Tooltip wrapperClassName="text-xs rounded-xl shadow-lg border-slate-200" contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'}} />
+                                    <RechartsRadar name="Baseline (Ideal)" dataKey="baseline" stroke="#94a3b8" fill="none" strokeDasharray="3 3" />
+                                    <RechartsRadar name="Perfil" dataKey="value" stroke="#4f46e5" fill="#6366f1" fillOpacity={0.4} />
+                                    <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+                                  </RadarChart>
+                                </ResponsiveContainer>
+                              </div>
                             </div>
                           </div>
-                          
-                          <div className="w-full md:w-2/3 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col relative overflow-hidden">
+                        </div>
+
+                        {/* QUADRANTE INFERIOR: IA */}
+                        <div className="p-6 bg-slate-50 flex flex-col gap-6">
+                          <div className="w-full bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
                             <div className="flex justify-between items-center mb-4">
                               <h5 className="text-sm font-black text-slate-800 flex items-center gap-2 uppercase tracking-wider">
@@ -795,6 +827,26 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                   </div>
                 </div>
               </div>
+
+              <div className="flex items-center gap-2 print:hidden">
+                {vendorTab !== "modulos" ? (
+                  <button
+                    onClick={() => setVendorTab("modulos")}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Voltar aos Cards
+                  </button>
+                ) : (
+                  isAdmin && (
+                    <button
+                      onClick={() => setSelectedVendorId(null)}
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors"
+                    >
+                      <ArrowLeft className="w-4 h-4" /> Voltar à Equipe
+                    </button>
+                  )
+                )}
+              </div>
             </div>
 
             {/* Conteúdo da Aba */}
@@ -851,24 +903,30 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                   
                   <div className="flex justify-between items-center print:hidden mb-6">
                     <h3 className="text-xl font-black text-slate-800">Resumo Geral (Completo)</h3>
-                    <button onClick={() => window.print()} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors">
-                      <Printer className="w-4 h-4" /> Imprimir
+                    <button 
+                      onClick={handlePrintPdf} 
+                      disabled={isGeneratingPdf}
+                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors"
+                    >
+                      <Printer className="w-4 h-4" /> {isGeneratingPdf ? "Gerando PDF..." : "Imprimir / Salvar PDF"}
                     </button>
                   </div>
 
-                  {renderDisc()}
-                  {renderPdi()}
-                  {renderCompetencias()}
-                  {renderPerfilComercial()}
-                  {renderFitCargo()}
-                  {renderIndices()}
-                  {renderClima()}
-                  {renderPulse()}
-                  {renderAval360()}
-                  {renderInteligenciaEmocional()}
-                  {renderTesteConhecimento()}
-                  {renderBigFive()}
-                  {renderRaiox()}
+                  <div id="pdf-dashboard-content" className="space-y-6 print:space-y-4">
+                    {renderDisc()}
+                    {renderPdi()}
+                    {renderCompetencias()}
+                    {renderPerfilComercial()}
+                    {renderFitCargo()}
+                    {renderIndices()}
+                    {renderClima()}
+                    {renderPulse()}
+                    {renderAval360()}
+                    {renderInteligenciaEmocional()}
+                    {renderTesteConhecimento()}
+                    {renderBigFive()}
+                    {renderRaiox()}
+                  </div>
                 </div>
               )}
 

@@ -1,0 +1,17 @@
+--- src/components/GestaoPessoasPage.tsx
++++ src/components/GestaoPessoasPage.tsx
+@@ -53,8 +53,9 @@
+ 
+   useEffect(() => {
+     // Popula mocks iniciais se vazio
+-    if (selectedVendor && discResults.length === 0) {
+-      setDiscResults([{
+-        id: "1", vendorId: selectedVendor.id, data: new Date().toISOString(),
+-        d: 12, i: 18, s: 5, c: 3, perfilPrimario: "I", perfilSecundario: "D", perfilAnimal: "Águia"
+-      }]);
++    if (vendors.length > 0 && discResults.length === 0) {
++      const initialDiscResults = vendors.map((v, idx) => ({
++        id: `disc_${idx}`, vendorId: v.id, data: new Date().toISOString(),
++        d: 12 + idx, i: 18 + (idx % 3), s: 5, c: 3, perfilPrimario: "I", perfilSecundario: "D", perfilAnimal: "Águia" as any
++      }));
++      setDiscResults(initialDiscResults);
