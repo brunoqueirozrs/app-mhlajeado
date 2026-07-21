@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Markdown from "react-markdown";
 import { Users, User, Shield, Target, Activity, Brain, CheckCircle, Clock, Save, FileText, X, MessageSquare, Plus, Edit2, Play, Circle, Radar, TrendingUp, Printer, LayoutGrid, BarChart2, Heart, GraduationCap, ArrowLeft, ClipboardList } from 'lucide-react';
 import { Vendor, DiscResult, PDI, RaioX, CompetenciaAvaliacao, PerfilComercial } from '../types';
-import { Radar as RechartsRadar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import { Radar as RechartsRadar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { DISC_QUESTIONS } from '../data/discQuestions';
 
 interface GestaoPessoasPageProps {
@@ -63,11 +63,11 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
       setCompetencias([{
         id: "c1", vendorId: selectedVendor.id, data: new Date().toISOString(),
         competencias: [
-          { nome: "Comunicação", autoavaliacao: 5, gestor: 4, ia: 4 },
-          { nome: "Resiliência", autoavaliacao: 4, gestor: 3, ia: 3 },
-          { nome: "Fechamento", autoavaliacao: 3, gestor: 2, ia: 2 },
-          { nome: "Organização", autoavaliacao: 4, gestor: 4, ia: 5 },
-          { nome: "Prospecção", autoavaliacao: 5, gestor: 5, ia: 4 },
+          { nome: "Comunicação", autoavaliacao: 5, gestor: 4, ia: 4, baseline: 4 },
+          { nome: "Resiliência", autoavaliacao: 4, gestor: 3, ia: 3, baseline: 4 },
+          { nome: "Fechamento", autoavaliacao: 3, gestor: 2, ia: 2, baseline: 4 },
+          { nome: "Organização", autoavaliacao: 4, gestor: 4, ia: 5, baseline: 4 },
+          { nome: "Prospecção", autoavaliacao: 5, gestor: 5, ia: 4, baseline: 4 },
         ]
       }]);
       setPerfilComerciais([{
@@ -154,7 +154,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
       rawNatural: { d: natural.D, i: natural.I, s: natural.S, c: natural.C }
     };
 
-    setDiscResults([...discResults, newRes]);
+    setDiscResults([...discResults.filter(d => d.vendorId !== selectedVendor.id), newRes]);
     setIsTakingTest(false);
   };
 
@@ -175,6 +175,32 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
     setPdis([...pdis, pdiToSave]);
     setIsAddingPdi(false);
     setNewPdi({});
+  };
+
+  
+  const generateDiscAnalysis = async () => {
+    setIsGeneratingDiscAnalysis(true);
+    try {
+      const dataPayload = {
+        colaborador: selectedVendor,
+        disc: vendorDisc
+      };
+      
+      const response = await fetch("/api/ai/raiox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: dataPayload })
+      });
+      
+      const json = await response.json();
+      if (json.analysis) {
+        setDiscAnalysisResult(json.analysis);
+      }
+    } catch (e) {
+      console.error("Erro ao gerar análise do DISC", e);
+    } finally {
+      setIsGeneratingDiscAnalysis(false);
+    }
   };
 
   const generateRaioX = async () => {
@@ -277,13 +303,25 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                           <div className="flex justify-end gap-3">
                             <button onClick={() => setIsTakingTest(false)} className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
                             {currentBlock < DISC_QUESTIONS.length - 1 ? (
-                              <button onClick={() => setCurrentBlock(c => c+1)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl">Próximo</button>
+                              <button 
+                                onClick={() => setCurrentBlock(c => c+1)} 
+                                disabled={!testAnswers[currentBlock]?.mais || !testAnswers[currentBlock]?.menos}
+                                className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Próximo
+                              </button>
                             ) : (
-                              <button onClick={handleTestSubmit} className="px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-xl">Finalizar Teste</button>
+                              <button 
+                                onClick={handleTestSubmit} 
+                                disabled={!testAnswers[currentBlock]?.mais || !testAnswers[currentBlock]?.menos}
+                                className="px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Finalizar Teste
+                              </button>
                             )}
                           </div>
                         </div>
-                      ) : vendorDisc ? (
+                      ) : vendorDisc ? (<>
                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                           <div className="w-full space-y-6 pt-4">
                             <div className="flex flex-col gap-2">
@@ -340,7 +378,61 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                             </button>
                           </div>
                         </div>
+
+                        <div className="p-6 border-t border-slate-100 bg-slate-50 flex flex-col md:flex-row gap-6">
+                          <div className="w-full md:w-1/3 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col items-center">
+                            <h5 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">Radar Comportamental</h5>
+                            <div className="w-full h-48">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={[
+                                  { subject: 'Dominância (D)', value: vendorDisc.d, baseline: 50 },
+                                  { subject: 'Influência (I)', value: vendorDisc.i, baseline: 50 },
+                                  { subject: 'Estabilidade (S)', value: vendorDisc.s, baseline: 50 },
+                                  { subject: 'Conformidade (C)', value: vendorDisc.c, baseline: 50 },
+                                ]}>
+                                  <PolarGrid />
+                                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }} />
+                                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                  <Tooltip wrapperClassName="text-xs rounded-xl shadow-lg border-slate-200" contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'}} />
+                                  <RechartsRadar name="Baseline (Ideal)" dataKey="baseline" stroke="#94a3b8" fill="none" strokeDasharray="3 3" />
+                                  <RechartsRadar name="Perfil" dataKey="value" stroke="#4f46e5" fill="#6366f1" fillOpacity={0.4} />
+                                  <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+                                </RadarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                          
+                          <div className="w-full md:w-2/3 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                            <div className="flex justify-between items-center mb-4">
+                              <h5 className="text-sm font-black text-slate-800 flex items-center gap-2 uppercase tracking-wider">
+                                <Brain className="w-4 h-4 text-indigo-500" />
+                                Análise do Agente IA
+                              </h5>
+                              <button
+                                onClick={generateDiscAnalysis}
+                                disabled={isGeneratingDiscAnalysis}
+                                className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 text-xs font-bold rounded-lg transition-colors print:hidden"
+                              >
+                                {isGeneratingDiscAnalysis ? "Analisando..." : "Gerar/Atualizar Parecer"}
+                              </button>
+                            </div>
+                            
+                            {discAnalysisResult ? (
+                              <div className="prose prose-sm prose-slate max-w-none prose-headings:font-bold prose-h2:text-indigo-900 prose-h2:text-sm prose-h2:mt-4 prose-h2:mb-2 prose-h2:uppercase prose-p:text-slate-700 prose-li:text-slate-700 prose-strong:text-slate-900">
+                                <Markdown>{discAnalysisResult}</Markdown>
+                              </div>
+                            ) : (
+                              <div className="flex-1 flex flex-col items-center justify-center text-center py-6 text-slate-400">
+                                <Brain className="w-8 h-8 mb-2 opacity-20" />
+                                <p className="text-sm">Clique em Gerar Parecer para a IA analisar este perfil.</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
                       ) : (
+                      </>) : (
                         <div className="p-12 flex flex-col items-center justify-center text-center">
                           <Activity className="w-12 h-12 text-slate-200 mb-4" />
                           <h4 className="text-lg font-bold text-slate-700">Teste Pendente</h4>
@@ -458,16 +550,24 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                           <div className="h-80 w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={vendorCompetencias.competencias}>
+                              <RadarChart cx="50%" cy="50%" outerRadius="75%" data={vendorCompetencias.competencias}>
                                 <PolarGrid />
-                                <PolarAngleAxis dataKey="nome" tick={{fill: '#475569', fontSize: 11, fontWeight: 'bold'}} />
+                                <PolarAngleAxis dataKey="nome" tick={{fill: '#475569', fontSize: 10, fontWeight: 'bold'}} />
+                                <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                                <Tooltip wrapperClassName="text-xs rounded-xl shadow-lg border-slate-200" contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'}} />
+                                <RechartsRadar name="Baseline (Ideal)" dataKey="baseline" stroke="#94a3b8" fill="none" strokeDasharray="3 3" />
                                 <RechartsRadar name="Autoavaliação" dataKey="autoavaliacao" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
                                 <RechartsRadar name="Gestor" dataKey="gestor" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.3} />
                                 <RechartsRadar name="IA" dataKey="ia" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
+                                <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
                               </RadarChart>
                             </ResponsiveContainer>
                           </div>
                           <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-3 h-3 rounded-full border-2 border-slate-400 border-dashed"></div>
+                              <span className="text-sm font-bold text-slate-700">Baseline (Meta/Ideal)</span>
+                            </div>
                             <div className="flex items-center gap-3">
                               <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                               <span className="text-sm font-bold text-slate-700">Autoavaliação (Visão do Vendedor)</span>
@@ -656,59 +756,47 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
         {selectedVendor ? (
           <div className="flex flex-col h-[calc(100vh-200px)] print:h-auto print:block">
             {/* Header do Colaborador */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-6 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:shadow-none print:border-slate-300 print:mb-4">
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-6 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:shadow-none print:border-slate-300 print:mb-4">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-2xl">
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-black text-xl">
                   {selectedVendor.nome.substring(0, 2).toUpperCase()}
                 </div>
-                <div>
+                
+                <div className="flex flex-col">
                   {isAdmin ? (
-                    <>
-                      <div className="relative inline-block print:hidden">
-                        <select
-                          className="text-xl font-black text-slate-800 bg-transparent border-0 border-b-2 border-slate-200 focus:ring-0 focus:border-indigo-600 cursor-pointer pb-1 pr-8 pl-0 appearance-none hover:border-indigo-400 transition-colors focus:outline-none"
-                          value={selectedVendorId || ""}
-                          onChange={(e) => {
-                            setSelectedVendorId(e.target.value);
-                            setVendorTab("modulos");
-                          }}
-                        >
-                          {vendors.map(v => (
-                            <option key={v.id} value={v.id}>{v.nome}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                      </div>
-                      <h3 className="text-xl font-black text-slate-800 hidden print:block">{selectedVendor.nome}</h3>
-                    </>
+                    <div className="relative inline-flex items-center print:hidden">
+                      <select
+                        className="appearance-none bg-transparent font-black text-lg text-slate-800 pr-8 py-0 focus:outline-none cursor-pointer border-none p-0 hover:text-indigo-600 transition-colors"
+                        value={selectedVendorId || ""}
+                        onChange={(e) => {
+                          setSelectedVendorId(e.target.value);
+                          setVendorTab("modulos");
+                        }}
+                      >
+                        {vendors.map(v => (
+                          <option key={v.id} value={v.id}>{v.nome}</option>
+                        ))}
+                      </select>
+                      <svg className="w-4 h-4 text-slate-400 absolute right-1 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
                   ) : (
-                    <h3 className="text-xl font-black text-slate-800">{selectedVendor.nome}</h3>
+                    <h3 className="text-lg font-black text-slate-800">{selectedVendor.nome}</h3>
                   )}
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
-                      <User className="w-3 h-3" /> Vendas Porta a Porta
+                  <h3 className="text-lg font-black text-slate-800 hidden print:block">{selectedVendor.nome}</h3>
+                  
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                      <User className="w-3 h-3" /> PAP
                     </span>
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
                       <Shield className="w-3 h-3" /> Ativo
                     </span>
                   </div>
                 </div>
               </div>
-              
-              </div>
+            </div>
 
             {/* Conteúdo da Aba */}
-
-              {vendorTab !== "modulos" && (
-                <div className="mb-4 print:hidden">
-                  <button onClick={() => setVendorTab("modulos")} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
-                    <ArrowLeft className="w-4 h-4" /> Voltar para Módulos
-                  </button>
-                </div>
-              )}
-
             <div className="flex-1 overflow-y-auto pr-2 pb-10 space-y-6 print:overflow-visible print:pr-0">
 
               {vendorTab === "modulos" && (
