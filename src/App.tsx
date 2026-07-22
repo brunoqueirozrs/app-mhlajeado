@@ -2227,7 +2227,7 @@ export default function App() {
           setIsAiChatOpen(true);
           setUnreadAiTips(0);
           setIsBadgePulsing(false);
-        }} className={`fixed bottom-16 right-4 lg:bottom-6 lg:right-6 w-12 h-12 bg-gradient-to-tr from-sky-600 to-sky-800 text-white rounded-2xl shadow-xl hover:scale-110 hover:-translate-y-1 active:scale-95 transition-all duration-300 ease-out flex items-center justify-center border border-sky-500/50 hover:shadow-sky-900/10 z-[99999] cursor-pointer ${isBadgePulsing ? 'animate-ping' : 'animate-pulse-light'}`}
+        }} className={`print:hidden fixed bottom-16 right-4 lg:bottom-6 lg:right-6 w-12 h-12 bg-gradient-to-tr from-sky-600 to-sky-800 text-white rounded-2xl shadow-xl hover:scale-110 hover:-translate-y-1 active:scale-95 transition-all duration-300 ease-out flex items-center justify-center border border-sky-500/50 hover:shadow-sky-900/10 z-[99999] cursor-pointer ${isBadgePulsing ? 'animate-ping' : 'animate-pulse-light'}`}
         title="Assistente Comercial IA"
       >
         <Bot className="w-6 h-6 stroke-[2.2]" />

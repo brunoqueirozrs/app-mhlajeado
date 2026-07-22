@@ -1439,8 +1439,31 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
         {/* Dashboard do Colaborador Selecionado */}
         {selectedVendor ? (
           <div className="flex flex-col h-[calc(100vh-200px)] print:h-auto print:block">
-            {/* Header do Colaborador */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-6 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:shadow-none print:border-slate-300 print:mb-4">
+            {/* Cabecalho de Impressao Fixo */}
+            <div className="hidden print:flex flex-col mb-8 border-b-2 border-slate-800 pb-4">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h1 className="text-3xl font-black text-slate-900">Relatório de Gestão de Pessoas</h1>
+                  <p className="text-slate-500 mt-1">Análise de Desempenho e Comportamento</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-slate-600 font-medium">Data: {new Date().toLocaleDateString('pt-BR')}</p>
+                  <p className="text-slate-600 font-medium text-sm">Gerado por: {loggedUser}</p>
+                </div>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">Colaborador: {selectedVendor.nome}</h2>
+                  <p className="text-slate-600 mt-1">Cargo: Consultor Comercial (PAP) | Status: Ativo</p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xl">
+                  {selectedVendor.nome.substring(0, 2).toUpperCase()}
+                </div>
+              </div>
+            </div>
+
+            {/* Header do Colaborador (Web) */}
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-6 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-black text-xl">
                   {selectedVendor.nome.substring(0, 2).toUpperCase()}
@@ -1448,7 +1471,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                 
                 <div className="flex flex-col">
                   {isAdmin ? (
-                    <div className="relative inline-flex items-center print:hidden">
+                    <div className="relative inline-flex items-center">
                       <select
                         className="appearance-none bg-transparent font-black text-lg text-slate-800 pr-8 py-0 focus:outline-none cursor-pointer border-none p-0 hover:text-indigo-600 transition-colors"
                         value={selectedVendorId || ""}
@@ -1466,9 +1489,6 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                   ) : (
                     <h3 className="text-lg font-black text-slate-800">{selectedVendor.nome}</h3>
                   )}
-                  <h3 className="text-lg font-black text-slate-800 hidden print:block">
-                    {selectedVendor.nome} - Relatório Gerado em: {new Date().toLocaleDateString('pt-BR')}
-                  </h3>
                   
                   <div className="flex items-center gap-2 mt-1">
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
@@ -1509,6 +1529,13 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
 
             {/* Conteúdo da Aba */}
             <div className="flex-1 overflow-y-auto pr-2 pb-10 space-y-6 print:overflow-visible print:pr-0">
+
+              {/* Rodapé de Impressão Fixo (Aparece em todas as páginas) */}
+              <div className="hidden print:flex fixed bottom-0 left-0 right-0 w-full justify-between items-center text-[10px] text-slate-500 bg-white pt-2 pb-2 border-t border-slate-200 z-50">
+                <span>MHNET Telecom - Gestão de Pessoas</span>
+                <span>Página impressa em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
+                <span>Documento Confidencial de Uso Interno</span>
+              </div>
 
               {vendorTab === "modulos" && (
                 <div className="space-y-8">
@@ -1573,6 +1600,51 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                   </div>
 
                   <div id="pdf-dashboard-content" className="space-y-6 print:space-y-4">
+                    {/* Tabela de Resumo de Indicadores (Apenas Impressão) */}
+                    <div className="hidden print:block mb-8">
+                      <h3 className="text-lg font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">Quadro Resumo de Indicadores</h3>
+                      <table className="w-full border-collapse border border-slate-200 text-sm text-left">
+                        <thead className="bg-slate-100">
+                          <tr>
+                            <th className="border border-slate-200 p-2 font-bold text-slate-800 uppercase text-xs tracking-wider">Módulo / Avaliação</th>
+                            <th className="border border-slate-200 p-2 font-bold text-slate-800 uppercase text-xs tracking-wider text-center">Score / Resultado</th>
+                            <th className="border border-slate-200 p-2 font-bold text-slate-800 uppercase text-xs tracking-wider">Status / Nível</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border border-slate-200 p-2 text-slate-700 font-medium">Fit de Cargo</td>
+                            <td className="border border-slate-200 p-2 text-slate-800 font-bold text-center">75%</td>
+                            <td className="border border-slate-200 p-2 text-emerald-600 font-bold">Adequado</td>
+                          </tr>
+                          <tr className="bg-slate-50">
+                            <td className="border border-slate-200 p-2 text-slate-700 font-medium">Competências</td>
+                            <td className="border border-slate-200 p-2 text-slate-800 font-bold text-center">80%</td>
+                            <td className="border border-slate-200 p-2 text-emerald-600 font-bold">Desenvolvido</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-slate-200 p-2 text-slate-700 font-medium">Perfil Comercial (Tx. Conversão)</td>
+                            <td className="border border-slate-200 p-2 text-slate-800 font-bold text-center">82%</td>
+                            <td className="border border-slate-200 p-2 text-blue-600 font-bold">Alta Performance</td>
+                          </tr>
+                          <tr className="bg-slate-50">
+                            <td className="border border-slate-200 p-2 text-slate-700 font-medium">Avaliação 360°</td>
+                            <td className="border border-slate-200 p-2 text-slate-800 font-bold text-center">85%</td>
+                            <td className="border border-slate-200 p-2 text-blue-600 font-bold">Destaque</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-slate-200 p-2 text-slate-700 font-medium">Teste de Conhecimento</td>
+                            <td className="border border-slate-200 p-2 text-slate-800 font-bold text-center">78%</td>
+                            <td className="border border-slate-200 p-2 text-emerald-600 font-bold">Aprovado</td>
+                          </tr>
+                          <tr className="bg-slate-50">
+                            <td className="border border-slate-200 p-2 text-slate-700 font-medium border-t-2 border-t-slate-400">Raio-X (IA) Score Final</td>
+                            <td className="border border-slate-200 p-2 text-slate-900 font-black text-center border-t-2 border-t-slate-400">80%</td>
+                            <td className="border border-slate-200 p-2 text-slate-900 font-black border-t-2 border-t-slate-400">Excelente Perfil</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                     {renderRaiox()}
                     {renderDisc()}
                     {renderPdi()}
