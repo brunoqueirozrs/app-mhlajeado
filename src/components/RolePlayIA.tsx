@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { db } from '../lib/firebase';
+import { db } from '../lib/db';
 import { collection, onSnapshot, doc, setDoc, query, where, orderBy, addDoc } from 'firebase/firestore';
 import { Send, User, Bot, AlertCircle, CheckCircle2, Award, ArrowRight } from 'lucide-react';
 import Markdown from 'react-markdown';

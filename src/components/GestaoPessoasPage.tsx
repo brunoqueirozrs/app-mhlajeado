@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Markdown from "react-markdown";
 import { Users, AlertCircle, User, Bot, Shield, Target, Activity, Brain, CheckCircle, Clock, Save, FileText, X, MessageSquare, Plus, Edit2, Play, Circle, Radar, TrendingUp, Printer, LayoutGrid, BarChart2, Heart, GraduationCap, ArrowLeft, ClipboardList } from 'lucide-react';
-import { db } from '../lib/firebase';
+import { db } from '../lib/db';
 import { collection, onSnapshot, doc, setDoc, addDoc } from 'firebase/firestore';
 import { Vendor, DiscResult, PDI, RaioX, CompetenciaAvaliacao, PerfilComercial } from '../types';
 import { Radar as RechartsRadar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
