@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { db } from '../lib/firebase';
+import { collection, onSnapshot, doc, setDoc, query, where, orderBy, addDoc } from 'firebase/firestore';
 import { Send, User, Bot, AlertCircle, CheckCircle2, Award, ArrowRight } from 'lucide-react';
 import Markdown from 'react-markdown';
 
@@ -19,6 +21,14 @@ export default function RolePlayIA({ vendorId, vendorName }: RolePlayIAProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluation, setEvaluation] = useState<any>(null);
+  const [isSavingSync, setIsSavingSync] = useState(false);
+  const [syncSuccessMsg, setSyncSuccessMsg] = useState<string | null>(null);
+
+  const showSyncSuccess = (msg: string) => {
+    setSyncSuccessMsg(msg);
+    setTimeout(() => setSyncSuccessMsg(null), 3000);
+  };
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -30,9 +40,13 @@ export default function RolePlayIA({ vendorId, vendorName }: RolePlayIAProps) {
   }, [messages, isTyping]);
 
   const handleStart = () => {
-    setMessages([
-      { role: 'model', content: getInitialGreeting(persona) }
-    ]);
+    
+    
+    const greetingMsg = { role: 'model', content: getInitialGreeting(persona) };
+    setDoc(doc(db, 'roleplay_messages', vendorId), { messages: [greetingMsg] });
+    setDoc(doc(db, 'roleplay_evaluations', vendorId), { evaluation: null });
+  
+  
     setEvaluation(null);
   };
 
@@ -48,8 +62,11 @@ export default function RolePlayIA({ vendorId, vendorName }: RolePlayIAProps) {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
+    
     const newMessages = [...messages, { role: 'user' as const, content: input }];
     setMessages(newMessages);
+    setDoc(doc(db, 'roleplay_messages', vendorId), { messages: newMessages });
+  
     setInput('');
     setIsTyping(true);
 
@@ -60,9 +77,17 @@ export default function RolePlayIA({ vendorId, vendorName }: RolePlayIAProps) {
         body: JSON.stringify({ messages: newMessages, persona })
       });
       const data = await res.json();
-      setMessages([...newMessages, { role: 'model', content: data.reply }]);
+      
+    const updatedWithModel = [...newMessages, { role: 'model' as const, content: data.reply }];
+    setMessages(updatedWithModel);
+    setDoc(doc(db, 'roleplay_messages', vendorId), { messages: updatedWithModel });
+  
     } catch (e) {
-      setMessages([...newMessages, { role: 'model', content: "Desculpe, ocorreu um erro de conexão. Tente novamente." }]);
+      
+    const errorMsg = [...newMessages, { role: 'model' as const, content: "Desculpe, ocorreu um erro de conexão. Tente novamente." }];
+    setMessages(errorMsg);
+    setDoc(doc(db, 'roleplay_messages', vendorId), { messages: errorMsg });
+  
     } finally {
       setIsTyping(false);
     }

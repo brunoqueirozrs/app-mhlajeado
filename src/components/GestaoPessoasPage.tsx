@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Markdown from "react-markdown";
 import { Users, AlertCircle, User, Bot, Shield, Target, Activity, Brain, CheckCircle, Clock, Save, FileText, X, MessageSquare, Plus, Edit2, Play, Circle, Radar, TrendingUp, Printer, LayoutGrid, BarChart2, Heart, GraduationCap, ArrowLeft, ClipboardList } from 'lucide-react';
+import { db } from '../lib/firebase';
+import { collection, onSnapshot, doc, setDoc, addDoc } from 'firebase/firestore';
 import { Vendor, DiscResult, PDI, RaioX, CompetenciaAvaliacao, PerfilComercial } from '../types';
 import { Radar as RechartsRadar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { DISC_QUESTIONS } from '../data/discQuestions';
@@ -25,12 +27,46 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
   const [raioxes, setRaioxes] = useState<RaioX[]>([]);
   const [competencias, setCompetencias] = useState<CompetenciaAvaliacao[]>([]);
   const [perfilComerciais, setPerfilComerciais] = useState<PerfilComercial[]>([]);
+
+  useEffect(() => {
+    const unsubDisc = onSnapshot(collection(db, 'disc_results'), (snapshot) => {
+      setDiscResults(snapshot.docs.map(doc => doc.data() as DiscResult));
+    });
+    const unsubPdi = onSnapshot(collection(db, 'pdis'), (snapshot) => {
+      setPdis(snapshot.docs.map(doc => doc.data() as PDI));
+    });
+    const unsubRaiox = onSnapshot(collection(db, 'raioxes'), (snapshot) => {
+      setRaioxes(snapshot.docs.map(doc => doc.data() as RaioX));
+    });
+    const unsubComp = onSnapshot(collection(db, 'competencias'), (snapshot) => {
+      setCompetencias(snapshot.docs.map(doc => doc.data() as CompetenciaAvaliacao));
+    });
+    const unsubPerfil = onSnapshot(collection(db, 'perfil_comerciais'), (snapshot) => {
+      setPerfilComerciais(snapshot.docs.map(doc => doc.data() as PerfilComercial));
+    });
+
+    return () => {
+      unsubDisc();
+      unsubPdi();
+      unsubRaiox();
+      unsubComp();
+      unsubPerfil();
+    };
+  }, []);
   
   // Estado do Teste DISC
   const [isTakingTest, setIsTakingTest] = useState(false);
   const [isTakingCompetenciasTest, setIsTakingCompetenciasTest] = useState(false);
   const [isEditingPerfilComercial, setIsEditingPerfilComercial] = useState(false);
   const [isGeneratingRaiox, setIsGeneratingRaiox] = useState(false);
+  const [isSavingSync, setIsSavingSync] = useState(false);
+  const [syncSuccessMsg, setSyncSuccessMsg] = useState<string | null>(null);
+
+  const showSyncSuccess = (msg: string) => {
+    setSyncSuccessMsg(msg);
+    setTimeout(() => setSyncSuccessMsg(null), 3000);
+  };
+
   const [currentBlock, setCurrentBlock] = useState(0);
   const [testAnswers, setTestAnswers] = useState<Record<number, { mais: string, menos: string }>>({});
 
@@ -89,7 +125,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
   const vendorPerfilComercial = selectedVendor ? perfilComerciais.find(pc => pc.vendorId === selectedVendor.id) : null;
 
 
-  const handlePerfilComercialComplete = (data: Omit<PerfilComercial, 'id' | 'vendorId' | 'data'>) => {
+  const handlePerfilComercialComplete = async (data: Omit<PerfilComercial, 'id' | 'vendorId' | 'data'>) => {
     if (!selectedVendor) return;
     
     const newRecord: PerfilComercial = {
@@ -103,14 +139,36 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
     if (existingIndex >= 0) {
       const updated = [...perfilComerciais];
       updated[existingIndex] = newRecord;
-      setPerfilComerciais(updated);
+      setIsSavingSync(true);
+      await Promise.all(updated.map(pc => setDoc(doc(db, 'perfil_comerciais', pc.id), pc)));
+      await addDoc(collection(db, 'test_results'), {
+        vendorId: selectedVendor.id,
+        vendorName: selectedVendor.nome,
+        type: 'perfil_comercial',
+        date: new Date().toISOString(),
+        summary: 'Perfil Comercial atualizado',
+        details: updated
+      });
+      setIsSavingSync(false);
+      showSyncSuccess('Perfil Comercial salvo com sucesso!');
     } else {
-      setPerfilComerciais([...perfilComerciais, newRecord]);
+      setIsSavingSync(true);
+      await setDoc(doc(db, 'perfil_comerciais', newRecord.id), newRecord);
+      await addDoc(collection(db, 'test_results'), {
+        vendorId: selectedVendor.id,
+        vendorName: selectedVendor.nome,
+        type: 'perfil_comercial',
+        date: new Date().toISOString(),
+        summary: 'Novo Perfil Comercial',
+        details: newRecord
+      });
+      setIsSavingSync(false);
+      showSyncSuccess('Perfil Comercial salvo com sucesso!');
     }
     setIsEditingPerfilComercial(false);
   };
 
-  const handleCompetenciasComplete = (resultados: Record<string, number>) => {
+  const handleCompetenciasComplete = async (resultados: Record<string, number>) => {
     if (!selectedVendor) return;
     
     // Transform the results into the expected shape
@@ -129,20 +187,45 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
         ...updated[existingIndex],
         competencias: newCompetencias
       };
-      setCompetencias(updated);
+      setIsSavingSync(true);
+      await Promise.all(updated.map(c => setDoc(doc(db, 'competencias', c.id), c)));
+      await addDoc(collection(db, 'test_results'), {
+        vendorId: selectedVendor.id,
+        vendorName: selectedVendor.nome,
+        type: 'competencias',
+        date: new Date().toISOString(),
+        summary: 'Avaliação de Competências atualizada',
+        details: updated
+      });
+      setIsSavingSync(false);
+      showSyncSuccess('Competências salvas com sucesso!');
     } else {
-      setCompetencias([...competencias, {
+      
+    const newComp: CompetenciaAvaliacao = {
+  
         id: `comp_${Date.now()}`,
         vendorId: selectedVendor.id,
         data: new Date().toISOString(),
         competencias: newCompetencias
-      }]);
+      };
+    setIsSavingSync(true);
+    await setDoc(doc(db, 'competencias', newComp.id), newComp);
+    await addDoc(collection(db, 'test_results'), {
+      vendorId: selectedVendor.id,
+      vendorName: selectedVendor.nome,
+      type: 'competencias',
+      date: new Date().toISOString(),
+      summary: 'Nova Avaliação de Competências',
+      details: newComp
+    });
+    setIsSavingSync(false);
+    showSyncSuccess('Competências salvas com sucesso!');
     }
     
     setIsTakingCompetenciasTest(false);
   };
 
-  const handleTestSubmit = () => {
+  const handleTestSubmit = async () => {
     let adaptado = { D: 0, I: 0, S: 0, C: 0 };
     let intimoCounts = { D: 0, I: 0, S: 0, C: 0 };
 
@@ -209,11 +292,22 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
       rawNatural: { d: natural.D, i: natural.I, s: natural.S, c: natural.C }
     };
 
-    setDiscResults([...discResults.filter(d => d.vendorId !== selectedVendor.id), newRes]);
+    setIsSavingSync(true);
+    await setDoc(doc(db, 'disc_results', newRes.id), newRes);
+    await addDoc(collection(db, 'test_results'), {
+      vendorId: selectedVendor.id,
+      vendorName: selectedVendor.nome,
+      type: 'disc',
+      date: new Date().toISOString(),
+      summary: `Perfil: ${newRes.perfilAnimal}`,
+      details: newRes
+    });
+    setIsSavingSync(false);
+    showSyncSuccess('Teste DISC salvo com sucesso!');
     setIsTakingTest(false);
   };
 
-  const handleSavePdi = () => {
+  const handleSavePdi = async () => {
     if (!newPdi.competencia) return;
     const pdiToSave: PDI = {
       id: Math.random().toString(),
@@ -287,7 +381,18 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
           pontosAtencao: [],
           recomendacoesPdi: ""
         };
-        setRaioxes([newRx, ...raioxes]);
+        setIsSavingSync(true);
+        await setDoc(doc(db, 'raioxes', newRx.id), newRx);
+        await addDoc(collection(db, 'test_results'), {
+          vendorId: selectedVendor.id,
+          vendorName: selectedVendor.nome,
+          type: 'raiox',
+          date: new Date().toISOString(),
+          summary: 'Análise de Raio-X com IA concluída',
+          details: newRx
+        });
+        setIsSavingSync(false);
+        showSyncSuccess('Raio-X salvo com sucesso!');
       }
     } catch (e) {
       console.error("Erro ao gerar Raio-X", e);
@@ -1536,6 +1641,20 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                 <span>Página impressa em: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
                 <span>Documento Confidencial de Uso Interno</span>
               </div>
+
+              {/* Sync feedback */}
+              {isSavingSync && (
+                <div className="fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 z-50 animate-fade-in">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm font-bold">Sincronizando com Firestore...</span>
+                </div>
+              )}
+              {syncSuccessMsg && (
+                <div className="fixed bottom-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 z-50 animate-fade-in">
+                  <CheckCircle className="w-5 h-5" />
+                  <span className="text-sm font-bold">{syncSuccessMsg}</span>
+                </div>
+              )}
 
               {vendorTab === "modulos" && (
                 <div className="space-y-8">

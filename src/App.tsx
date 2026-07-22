@@ -39,6 +39,7 @@ import InstallationsPage from "./components/InstallationsPage";
 import ExternalStorePortal from "./components/ExternalStorePortal";
 import { AdminN8NPage } from "./components/AdminN8NPage";
 import AdminLogsPage from "./components/AdminLogsPage";
+import AdminTestResultsPage from "./components/AdminTestResultsPage";
 import GestaoPessoasPage from "./components/GestaoPessoasPage";
 import CalculoMultaPage from "./components/CalculoMultaPage";
 import PosVendaPage from "./components/PosVendaPage";
@@ -1959,7 +1960,7 @@ export default function App() {
         </nav>
 
         {/* Primary Page Canvas Stage */}
-        <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 h-[calc(100vh-80px)] lg:h-[calc(100vh-36px)] bg-slate-200/40 shadow-[inset_0_4px_10px_rgba(0,0,0,0.02)]">
+        <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 h-[calc(100vh-80px)] lg:h-[calc(100vh-36px)] bg-slate-200/40 shadow-[inset_0_4px_10px_rgba(0,0,0,0.02)] print:h-auto print:block print:overflow-visible">
           {/* Global Search Bar */}
           <div className="mb-6 relative">
             <div className="relative">

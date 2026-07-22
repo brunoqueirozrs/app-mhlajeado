@@ -59,12 +59,17 @@
     }
   }
 
-  body, html, #root, main, .overflow-y-auto, .overflow-x-auto, .overflow-hidden, .flex-1 {
+  body, html, #root {
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    background: white !important;
-    color: black !important;
+    display: block !important;
+  }
+  
+  main, .overflow-y-auto, .overflow-x-auto, .overflow-hidden, .flex-1, .h-screen {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
   
   body * {

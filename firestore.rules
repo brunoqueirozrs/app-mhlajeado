@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /disc_results/{documentId} {
+      allow read, write: if true;
+    }
+    match /pdis/{documentId} {
+      allow read, write: if true;
+    }
+    match /raioxes/{documentId} {
+      allow read, write: if true;
+    }
+    match /competencias/{documentId} {
+      allow read, write: if true;
+    }
+    match /perfil_comerciais/{documentId} {
+      allow read, write: if true;
+    }
+    match /roleplay_messages/{documentId} {
+      allow read, write: if true;
+    }
+    match /roleplay_evaluations/{documentId} {
+      allow read, write: if true;
+    }
+    match /test_results/{documentId} {
+      allow read, write: if true;
+    }
+  }
+}

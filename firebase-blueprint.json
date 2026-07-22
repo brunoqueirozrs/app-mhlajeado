@@ -1,0 +1,124 @@
+{
+  "collections": [
+    {
+      "name": "disc_results",
+      "fields": [
+        {
+          "name": "vendorId",
+          "type": "string"
+        }
+      ],
+      "rules": [
+        {
+          "allow": "read, write",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "name": "pdis",
+      "fields": [
+        {
+          "name": "vendorId",
+          "type": "string"
+        }
+      ],
+      "rules": [
+        {
+          "allow": "read, write",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "name": "raioxes",
+      "fields": [
+        {
+          "name": "vendorId",
+          "type": "string"
+        }
+      ],
+      "rules": [
+        {
+          "allow": "read, write",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "name": "competencias",
+      "fields": [
+        {
+          "name": "vendorId",
+          "type": "string"
+        }
+      ],
+      "rules": [
+        {
+          "allow": "read, write",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "name": "perfil_comerciais",
+      "fields": [
+        {
+          "name": "vendorId",
+          "type": "string"
+        }
+      ],
+      "rules": [
+        {
+          "allow": "read, write",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "name": "roleplay_messages",
+      "fields": [
+        {
+          "name": "vendorId",
+          "type": "string"
+        }
+      ],
+      "rules": [
+        {
+          "allow": "read, write",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "name": "roleplay_evaluations",
+      "fields": [
+        {
+          "name": "vendorId",
+          "type": "string"
+        }
+      ],
+      "rules": [
+        {
+          "allow": "read, write",
+          "condition": "true"
+        }
+      ]
+    },
+    {
+      "name": "test_results",
+      "fields": [
+        {
+          "name": "vendorId",
+          "type": "string"
+        }
+      ],
+      "rules": [
+        {
+          "allow": "read, write",
+          "condition": "true"
+        }
+      ]
+    }
+  ]
+}
