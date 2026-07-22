@@ -1690,6 +1690,15 @@ export default function App() {
                 <ClipboardList className="w-4 h-4 shrink-0 text-white" />
                 <span>Fila de Monitoramento</span>
               </button>
+              <button onClick={() => setActiveTab("gestao_pessoas")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  activeTab === "gestao_pessoas" 
+                    ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
+                    : "text-white hover:bg-slate-900"
+                }`}>
+                {userRole === "admin" ? <Users className="w-4 h-4 shrink-0 text-white" /> : <User className="w-4 h-4 shrink-0 text-white" />}
+                <span>{userRole === "admin" ? "Gestão de Pessoas" : "Meu RH"}</span>
+              </button>
             </div>
 
             {userRole === "admin" && (
@@ -1721,15 +1730,6 @@ export default function App() {
                   }`}>
                   <Sliders className="w-4 h-4 shrink-0 text-white" />
                   <span>Vendedores & Metas</span>
-                </button>
-                <button onClick={() => setActiveTab("gestao_pessoas")}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
-                    activeTab === "gestao_pessoas" 
-                      ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
-                      : "text-white hover:bg-slate-900"
-                  }`}>
-                  {userRole === "admin" ? <Users className="w-4 h-4 shrink-0 text-white" /> : <User className="w-4 h-4 shrink-0 text-white" />}
-                  <span>{userRole === "admin" ? "Gestão de Pessoas" : "Meu RH"}</span>
                 </button>
                 <button onClick={() => setActiveTab("admin_n8n")}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${

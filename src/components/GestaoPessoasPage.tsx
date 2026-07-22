@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Markdown from "react-markdown";
-import { Users, User, Shield, Target, Activity, Brain, CheckCircle, Clock, Save, FileText, X, MessageSquare, Plus, Edit2, Play, Circle, Radar, TrendingUp, Printer, LayoutGrid, BarChart2, Heart, GraduationCap, ArrowLeft, ClipboardList } from 'lucide-react';
+import { Users, AlertCircle, User, Bot, Shield, Target, Activity, Brain, CheckCircle, Clock, Save, FileText, X, MessageSquare, Plus, Edit2, Play, Circle, Radar, TrendingUp, Printer, LayoutGrid, BarChart2, Heart, GraduationCap, ArrowLeft, ClipboardList } from 'lucide-react';
 import { Vendor, DiscResult, PDI, RaioX, CompetenciaAvaliacao, PerfilComercial } from '../types';
 import { Radar as RechartsRadar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { DISC_QUESTIONS } from '../data/discQuestions';
+import CompetenciasQuestionnaire from './CompetenciasQuestionnaire';
+import PerfilComercialForm from './PerfilComercialForm';
+import RolePlayIA from './RolePlayIA';
+
 
 interface GestaoPessoasPageProps {
   vendors: Vendor[];
@@ -13,7 +17,7 @@ interface GestaoPessoasPageProps {
 
 export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: GestaoPessoasPageProps) {
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
-  const [vendorTab, setVendorTab] = useState<"modulos" | "dashboard" | "disc" | "pdi" | "raiox" | "coach" | "competencias" | "perfil_comercial" | "fit_cargo" | "indices" | "clima" | "pulse" | "aval_360" | "inteligencia_emocional" | "teste_conhecimento" | "big_five">("modulos");
+  const [vendorTab, setVendorTab] = useState<"modulos" | "dashboard" | "disc" | "pdi" | "raiox" | "coach" | "competencias" | "perfil_comercial" | "fit_cargo" | "indices" | "clima" | "pulse" | "aval_360" | "inteligencia_emocional" | "teste_conhecimento" | "big_five" | "roleplay">("modulos");
 
   // Estados dos dados (mockados por enquanto)
   const [discResults, setDiscResults] = useState<DiscResult[]>([]);
@@ -24,6 +28,8 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
   
   // Estado do Teste DISC
   const [isTakingTest, setIsTakingTest] = useState(false);
+  const [isTakingCompetenciasTest, setIsTakingCompetenciasTest] = useState(false);
+  const [isEditingPerfilComercial, setIsEditingPerfilComercial] = useState(false);
   const [isGeneratingRaiox, setIsGeneratingRaiox] = useState(false);
   const [currentBlock, setCurrentBlock] = useState(0);
   const [testAnswers, setTestAnswers] = useState<Record<number, { mais: string, menos: string }>>({});
@@ -64,16 +70,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
         situacaoAtual: 3, meta: "Chegar na taxa de conversão de 15%", acaoCombinada: "Role-play 1x por semana com o coordenador",
         prazo: "2024-12-31", status: "em_andamento", dataCriacao: new Date().toISOString(), dataAtualizacao: new Date().toISOString()
       })));
-      setCompetencias(vendors.map((v, i) => ({
-        id: `comp_${i}`, vendorId: v.id, data: new Date().toISOString(),
-        competencias: [
-          { nome: "Comunicação", autoavaliacao: 5, gestor: 4, ia: 4, baseline: 4 },
-          { nome: "Resiliência", autoavaliacao: 4, gestor: 3, ia: 3, baseline: 4 },
-          { nome: "Fechamento", autoavaliacao: 3, gestor: 2, ia: 2, baseline: 4 },
-          { nome: "Organização", autoavaliacao: 4, gestor: 4, ia: 5, baseline: 4 },
-          { nome: "Prospecção", autoavaliacao: 5, gestor: 5, ia: 4, baseline: 4 },
-        ]
-      })));
+      setCompetencias([]);
       setPerfilComerciais(vendors.map((v, i) => ({
         id: `pc_${i}`, vendorId: v.id, data: new Date().toISOString(),
         gargaloPrincipal: "Conversão na etapa de Quebra de Objeções",
@@ -90,6 +87,60 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
   const vendorRaiox = selectedVendor ? raioxes.filter(r => r.vendorId === selectedVendor.id) : [];
   const vendorCompetencias = selectedVendor ? competencias.find(c => c.vendorId === selectedVendor.id) : null;
   const vendorPerfilComercial = selectedVendor ? perfilComerciais.find(pc => pc.vendorId === selectedVendor.id) : null;
+
+
+  const handlePerfilComercialComplete = (data: Omit<PerfilComercial, 'id' | 'vendorId' | 'data'>) => {
+    if (!selectedVendor) return;
+    
+    const newRecord: PerfilComercial = {
+      id: `pc_${Date.now()}`,
+      vendorId: selectedVendor.id,
+      data: new Date().toISOString(),
+      ...data
+    };
+
+    const existingIndex = perfilComerciais.findIndex(pc => pc.vendorId === selectedVendor.id);
+    if (existingIndex >= 0) {
+      const updated = [...perfilComerciais];
+      updated[existingIndex] = newRecord;
+      setPerfilComerciais(updated);
+    } else {
+      setPerfilComerciais([...perfilComerciais, newRecord]);
+    }
+    setIsEditingPerfilComercial(false);
+  };
+
+  const handleCompetenciasComplete = (resultados: Record<string, number>) => {
+    if (!selectedVendor) return;
+    
+    // Transform the results into the expected shape
+    const newCompetencias = Object.entries(resultados).map(([nome, val]) => ({
+      nome,
+      autoavaliacao: val,
+      gestor: 0,
+      ia: 0,
+      baseline: 4
+    }));
+
+    const existingIndex = competencias.findIndex(c => c.vendorId === selectedVendor.id);
+    if (existingIndex >= 0) {
+      const updated = [...competencias];
+      updated[existingIndex] = {
+        ...updated[existingIndex],
+        competencias: newCompetencias
+      };
+      setCompetencias(updated);
+    } else {
+      setCompetencias([...competencias, {
+        id: `comp_${Date.now()}`,
+        vendorId: selectedVendor.id,
+        data: new Date().toISOString(),
+        competencias: newCompetencias
+      }]);
+    }
+    
+    setIsTakingCompetenciasTest(false);
+  };
 
   const handleTestSubmit = () => {
     let adaptado = { D: 0, I: 0, S: 0, C: 0 };
@@ -255,9 +306,9 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
       const opt = {
         margin:       10,
         filename:     `relatorio_completo_${selectedVendor?.nome.replace(/\s+/g, '_') || 'colaborador'}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
+        image:        { type: 'jpeg' as const, quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
       };
       
       await html2pdf().set(opt).from(element).save();
@@ -266,9 +317,16 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
     } finally {
       setIsGeneratingPdf(false);
     }
-  };
 
   
+  };
+
+
+  const renderRolePlay = () => {
+    if (!selectedVendor) return null;
+    return <RolePlayIA vendorId={selectedVendor.id} vendorName={selectedVendor.nome} />;
+  };
+
   const renderDisc = () => (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
                       <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
@@ -570,13 +628,34 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                     </div>
   );
 
-  const renderCompetencias = () => (
+
+  const renderCompetencias = () => {
+    if (isTakingCompetenciasTest && selectedVendor) {
+      return (
+        <CompetenciasQuestionnaire
+          vendorId={selectedVendor.id}
+          vendorName={selectedVendor.nome}
+          onComplete={handleCompetenciasComplete}
+          onCancel={() => setIsTakingCompetenciasTest(false)}
+        />
+      );
+    }
+
+    return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
                       <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                         <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                           <Target className="w-4 h-4 text-orange-500" />
                           Radar de Competências
                         </h3>
+                        {selectedVendor?.id === effectiveVendorId && (
+                          <button 
+                            onClick={() => setIsTakingCompetenciasTest(true)}
+                            className="px-3 py-1.5 bg-sky-100 text-sky-700 hover:bg-sky-200 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            <Play className="w-3 h-3" /> {vendorCompetencias ? "Refazer Autoavaliação" : "Iniciar Autoavaliação"}
+                          </button>
+                        )}
                       </div>
                       
                       {vendorCompetencias ? (
@@ -630,14 +709,34 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                       )}
                     </div>
   );
+  };
 
-  const renderPerfilComercial = () => (
+  const renderPerfilComercial = () => {
+    if (isEditingPerfilComercial && selectedVendor) {
+      return (
+        <PerfilComercialForm
+          vendorId={selectedVendor.id}
+          vendorName={selectedVendor.nome}
+          existingData={vendorPerfilComercial || undefined}
+          onComplete={handlePerfilComercialComplete}
+          onCancel={() => setIsEditingPerfilComercial(false)}
+        />
+      );
+    }
+    
+    return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
                       <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                         <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-blue-500" />
                           Perfil Comercial & Gargalos de Campo
                         </h3>
+                        <button 
+                          onClick={() => setIsEditingPerfilComercial(true)}
+                          className="px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
+                        >
+                          <Edit2 className="w-3 h-3" /> {vendorPerfilComercial ? "Atualizar Perfil" : "Preencher Perfil"}
+                        </button>
                       </div>
                       
                       {vendorPerfilComercial ? (
@@ -698,49 +797,179 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                       )}
                     </div>
   );
+  };
 
-  const renderRaiox = () => (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
-                      <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                          <Brain className="w-4 h-4 text-rose-500" />
-                          Raio-X com IA
-                        </h3>
-                        <button onClick={generateRaioX} disabled={isGeneratingRaiox} className="px-3 py-1.5 bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 text-xs font-bold rounded-lg transition-colors print:hidden">
-                          {isGeneratingRaiox ? "Gerando..." : "Gerar Agora"}
-                        </button>
-                      </div>
-                      
-                      <div className="p-6 space-y-6">
-                        {vendorRaiox.length === 0 ? (
-                           <div className="py-8 flex flex-col items-center justify-center text-center">
-                             <Brain className="w-16 h-16 text-rose-100 mb-4" />
-                             <h4 className="text-lg font-bold text-slate-700">Gerar Relatório Inteligente</h4>
-                             <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-                               A inteligência artificial irá cruzar o perfil DISC, o PDI atual e as métricas de vendas do colaborador para sugerir pontos fortes e áreas de atenção.
-                             </p>
-                           </div>
-                        ) : (
-                          vendorRaiox.map(rx => (
-                            <div key={rx.id} className="border border-slate-200 rounded-xl p-5 relative overflow-hidden">
-                              <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
-                              <div className="flex justify-between items-center mb-4">
-                                <h4 className="font-black text-slate-800 flex items-center gap-2">
-                                  <Brain className="w-5 h-5 text-rose-500" />
-                                  Análise Gerada
-                                </h4>
-                                <span className="text-xs font-bold text-slate-400">{new Date(rx.data).toLocaleDateString()}</span>
-                              </div>
-                              
-                              <div className="prose prose-sm prose-slate max-w-none prose-headings:font-black prose-h2:text-indigo-900 prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3 prose-p:text-slate-700 prose-li:text-slate-700 prose-strong:text-slate-900 prose-ul:my-2">
-                              <Markdown>{rx.resumoIa}</Markdown>
-                            </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-  );
+  
+  const renderRaiox = () => {
+    let fitCargo = 75;
+    if (vendorDisc) {
+      const ideal = { d: 70, i: 80, s: 40, c: 30 };
+      const natural = vendorDisc.rawNatural || { d: 50, i: 50, s: 50, c: 50 };
+      const diffTotal = Math.abs(natural.d - ideal.d) + Math.abs(natural.i - ideal.i) + Math.abs(natural.s - ideal.s) + Math.abs(natural.c - ideal.c);
+      fitCargo = Math.max(0, Math.round(100 - ((diffTotal / 400) * 100 * 2)));
+    }
+
+    let scoreCompetencias = 80;
+    if (vendorCompetencias && vendorCompetencias.competencias) {
+      const autoArr = vendorCompetencias.competencias.map((c: any) => c.autoavaliacao);
+      if (autoArr.length) scoreCompetencias = Math.round((autoArr.reduce((a: number, b: number)=>a+b,0)/autoArr.length) * 20);
+    }
+
+    let scoreComercial = 82;
+    if (vendorPerfilComercial) {
+       scoreComercial = Math.round(vendorPerfilComercial.taxaConversaoMedia * 5); 
+       if (scoreComercial > 100) scoreComercial = 100;
+    }
+
+    const scoreAval360 = 85; 
+    const scoreConhecimento = 78;
+
+    const w1 = 0.15, w2 = 0.25, w3 = 0.25, w4 = 0.20, w5 = 0.15;
+    const scoreFinal = Math.round((fitCargo * w1) + (scoreCompetencias * w2) + (scoreComercial * w3) + (scoreAval360 * w4) + (scoreConhecimento * w5));
+
+    const values = [fitCargo, scoreCompetencias, scoreComercial, scoreAval360, scoreConhecimento];
+    const avg = values.reduce((a,b) => a+b, 0) / values.length;
+    const variance = values.reduce((a,b) => a + Math.pow(b - avg, 2), 0) / values.length;
+    const stdDev = Math.sqrt(variance);
+    const confiabilidade = Math.max(0, Math.round(100 - (stdDev * 2.5)));
+
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <Brain className="w-4 h-4 text-rose-500" />
+            Raio-X Consolidado & People Analytics
+          </h3>
+          <button onClick={generateRaioX} disabled={isGeneratingRaiox} className="px-3 py-1.5 bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 text-xs font-bold rounded-lg transition-colors print:hidden">
+            {isGeneratingRaiox ? "Gerando Resumo..." : "Recalcular com IA"}
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-8">
+          {/* Header Dashboard */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-slate-900 rounded-2xl p-6 text-white flex flex-col justify-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Target className="w-24 h-24" />
+              </div>
+              <span className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2 relative z-10">Score Final Ponderado</span>
+              <div className="flex items-end gap-2 relative z-10">
+                <span className="text-5xl font-black text-emerald-400">{scoreFinal}</span>
+                <span className="text-lg text-slate-500 font-bold mb-1">/ 100</span>
+              </div>
+              <p className="text-xs text-slate-400 mt-2 relative z-10">Agrega DISC, Competências, Comercial, 360 e Conhecimento.</p>
+            </div>
+            
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-center">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Índice de Confiabilidade</span>
+                <Activity className={`w-5 h-5 ${confiabilidade > 80 ? 'text-emerald-500' : 'text-amber-500'}`} />
+              </div>
+              <div className="flex items-end gap-2">
+                <span className="text-4xl font-black text-slate-800">{confiabilidade}%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3">
+                <div className={`h-1.5 rounded-full ${confiabilidade > 80 ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${confiabilidade}%` }}></div>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">Calculado pelo desvio padrão ({stdDev.toFixed(1)}) entre as múltiplas avaliações.</p>
+            </div>
+
+            <div className="bg-rose-50 border border-rose-100 rounded-2xl p-6 flex flex-col justify-center">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-sm font-bold text-rose-800 uppercase tracking-wider">Maior GAP Mapeado</span>
+                <AlertCircle className="w-5 h-5 text-rose-500" />
+              </div>
+              <span className="text-xl font-black text-rose-900 leading-tight">
+                {vendorPerfilComercial && vendorPerfilComercial.areasMelhoriaCampo.length > 0 ? vendorPerfilComercial.areasMelhoriaCampo[0] : "Técnicas de Fechamento"}
+              </span>
+              <p className="text-xs text-rose-700 mt-2">Impacto Direto: Perda de 15% na conversão final de rota.</p>
+            </div>
+          </div>
+
+          {/* Breakdown / Radar Equivalente */}
+          <div>
+            <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <BarChart2 className="w-5 h-5 text-indigo-500" /> Detalhamento Multimétodo
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="p-4 border border-slate-100 rounded-xl bg-slate-50 text-center">
+                <span className="block text-xl font-black text-slate-800">{fitCargo}</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Fit Cargo (15%)</span>
+              </div>
+              <div className="p-4 border border-slate-100 rounded-xl bg-slate-50 text-center">
+                <span className="block text-xl font-black text-slate-800">{scoreCompetencias}</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Competências (25%)</span>
+              </div>
+              <div className="p-4 border border-slate-100 rounded-xl bg-slate-50 text-center">
+                <span className="block text-xl font-black text-slate-800">{scoreComercial}</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Comercial (25%)</span>
+              </div>
+              <div className="p-4 border border-slate-100 rounded-xl bg-slate-50 text-center">
+                <span className="block text-xl font-black text-slate-800">{scoreAval360}</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Aval 360° (20%)</span>
+              </div>
+              <div className="p-4 border border-slate-100 rounded-xl bg-slate-50 text-center">
+                <span className="block text-xl font-black text-slate-800">{scoreConhecimento}</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Conhecimento (15%)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Texto de IA gerado (O Raio-X original) */}
+          {vendorRaiox.length > 0 ? (
+            <div>
+              <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <Brain className="w-5 h-5 text-rose-500" /> Análise Qualitativa da IA
+              </h4>
+              {vendorRaiox.map(rx => (
+                <div key={rx.id} className="border border-slate-200 rounded-xl p-5 relative overflow-hidden bg-white shadow-sm">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
+                  <div className="prose prose-sm prose-slate max-w-none prose-headings:font-black prose-h2:text-indigo-900 prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3 prose-p:text-slate-700 prose-li:text-slate-700 prose-strong:text-slate-900 prose-ul:my-2">
+                    <Markdown>{rx.resumoIa}</Markdown>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center">
+               <p className="text-sm text-slate-600">Gere a análise da IA para obter insights qualitativos detalhados sobre o colaborador.</p>
+            </div>
+          )}
+
+          {/* PDI Automático */}
+          <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-100">
+             <h4 className="font-bold text-emerald-900 mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5" /> Plano de Desenvolvimento Recomendado (Automático)
+             </h4>
+             <ul className="space-y-3">
+               <li className="flex items-start gap-3 bg-white p-3 rounded-lg border border-emerald-100">
+                 <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">1</div>
+                 <div>
+                   <span className="block text-sm font-bold text-emerald-900">Treinamento de Role-Play Focado</span>
+                   <span className="block text-xs text-emerald-700 mt-1">Utilizar o simulador IA (Persona: Indeciso) 3x na semana para calibrar a conversão na fase de objeções.</span>
+                 </div>
+               </li>
+               <li className="flex items-start gap-3 bg-white p-3 rounded-lg border border-emerald-100">
+                 <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</div>
+                 <div>
+                   <span className="block text-sm font-bold text-emerald-900">Reciclagem de Conhecimento Técnico</span>
+                   <span className="block text-xs text-emerald-700 mt-1">Revisão do portfólio de planos empresariais e uso avançado do CRM Mobile.</span>
+                 </div>
+               </li>
+               <li className="flex items-start gap-3 bg-white p-3 rounded-lg border border-emerald-100">
+                 <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">3</div>
+                 <div>
+                   <span className="block text-sm font-bold text-emerald-900">Acompanhamento de Campo (Rota Dupla)</span>
+                   <span className="block text-xs text-emerald-700 mt-1">O supervisor deve focar no controle emocional do vendedor diante de negativas consecutivas.</span>
+                 </div>
+               </li>
+             </ul>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
 
   const renderPlaceholder = (title: string, desc: string) => (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
@@ -759,14 +988,452 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
     </div>
   );
 
-  const renderFitCargo = () => renderPlaceholder("Fit de Cargo", "Módulo de alocação automática calculando a distância entre o perfil natural do colaborador e o perfil ideal.");
-  const renderIndices = () => renderPlaceholder("Índices Preditivos (Risco/Potencial)", "Predição de desligamento e alto potencial baseado no cruzamento de dados de engajamento, PDI e testes.");
-  const renderClima = () => renderPlaceholder("Clima Organizacional", "Módulo semanal/mensal para medir o clima geral e engajamento da equipe.");
-  const renderPulse = () => renderPlaceholder("Pulse Survey", "Pesquisas rápidas de engajamento focadas em micro-interações semanais.");
-  const renderAval360 = () => renderPlaceholder("Avaliação 360°", "Avaliação anual de liderança cruzando autoavaliação, pares, liderados e gestores.");
-  const renderInteligenciaEmocional = () => renderPlaceholder("Inteligência Emocional", "Teste anual de inteligência emocional para mapear o comportamento interpessoal.");
-  const renderTesteConhecimento = () => renderPlaceholder("Teste de Conhecimento", "Teste pós-treinamento focado em capacitação técnica.");
-  const renderBigFive = () => renderPlaceholder("Big Five (OCEAN)", "Avaliação anual de personalidade Big Five, aplicada a líderes para alinhar perfil de gestão.");
+  const renderFitCargo = () => {
+    if (!vendorDisc) return renderPlaceholder("Fit de Cargo", "Realize o Teste DISC para visualizar o Fit de Cargo.");
+    
+    // Simulação do Perfil Ideal (PAP - Vendedor Externo)
+    const ideal = { d: 70, i: 80, s: 40, c: 30 };
+    
+    // Perfil Natural do colaborador
+    const natural = vendorDisc.rawNatural || { d: 50, i: 50, s: 50, c: 50 };
+    
+    const diffD = Math.abs(natural.d - ideal.d);
+    const diffI = Math.abs(natural.i - ideal.i);
+    const diffS = Math.abs(natural.s - ideal.s);
+    const diffC = Math.abs(natural.c - ideal.c);
+    
+    const totalDiff = diffD + diffI + diffS + diffC;
+    const maxDiff = 400; // max possible difference
+    
+    const fitPercentage = Math.max(0, Math.round(100 - ((totalDiff / maxDiff) * 100 * 2)));
+
+    return (
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
+      <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+          <Target className="w-4 h-4 text-emerald-500" />
+          Fit de Cargo (PAP)
+        </h3>
+      </div>
+      <div className="p-6">
+        <div className="flex flex-col md:flex-row items-center gap-8">
+          <div className="flex flex-col items-center justify-center p-8 bg-emerald-50 border border-emerald-100 rounded-full w-48 h-48">
+            <span className="text-4xl font-black text-emerald-700">{fitPercentage}%</span>
+            <span className="text-xs font-bold text-emerald-600 uppercase mt-1">Aderência Ideal</span>
+          </div>
+          <div className="flex-1 space-y-4">
+            <h4 className="font-bold text-slate-800">Análise de Distância Comportamental</h4>
+            <p className="text-sm text-slate-600">
+              Com base no perfil DISC natural do colaborador em relação à função exigida de <strong>Porta a Porta (PAP)</strong>, que demanda alta influência (I) e alta dominância (D).
+            </p>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span className="block text-xs font-bold text-slate-500 uppercase">Perfil Natural</span>
+                <span className="block font-bold text-slate-800 mt-1">
+                  D: {natural.d}% | I: {natural.i}% | S: {natural.s}% | C: {natural.c}%
+                </span>
+              </div>
+              <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-200">
+                <span className="block text-xs font-bold text-indigo-500 uppercase">Perfil Ideal (PAP)</span>
+                <span className="block font-bold text-indigo-800 mt-1">
+                  D: {ideal.d}% | I: {ideal.i}% | S: {ideal.s}% | C: {ideal.c}%
+                </span>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-4 bg-slate-100 rounded-xl">
+               <h4 className="text-sm font-bold text-slate-800 mb-2">Recomendação</h4>
+               <p className="text-sm text-slate-600">
+                 {fitPercentage > 80 
+                    ? "Excelente aderência ao cargo. Colaborador possui as características ideais para atuar com alta performance em campo."
+                    : fitPercentage > 60
+                    ? "Aderência moderada. O colaborador pode precisar de apoio específico e PDI para compensar certas características naturais em campo."
+                    : "Baixa aderência. O esforço comportamental exigido em campo pode gerar desgaste rápido. Recomenda-se alinhamento de expectativas ou considerar realocação para Inside Sales."}
+               </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  };
+  
+  const renderIndices = () => {
+    // Fake prediction data
+    const turnoverRisk = 15; // 15%
+    const highPotential = 85; // 85%
+    
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-purple-500" />
+            Índices Preditivos (Risco & Potencial)
+          </h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Turnover Risk */}
+            <div className="bg-rose-50 p-6 rounded-2xl border border-rose-100 flex flex-col items-center text-center">
+              <h4 className="text-sm font-bold text-rose-800 uppercase tracking-wider mb-2">Risco de Turnover</h4>
+              <div className="relative w-32 h-32 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    className="text-rose-200"
+                    strokeWidth="3"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path
+                    className="text-rose-500"
+                    strokeDasharray={`${turnoverRisk}, 100`}
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-3xl font-black text-rose-700">{turnoverRisk}%</span>
+                </div>
+              </div>
+              <p className="text-xs text-rose-600 mt-4 font-medium">Baixo risco de saída nos próximos 6 meses.</p>
+            </div>
+
+            {/* High Potential */}
+            <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex flex-col items-center text-center">
+              <h4 className="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-2">Potencial de Liderança</h4>
+              <div className="relative w-32 h-32 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    className="text-emerald-200"
+                    strokeWidth="3"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path
+                    className="text-emerald-500"
+                    strokeDasharray={`${highPotential}, 100`}
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-3xl font-black text-emerald-700">{highPotential}%</span>
+                </div>
+              </div>
+              <p className="text-xs text-emerald-600 mt-4 font-medium">Alto potencial para assumir supervisão.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+    const renderClima = () => {
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <Users className="w-4 h-4 text-orange-500" />
+            Clima Organizacional
+          </h3>
+        </div>
+        <div className="p-6">
+          <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-50 border border-slate-200 rounded-xl mb-6">
+            <span className="text-4xl font-black text-slate-800 mb-2">82 / 100</span>
+            <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">eNPS (Net Promoter Score Interno)</span>
+          </div>
+          
+          <div className="space-y-4">
+            <h4 className="font-bold text-slate-800">Dimensões do Clima</h4>
+            
+            <div className="flex items-center gap-4">
+              <span className="w-1/3 text-sm font-bold text-slate-700 text-right">Comunicação</span>
+              <div className="w-2/3 bg-slate-100 rounded-full h-2.5">
+                <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: '70%' }}></div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="w-1/3 text-sm font-bold text-slate-700 text-right">Reconhecimento</span>
+              <div className="w-2/3 bg-slate-100 rounded-full h-2.5">
+                <div className="bg-orange-500 h-2.5 rounded-full" style={{ width: '60%' }}></div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="w-1/3 text-sm font-bold text-slate-700 text-right">Relacionamento com Gestor</span>
+              <div className="w-2/3 bg-slate-100 rounded-full h-2.5">
+                <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: '90%' }}></div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="w-1/3 text-sm font-bold text-slate-700 text-right">Ferramentas de Trabalho</span>
+              <div className="w-2/3 bg-slate-100 rounded-full h-2.5">
+                <div className="bg-rose-500 h-2.5 rounded-full" style={{ width: '45%' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  const renderPulse = () => {
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <Heart className="w-4 h-4 text-rose-500" />
+            Pulse Survey (Termômetro de Engajamento)
+          </h3>
+        </div>
+        <div className="p-6">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="flex-1 space-y-6 w-full">
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-bold text-slate-700">Satisfação com o Clima</span>
+                  <span className="text-sm font-bold text-slate-900">8.5/10</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                  <div className="bg-emerald-500 h-2.5 rounded-full" style={{ width: '85%' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-bold text-slate-700">Alinhamento com a Liderança</span>
+                  <span className="text-sm font-bold text-slate-900">7.2/10</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                  <div className="bg-amber-400 h-2.5 rounded-full" style={{ width: '72%' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm font-bold text-slate-700">Carga de Trabalho</span>
+                  <span className="text-sm font-bold text-slate-900">6.0/10</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                  <div className="bg-orange-500 h-2.5 rounded-full" style={{ width: '60%' }}></div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="w-full md:w-1/3 bg-rose-50 p-5 rounded-xl border border-rose-100">
+               <h4 className="text-sm font-bold text-rose-800 mb-3 flex items-center gap-2">
+                 <Activity className="w-4 h-4" /> Alerta de Carga
+               </h4>
+               <p className="text-sm text-rose-700">
+                 O indicador de <strong>Carga de Trabalho</strong> caiu 15% nas últimas 2 semanas. Sugere-se uma conversa 1:1 para priorização de demandas de campo.
+               </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  
+  const renderAval360 = () => {
+    const data = [
+      { name: "Comunicação", auto: 4.5, pares: 4.2, liderados: 4.8, gestor: 4.0 },
+      { name: "Liderança", auto: 4.0, pares: 3.8, liderados: 4.5, gestor: 3.5 },
+      { name: "Foco em Resultados", auto: 5.0, pares: 4.5, liderados: 4.2, gestor: 4.8 },
+      { name: "Trabalho em Equipe", auto: 4.2, pares: 4.6, liderados: 4.4, gestor: 4.5 },
+      { name: "Inteligência Emocional", auto: 3.8, pares: 3.5, liderados: 4.0, gestor: 3.2 },
+    ];
+
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <Users className="w-4 h-4 text-indigo-500" />
+            Avaliação 360°
+          </h3>
+        </div>
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="75%" data={data}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="name" tick={{fill: '#475569', fontSize: 10, fontWeight: 'bold'}} />
+                <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                <Tooltip wrapperClassName="text-xs rounded-xl shadow-lg border-slate-200" contentStyle={{borderRadius: '12px', border: '1px solid #e2e8f0'}} />
+                <RechartsRadar name="Autoavaliação" dataKey="auto" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
+                <RechartsRadar name="Pares" dataKey="pares" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} />
+                <RechartsRadar name="Gestor" dataKey="gestor" stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} />
+                <RechartsRadar name="Liderados" dataKey="liderados" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
+                <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="space-y-4">
+            <h4 className="font-bold text-slate-800 mb-2">Resumo da Avaliação</h4>
+            <p className="text-sm text-slate-600">
+              O colaborador possui uma percepção de si mesmo muito alinhada com a equipe em <strong>Foco em Resultados</strong>, porém há um gap de percepção na área de <strong>Inteligência Emocional</strong>, onde o gestor e pares avaliaram com notas mais baixas.
+            </p>
+            <div className="mt-4 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+              <h5 className="text-xs font-bold text-indigo-800 uppercase mb-2">Plano de Ação Recomendado</h5>
+              <ul className="text-sm text-indigo-700 space-y-2">
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                  Realizar treinamento de feedback não-violento.
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                  Mentoria quinzenal focada em gestão de conflitos.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  
+  const renderInteligenciaEmocional = () => {
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <Brain className="w-4 h-4 text-violet-500" />
+            Inteligência Emocional
+          </h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+              <span className="block text-xs font-bold text-slate-500 uppercase mb-1">Autoconhecimento</span>
+              <span className="text-2xl font-black text-slate-800">82%</span>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+              <span className="block text-xs font-bold text-slate-500 uppercase mb-1">Autocontrole</span>
+              <span className="text-2xl font-black text-slate-800">75%</span>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+              <span className="block text-xs font-bold text-slate-500 uppercase mb-1">Automotivação</span>
+              <span className="text-2xl font-black text-slate-800">90%</span>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+              <span className="block text-xs font-bold text-slate-500 uppercase mb-1">Empatia</span>
+              <span className="text-2xl font-black text-slate-800">68%</span>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600 bg-violet-50 p-4 rounded-lg border border-violet-100 text-violet-800">
+            <strong>Resumo:</strong> O colaborador apresenta excelente nível de automotivação, lidando bem com metas desafiadoras. O ponto de desenvolvimento encontra-se na <strong>Empatia</strong>, podendo gerar atritos em interações com clientes mais sensíveis.
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+    const renderTesteConhecimento = () => {
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <GraduationCap className="w-4 h-4 text-sky-500" />
+            Teste de Conhecimento (Capacitação)
+          </h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div className="flex justify-between mb-2">
+                  <span className="font-bold text-slate-700">Planos e Serviços</span>
+                  <span className="font-black text-sky-600">95%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div className="bg-sky-500 h-2 rounded-full" style={{ width: '95%' }}></div>
+                </div>
+              </div>
+              
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div className="flex justify-between mb-2">
+                  <span className="font-bold text-slate-700">Técnicas de Vendas PAP</span>
+                  <span className="font-black text-sky-600">80%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div className="bg-sky-500 h-2 rounded-full" style={{ width: '80%' }}></div>
+                </div>
+              </div>
+              
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div className="flex justify-between mb-2">
+                  <span className="font-bold text-slate-700">Sistemas (App/CRM)</span>
+                  <span className="font-black text-rose-600">60%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div className="bg-rose-500 h-2 rounded-full" style={{ width: '60%' }}></div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-sky-50 p-6 rounded-xl border border-sky-100 flex flex-col justify-center">
+              <h4 className="font-bold text-sky-900 mb-2">Plano de Treinamento</h4>
+              <p className="text-sm text-sky-800 mb-4">
+                O colaborador apresenta domínio excepcional no portfólio de planos, mas necessita de reciclagem no uso do aplicativo de vendas.
+              </p>
+              <button className="self-start px-4 py-2 bg-sky-600 text-white font-bold rounded-lg text-sm shadow-sm hover:bg-sky-700">
+                Agendar Reciclagem CRM
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+    const renderBigFive = () => {
+    const oceanData = [
+      { name: "Abertura à Experiência", value: 75, color: "#3b82f6" },
+      { name: "Conscienciosidade", value: 85, color: "#10b981" },
+      { name: "Extroversão", value: 90, color: "#f59e0b" },
+      { name: "Amabilidade", value: 65, color: "#8b5cf6" },
+      { name: "Neuroticismo", value: 30, color: "#ef4444" },
+    ];
+
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col print:break-inside-avoid print:shadow-none print:border-slate-300">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <Activity className="w-4 h-4 text-indigo-500" />
+            Big Five (OCEAN)
+          </h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-5">
+              {oceanData.map((item, i) => (
+                <div key={i}>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-bold text-slate-700">{item.name}</span>
+                    <span className="text-sm font-bold text-slate-900">{item.value}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2.5">
+                    <div className="h-2.5 rounded-full" style={{ width: item.value + "%", backgroundColor: item.color }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="bg-indigo-50 p-5 rounded-xl border border-indigo-100">
+              <h4 className="font-bold text-indigo-900 mb-3">Análise de Personalidade</h4>
+              <p className="text-sm text-indigo-800">
+                Perfil altamente <strong>Extrovertido e Consciencioso</strong>, com baixo índice de Neuroticismo (alta estabilidade emocional). Excelente alinhamento para trabalho externo sob pressão (PAP). O nível mediano de Amabilidade o torna um bom negociador, não cedendo facilmente em descontos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
 
   return (
@@ -829,7 +1496,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
               </div>
 
               <div className="flex items-center gap-2 print:hidden">
-                {vendorTab !== "modulos" ? (
+                <button onClick={() => alert("Protocolo adicionado na fila de monitoramento!")} className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors"><ClipboardList className="w-4 h-4" /> Monitoramento</button>{vendorTab !== "modulos" ? (
                   <button
                     onClick={() => setVendorTab("modulos")}
                     className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors"
@@ -866,6 +1533,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {[
+                      { id: "roleplay", nome: "Role Play IA", icon: Bot, desc: "Simulador de Vendas", color: "text-blue-600", bg: "bg-blue-50" },
                       { id: "disc", nome: "DISC & Perfil Animal", icon: Target, desc: "Avaliação comportamental semestral", color: "text-indigo-600", bg: "bg-indigo-50" },
                       { id: "pdi", nome: "PDI", icon: FileText, desc: "Plano de desenvolvimento contínuo", color: "text-emerald-600", bg: "bg-emerald-50" },
                       { id: "competencias", nome: "Competências", icon: Target, desc: "Avaliação trimestral", color: "text-orange-500", bg: "bg-orange-50" },
@@ -898,7 +1566,8 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
               )}
 
               
-              {vendorTab === "dashboard" && (
+              {vendorTab === 'roleplay' && renderRolePlay()}
+                            {vendorTab === "dashboard" && (
                 <div className="space-y-6">
                   
                   <div className="flex justify-between items-center print:hidden mb-6">

@@ -4,7 +4,7 @@ import React from 'react';
 import GestaoPessoasPage from './src/components/GestaoPessoasPage';
 
 test('renders disc without crashing', () => {
-  const mockVendors = [{ id: "v1", nome: "Ana Paula Rodrigues" }];
+  const mockVendors = [{ id: "v1", nome: "Ana Paula Rodrigues", meta: 50000, currentSales: 20000, location: "SP", avatar: "a" }];
   const { getByText } = render(<GestaoPessoasPage vendors={mockVendors} loggedUser="Ana Paula Rodrigues" isAdmin={true} />);
   
   // Click the DISC module
