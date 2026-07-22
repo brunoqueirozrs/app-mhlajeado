@@ -3413,6 +3413,8 @@ app.post("/api/cobrancas", (req, res) => {
 });
 
 app.post("/api/cobrancas/disparar-n8n", async (req, res) => {
+  console.log("[DEBUG N8N] 🔴 RECEBIDO REQUISIÇÃO EM /api/cobrancas/disparar-n8n");
+  console.log("[DEBUG N8N] Payload:", JSON.stringify(req.body, null, 2));
   const { clientes } = req.body;
   if (!Array.isArray(clientes)) {
     return res.status(400).json({ status: "error", message: "Clientes deve ser um array" });
@@ -5026,6 +5028,8 @@ Crie uma mensagem muito curta (max 3 linhas) com uma dica de abordagem criativa 
 
 // N8N Competitors Webhook integration
 app.post("/api/n8n/webhook-competitors", async (req, res) => {
+  console.log("[DEBUG N8N] 🔴 RECEBIDO REQUISIÇÃO EM /api/n8n/webhook-competitors");
+  console.log("[DEBUG N8N] Payload:", JSON.stringify(req.body, null, 2));
   const payload = req.body;
   const isTest = process.env.USE_N8N_TEST_COMPETITORS === "true";
   let webhookUrl = isTest 
@@ -5073,6 +5077,8 @@ app.post("/api/n8n/webhook-competitors", async (req, res) => {
 
 // N8N Upgrade Webhook integration
 app.post("/api/n8n/webhook-upgrade", async (req, res) => {
+  console.log("[DEBUG N8N] 🔴 RECEBIDO REQUISIÇÃO EM /api/n8n/webhook-upgrade");
+  console.log("[DEBUG N8N] Payload:", JSON.stringify(req.body, null, 2));
   const payload = req.body;
   // If not configured, just return simulated success
   const isTest = process.env.USE_N8N_TEST_UPGRADE_BASE === "true";
@@ -5131,6 +5137,8 @@ app.post("/api/n8n/webhook-upgrade", async (req, res) => {
 // N8N Pos-Venda Webhook integration
 
 app.post("/api/n8n/webhook-vendas-sva", async (req, res) => {
+  console.log("[DEBUG N8N] 🔴 RECEBIDO REQUISIÇÃO EM /api/n8n/webhook-vendas-sva");
+  console.log("[DEBUG N8N] Payload:", JSON.stringify(req.body, null, 2));
   if (process.env.PAUSE_ALL_N8N_WEBHOOKS === "true" || process.env.PAUSE_VENDAS_SVA_JOB === "true") {
     return res.status(400).json({ error: "Disparo pausado pelas configurações do administrador." });
   }
@@ -5168,6 +5176,8 @@ app.post("/api/n8n/webhook-vendas-sva", async (req, res) => {
 });
 
 app.post("/api/n8n/webhook-indicacoes", async (req, res) => {
+  console.log("[DEBUG N8N] 🔴 RECEBIDO REQUISIÇÃO EM /api/n8n/webhook-indicacoes");
+  console.log("[DEBUG N8N] Payload:", JSON.stringify(req.body, null, 2));
   if (process.env.PAUSE_ALL_N8N_WEBHOOKS === "true" || process.env.PAUSE_INDICACOES_JOB === "true") {
     return res.status(400).json({ error: "Disparo pausado pelas configurações do administrador." });
   }
@@ -5205,6 +5215,8 @@ app.post("/api/n8n/webhook-indicacoes", async (req, res) => {
 });
 
 app.post("/api/n8n/webhook-pos-venda", async (req, res) => {
+  console.log("[DEBUG N8N] 🔴 RECEBIDO REQUISIÇÃO EM /api/n8n/webhook-pos-venda");
+  console.log("[DEBUG N8N] Payload:", JSON.stringify(req.body, null, 2));
   const payload = req.body;
   const isTest = process.env.USE_N8N_TEST_POS_VENDA === "true";
   let webhookUrl = isTest 

@@ -296,15 +296,31 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
     }
   };
 
-  const handlePrintReport = () => {
-    if (window.self !== window.top) {
-      alert("Para imprimir ou salvar em PDF, abra o sistema em uma nova guia clicando no ícone de 'Nova Guia' (canto superior direito do painel de preview).");
-    } else {
-      setTimeout(() => {
-        window.print();
-      }, 500);
+  const handlePrintPdf = async () => {
+    const element = document.getElementById("pdf-dashboard-content");
+    if (!element) return;
+    
+    setIsGeneratingPdf(true);
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const opt = {
+        margin:       10,
+        filename:     `relatorio_completo_${selectedVendor?.nome.replace(/\s+/g, '_') || 'colaborador'}.pdf`,
+        image:        { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+      };
+      
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+    } finally {
+      setIsGeneratingPdf(false);
     }
+
+  
   };
+
 
   const renderRolePlay = () => {
     if (!selectedVendor) return null;
@@ -1466,9 +1482,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                   ) : (
                     <h3 className="text-lg font-black text-slate-800">{selectedVendor.nome}</h3>
                   )}
-                  <h3 className="text-lg font-black text-slate-800 hidden print:block">
-                    {selectedVendor.nome} - Relatório Gerado em: {new Date().toLocaleDateString('pt-BR')}
-                  </h3>
+                  <h3 className="text-lg font-black text-slate-800 hidden print:block">{selectedVendor.nome}</h3>
                   
                   <div className="flex items-center gap-2 mt-1">
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
@@ -1482,12 +1496,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
               </div>
 
               <div className="flex items-center gap-2 print:hidden">
-                {isAdmin && (
-                  <button onClick={() => alert("Protocolo adicionado na fila de monitoramento!")} className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors">
-                    <ClipboardList className="w-4 h-4" /> Monitoramento
-                  </button>
-                )}
-                {vendorTab !== "modulos" ? (
+                <button onClick={() => alert("Protocolo adicionado na fila de monitoramento!")} className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors"><ClipboardList className="w-4 h-4" /> Monitoramento</button>{vendorTab !== "modulos" ? (
                   <button
                     onClick={() => setVendorTab("modulos")}
                     className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors"
@@ -1564,7 +1573,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                   <div className="flex justify-between items-center print:hidden mb-6">
                     <h3 className="text-xl font-black text-slate-800">Resumo Geral (Completo)</h3>
                     <button 
-                      onClick={handlePrintReport} 
+                      onClick={handlePrintPdf} 
                       disabled={isGeneratingPdf}
                       className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors"
                     >
@@ -1573,7 +1582,6 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                   </div>
 
                   <div id="pdf-dashboard-content" className="space-y-6 print:space-y-4">
-                    {renderRaiox()}
                     {renderDisc()}
                     {renderPdi()}
                     {renderCompetencias()}
@@ -1586,6 +1594,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                     {renderInteligenciaEmocional()}
                     {renderTesteConhecimento()}
                     {renderBigFive()}
+                    {renderRaiox()}
                   </div>
                 </div>
               )}

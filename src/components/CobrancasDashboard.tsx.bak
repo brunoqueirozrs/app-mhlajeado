@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { Download, FileText, ArrowLeft, Brain, TrendingUp, Users, Smartphone, Phone, CheckCircle, AlertTriangle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 // @ts-ignore
+import autoTable from "jspdf-autotable";
 
 interface CobrancasDashboardProps {
   cobrancas: Cobranca[];
@@ -97,11 +98,7 @@ export default function CobrancasDashboard({ cobrancas, onClose, onOpenDetails }
   };
 
   const exportToPDF = () => {
-    if (window.self !== window.top) {
-      alert("Para imprimir ou salvar em PDF, abra o sistema em uma nova guia clicando no ícone de 'Nova Guia' (canto superior direito do painel de preview).");
-    } else {
-      setTimeout(() => { window.print(); }, 500);
-    }
+    window.print();
   };
 
   const generateDiagnostic = async () => {
