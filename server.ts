@@ -751,7 +751,7 @@ const INITIAL_COMPETITORS_SERVER = [
     _linha: 103,
     name: "Oi Fibra",
     sigla: "OI",
-    cor: "#ea580c",
+    cor: "#0284c7",
     type: "Fibra Óptica",
     mhnet: "Temos suporte técnico no mesmo dia com equipe de instalação própria da região, sem precisar aguardar dias pelo agendamento ou depender de terceirizados de fora.",
     pros: ["Planos com preços baixos iniciais", "Ganha modems novos em planos altos"],
@@ -2072,7 +2072,7 @@ app.post("/api/env/n8n/restore", async (req, res) => {
 app.post("/api/env/n8n/toggle-all", async (req, res) => {
   const { isTest } = req.body;
   const strValue = isTest ? "true" : "false";
-  const keys = ['USE_N8N_TEST_AGENDAMENTO', 'USE_N8N_TEST_NEW_TASK', 'USE_N8N_TEST_OVERDUE_TASKS', 'USE_N8N_TEST_LEAD_INACTIVITY', 'USE_N8N_TEST_UPGRADE_BASE', 'USE_N8N_TEST_POS_VENDA', 'USE_N8N_TEST_COBRANCAS', 'USE_N8N_TEST_VENDAS_SVA', 'USE_N8N_TEST_INDICACOES', 'USE_N8N_TEST_COMPETITORS'];
+  const keys = ['USE_N8N_TEST_AGENDAMENTO', 'USE_N8N_TEST_NEW_TASK', 'USE_N8N_TEST_OVERDUE_TASKS', 'USE_N8N_TEST_LEAD_INACTIVITY', 'USE_N8N_TEST_UPGRADE_BASE', 'USE_N8N_TEST_POS_VENDA', 'USE_N8N_TEST_COBRANCAS', 'USE_N8N_TEST_VENDAS_SVA', 'USE_N8N_TEST_INDICACOES', 'USE_N8N_TEST_COMPETITORS', 'USE_N8N_TEST_ABSENCES', 'USE_N8N_TEST_ABSENCE_APPROVAL'];
   
   keys.forEach(key => {
     process.env[key] = strValue;
@@ -2120,7 +2120,7 @@ app.post("/api/env/n8n/update-url", async (req, res) => {
 app.post("/api/env/n8n/toggle", async (req, res) => {
   const { key, value } = req.body;
   
-  if (!key || !['USE_N8N_TEST_AGENDAMENTO', 'USE_N8N_TEST_NEW_TASK', 'USE_N8N_TEST_OVERDUE_TASKS', 'USE_N8N_TEST_LEAD_INACTIVITY', 'PAUSE_LEAD_INACTIVITY_JOB', 'USE_N8N_TEST_UPGRADE_BASE', 'PAUSE_ALL_N8N_WEBHOOKS', 'USE_N8N_TEST_POS_VENDA', 'PAUSE_AGENDAMENTO_JOB', 'PAUSE_NEW_TASK_JOB', 'PAUSE_OVERDUE_TASKS_JOB', 'PAUSE_UPGRADE_BASE_JOB', 'PAUSE_POS_VENDA_JOB', 'USE_N8N_TEST_COBRANCAS', 'PAUSE_COBRANCAS_JOB', 'USE_N8N_TEST_VENDAS_SVA', 'PAUSE_VENDAS_SVA_JOB', 'USE_N8N_TEST_INDICACOES', 'PAUSE_INDICACOES_JOB', 'USE_N8N_TEST_COMPETITORS', 'PAUSE_COMPETITORS_JOB'].includes(key)) {
+  if (!key || !['USE_N8N_TEST_AGENDAMENTO', 'USE_N8N_TEST_NEW_TASK', 'USE_N8N_TEST_OVERDUE_TASKS', 'USE_N8N_TEST_LEAD_INACTIVITY', 'PAUSE_LEAD_INACTIVITY_JOB', 'USE_N8N_TEST_UPGRADE_BASE', 'PAUSE_ALL_N8N_WEBHOOKS', 'USE_N8N_TEST_POS_VENDA', 'PAUSE_AGENDAMENTO_JOB', 'PAUSE_NEW_TASK_JOB', 'PAUSE_OVERDUE_TASKS_JOB', 'PAUSE_UPGRADE_BASE_JOB', 'PAUSE_POS_VENDA_JOB', 'USE_N8N_TEST_COBRANCAS', 'PAUSE_COBRANCAS_JOB', 'USE_N8N_TEST_VENDAS_SVA', 'PAUSE_VENDAS_SVA_JOB', 'USE_N8N_TEST_INDICACOES', 'PAUSE_INDICACOES_JOB', 'USE_N8N_TEST_COMPETITORS', 'PAUSE_COMPETITORS_JOB', 'USE_N8N_TEST_ABSENCES', 'PAUSE_ABSENCES_JOB', 'USE_N8N_TEST_ABSENCE_APPROVAL', 'PAUSE_ABSENCE_APPROVAL_JOB'].includes(key)) {
     return res.status(400).json({ error: "Invalid key." });
   }
 
@@ -2968,7 +2968,65 @@ app.delete("/api/tasks", (req, res) => {
 });
 
 // Absences Endpoints
-app.get("/api/absences", (req, res) => {
+
+let lastAbsencesSyncTime = 0;
+let isSyncingAbsences = false;
+
+async function syncAbsencesFromGoogleSheet() {
+  const now = Date.now();
+  if (now - lastAbsencesSyncTime < ONE_MINUTE && absences.length > INITIAL_ABSENCES.length) {
+    return;
+  }
+  if (isSyncingAbsences) return;
+
+  isSyncingAbsences = true;
+  try {
+    const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Acompanhamento de Faltas");
+    const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
+    const sheetsResponse = await fetch(url, { signal });
+    if (!sheetsResponse.ok) throw new Error("HTTP error " + sheetsResponse.status);
+    
+    const csvText = await sheetsResponse.text();
+    const rows = parseCSV(csvText);
+    
+    if (rows.length > 1) {
+      const headers = rows[0].map((h) => h.trim().toLowerCase());
+      const dateIdx = headers.findIndex(h => h.includes("data"));
+      const vendorIdx = headers.findIndex(h => h.includes("vendedor") || h.includes("nome"));
+      const motivoIdx = headers.findIndex(h => h.includes("motivo"));
+      const statusIdx = headers.findIndex(h => h.includes("status"));
+      const obsIdx = headers.findIndex(h => h.includes("obs"));
+      const linkIdx = headers.findIndex(h => h.includes("link") || h.includes("anexo"));
+      const idIdx = headers.findIndex(h => h.includes("id"));
+      
+      const newAbsences = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0 || !row.join("").trim()) continue;
+        newAbsences.push({
+          id: (idIdx !== -1 && row[idIdx]) ? row[idIdx] : String(i),
+          vendedor: (vendorIdx !== -1 && row[vendorIdx]) ? row[vendorIdx] : "Consultor",
+          dataFalta: (dateIdx !== -1 && row[dateIdx]) ? row[dateIdx] : "",
+          motivo: (motivoIdx !== -1 && row[motivoIdx]) ? row[motivoIdx] : "",
+          status: (statusIdx !== -1 && row[statusIdx]) ? row[statusIdx] : "Aguardando",
+          observacao: (obsIdx !== -1 && row[obsIdx]) ? row[obsIdx] : "",
+          link: (linkIdx !== -1 && row[linkIdx]) ? row[linkIdx] : ""
+        });
+      }
+      absences = newAbsences;
+      writeJSONDb("absences.json", absences);
+      lastAbsencesSyncTime = Date.now();
+    }
+  } catch (err) {
+    console.error("[SYNC] Erro ao sincronizar Faltas do Google Sheets:", err);
+  } finally {
+    isSyncingAbsences = false;
+  }
+}
+
+app.get("/api/absences", async (req, res) => {
+  await syncAbsencesFromGoogleSheet();
+
   res.json({ status: "success", absences });
 });
 
@@ -2986,8 +3044,25 @@ app.post("/api/absences", async (req, res) => {
   absences.push(newAbsence);
   writeJSONDb("absences.json", absences);
 
+
   // We will also use newAbsence for the email
   abs.id = newAbsence.id;
+
+  if (process.env.PAUSE_ALL_N8N_WEBHOOKS !== "true" && process.env.PAUSE_ABSENCES_JOB !== "true") {
+      const isTest = process.env.USE_N8N_TEST_ABSENCES === "true";
+      let webhookUrl = isTest 
+         ? (process.env.N8N_TEST_ABSENCES_WEBHOOK_URL || "https://n8n-url-placeholder/webhook-test/absences") 
+         : (process.env.N8N_ABSENCES_WEBHOOK_URL || "https://n8n-url-placeholder/webhook/absences");
+      
+      if (webhookUrl && webhookUrl !== "https://n8n-url-placeholder/webhook/absences" && webhookUrl !== "") {
+          fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(abs)
+          }).catch(e => console.error("[N8N] Webhook Absences failed:", e));
+      }
+  }
+
 
   let emailStatus = "simulated";
   let emailError = null;
@@ -3020,7 +3095,7 @@ app.post("/api/absences", async (req, res) => {
     const driveLinkHtml = abs.driveLink 
       ? `
         <div style="text-align: center; margin: 25px 0;">
-            <a href="${abs.driveLink}" style="display: inline-block; background-color: #ea580c; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-family: sans-serif;">Visualizar Comprovante no Drive</a>
+            <a href="${abs.driveLink}" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-family: sans-serif;">Visualizar Comprovante no Drive</a>
         </div>
         `
       : "";
@@ -3052,7 +3127,7 @@ app.post("/api/absences", async (req, res) => {
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         .header {
-            background-color: #ea580c;
+            background-color: #0284c7;
             padding: 24px 30px;
             color: #ffffff;
             text-align: center;
@@ -3072,7 +3147,7 @@ app.post("/api/absences", async (req, res) => {
         .info-block {
             background-color: #fafafa;
             border: 1px solid #e4e4e7;
-            border-left: 4px solid #ea580c;
+            border-left: 4px solid #0284c7;
             padding: 20px;
             margin-bottom: 24px;
             border-radius: 6px;
@@ -3090,12 +3165,12 @@ app.post("/api/absences", async (req, res) => {
             min-width: 140px;
         }
         .observation {
-            background-color: #fff7ed;
-            border: 1px solid #ffedd5;
+            background-color: #f0f9ff;
+            border: 1px solid #e0f2fe;
             padding: 16px;
             border-radius: 8px;
             margin-top: 10px;
-            color: #431407;
+            color: #0c4a6e;
             font-size: 14px;
             white-space: pre-wrap;
         }
@@ -3112,7 +3187,7 @@ app.post("/api/absences", async (req, res) => {
 <body>
     <div style="font-family: sans-serif; background-color: #f4f4f5; padding: 20px;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-            <div style="background-color: #ea580c; padding: 24px 30px; text-align: center;">
+            <div style="background-color: #0284c7; padding: 24px 30px; text-align: center;">
                 <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff;">Justificativa de Falta / Atraso</h1>
             </div>
             
@@ -3120,7 +3195,7 @@ app.post("/api/absences", async (req, res) => {
                 <p style="margin-top: 0;">Olá,</p>
                 <p>Uma nova solicitação foi registrada no <strong>Painel MHNET</strong>.</p>
                 
-                <div style="background-color: #fafafa; border: 1px solid #e4e4e7; border-left: 4px solid #ea580c; padding: 20px; margin: 24px 0; border-radius: 6px;">
+                <div style="background-color: #fafafa; border: 1px solid #e4e4e7; border-left: 4px solid #0284c7; padding: 20px; margin: 24px 0; border-radius: 6px;">
                     <div style="margin-bottom: 12px;">
                         <span style="font-weight: 600; color: #52525b; display: inline-block; min-width: 140px;">Colaborador:</span>
                         <span style="color: #18181b; font-weight: 500;">${abs.vendedor}</span>
@@ -3136,7 +3211,7 @@ app.post("/api/absences", async (req, res) => {
                 </div>
 
                 <h3 style="margin: 0 0 10px 0; color: #18181b; font-size: 16px;">Observação Adicional:</h3>
-                <div style="background-color: #fff7ed; border: 1px solid #ffedd5; padding: 16px; border-radius: 8px; color: #431407; font-size: 14px; white-space: pre-wrap;">${abs.observacao ? abs.observacao : "Nenhuma observação informada."}</div>
+                <div style="background-color: #f0f9ff; border: 1px solid #e0f2fe; padding: 16px; border-radius: 8px; color: #0c4a6e; font-size: 14px; white-space: pre-wrap;">${abs.observacao ? abs.observacao : "Nenhuma observação informada."}</div>
 
                 ${driveLinkHtml}
 
@@ -3179,6 +3254,31 @@ app.post("/api/absences", async (req, res) => {
   res.json({ status: "success", emailStatus, emailError });
 });
 
+
+function triggerApprovalWebhook(absence) {
+  if (process.env.PAUSE_ALL_N8N_WEBHOOKS === "true" || process.env.PAUSE_ABSENCE_APPROVAL_JOB === "true") return;
+  const isTest = process.env.USE_N8N_TEST_ABSENCE_APPROVAL === "true";
+  let webhookUrl = isTest 
+     ? (process.env.N8N_TEST_ABSENCE_APPROVAL_WEBHOOK_URL || "https://n8n-url-placeholder/webhook-test/absence-approval") 
+     : (process.env.N8N_ABSENCE_APPROVAL_WEBHOOK_URL || "https://n8n-url-placeholder/webhook/absence-approval");
+  
+  if (webhookUrl && webhookUrl !== "https://n8n-url-placeholder/webhook/absence-approval" && webhookUrl !== "") {
+      const payload = {
+          vendedor: absence.vendedor,
+          telefone: "", // N8N will look this up, or add it later
+          mensagem: "Seu atestado/comprovante referente sua ausencia/falta foi devidamente encaminhado ao RH",
+          dataFalta: absence.dataFalta,
+          motivo: absence.motivo,
+          id: absence.id
+      };
+      fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+      }).catch(e => console.error("[N8N] Webhook Absence Approval failed:", e));
+  }
+}
+
 app.patch("/api/absences/:id", (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -3186,6 +3286,9 @@ app.patch("/api/absences/:id", (req, res) => {
   if (idx !== -1) {
     absences[idx].status = status;
     writeJSONDb("absences.json", absences);
+    if (status === "Aprovado" || status.toLowerCase() === "aprovado") {
+      triggerApprovalWebhook(absences[idx]);
+    }
     res.json({ status: "success", absence: absences[idx] });
   } else {
     res.status(404).json({ status: "error", message: "Absence not found" });
@@ -3201,6 +3304,9 @@ app.get("/api/absences/action", (req, res) => {
   if (idx !== -1) {
     absences[idx].status = action === "approve" ? "Aprovado" : "Rejeitado";
     writeJSONDb("absences.json", absences);
+    if (action === "approve") {
+      triggerApprovalWebhook(absences[idx]);
+    }
     
     // Simple HTML response
     res.send(`
@@ -4119,7 +4225,7 @@ app.post("/api/competitors/generate-ai-profile", async (req, res) => {
 Gere informações precisas, realistas e úteis no formato JSON com a seguinte estrutura:
 {
   "sigla": "2 letras maiúsculas identificadoras do concorrente",
-  "cor": "um código de cor HEX representativo associado à marca do concorrente (ex: #1565c0, #ea580c, #dc2626, #10b981)",
+  "cor": "um código de cor HEX representativo associado à marca do concorrente (ex: #1565c0, #0284c7, #dc2626, #10b981)",
   "type": "tipo de tecnologia principal ex: Fibra Óptica, Via Rádio, Híbrido / Coaxial",
   "mhnet": "Argumento matador detalhado de como a MHNET supera este concorrente específico no campo (com nosso atendimento local presencial, suporte rápido em até 24h, sem aumento abusivo após promoção)",
   "pros": ["ponto forte realista 1", "ponto forte realista 2", "ponto forte realista 3"],

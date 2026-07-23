@@ -275,6 +275,16 @@ export function AdminN8NPage() {
                   id: "10", title: "10. Concorrentes",
                   url: "N8N_COMPETITORS_WEBHOOK_URL", testUrl: "N8N_TEST_COMPETITORS_WEBHOOK_URL",
                   useTest: "USE_N8N_TEST_COMPETITORS", pause: "PAUSE_COMPETITORS_JOB", type: "concorrentes"
+                },
+                {
+                  id: "11", title: "11. Faltas (Envio)",
+                  url: "N8N_ABSENCES_WEBHOOK_URL", testUrl: "N8N_TEST_ABSENCES_WEBHOOK_URL",
+                  useTest: "USE_N8N_TEST_ABSENCES", pause: "PAUSE_ABSENCES_JOB", type: "absences"
+                },
+                {
+                  id: "12", title: "12. Faltas (Aprovação WhatsApp)",
+                  url: "N8N_ABSENCE_APPROVAL_WEBHOOK_URL", testUrl: "N8N_TEST_ABSENCE_APPROVAL_WEBHOOK_URL",
+                  useTest: "USE_N8N_TEST_ABSENCE_APPROVAL", pause: "PAUSE_ABSENCE_APPROVAL_JOB", type: "absence_approval"
                 }
               ].map(block => (
                 <div key={block.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50">

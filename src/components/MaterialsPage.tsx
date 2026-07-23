@@ -12,6 +12,7 @@ interface MaterialsPageProps {
 
 export default function MaterialsPage({ onBackToDashboard }: MaterialsPageProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const FOLDER_ID = "1p8rV9dAs9t98fGyl7W3m244_-I37JTeg";
 
   const handleSearch = (e: React.FormEvent) => {
@@ -97,16 +98,19 @@ export default function MaterialsPage({ onBackToDashboard }: MaterialsPageProps)
 
           <div className="flex-1 relative bg-slate-50 flex flex-col">
             {/* Iframe Loading Placeholder */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 z-0">
-               <div className="w-10 h-10 border-[3px] border-slate-200 border-t-sky-500 rounded-full animate-spin"></div>
-               <p className="text-[11px] font-bold text-slate-400 mt-4 uppercase tracking-wider">Carregando visualização...</p>
-            </div>
+            {isLoading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 z-0">
+                 <div className="w-10 h-10 border-[3px] border-slate-200 border-t-sky-500 rounded-full animate-spin"></div>
+                 <p className="text-[11px] font-bold text-slate-400 mt-4 uppercase tracking-wider">Carregando visualização...</p>
+              </div>
+            )}
             
             <iframe 
               src={`https://drive.google.com/embeddedfolderview?id=${FOLDER_ID}#grid`} 
-              className="absolute inset-0 z-10 w-full h-full border-0 bg-transparent" 
+              className={`absolute inset-0 z-10 w-full h-full border-0 transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100 bg-white'}`} 
               allow="autoplay"
               title="Google Drive Folder"
+              onLoad={() => setIsLoading(false)}
             ></iframe>
           </div>
         </div>

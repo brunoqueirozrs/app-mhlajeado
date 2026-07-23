@@ -711,62 +711,7 @@ export default function App() {
   ): Promise<string> => {
     let driveLink = "";
 
-    // Upload to Google Drive if file is present
-    if (fileData && fileName) {
-      let token = await getAccessToken();
-      if (!token) {
-        // Prompt login explicitly
-        try {
-          const result = await googleSignIn();
-          token = result?.accessToken || null;
-        } catch (e) {
-          console.warn("Pop-up do Google bloqueado ou fechado", e);
-        }
-      }
-
-      if (token) {
-        // Google Drive upload multipart form
-        const boundary = 'foo_bar_baz_' + Date.now();
-        const delimiter = "\r\n--" + boundary + "\r\n";
-        const close_delim = "\r\n--" + boundary + "--";
-
-        // Convert dataURL to base64 only
-        const base64Data = fileData.split(',')[1] || fileData;
-
-        const metadata = {
-          name: fileName,
-          mimeType: mimeType || 'application/octet-stream'
-        };
-
-        const multipartRequestBody =
-          delimiter +
-          'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-          JSON.stringify(metadata) +
-          delimiter +
-          'Content-Type: ' + (mimeType || 'application/octet-stream') + '\r\n' +
-          'Content-Transfer-Encoding: base64\r\n\r\n' +
-          base64Data +
-          close_delim;
-
-        const respUpload = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'multipart/related; boundary=' + boundary,
-          },
-          body: multipartRequestBody
-        });
-
-        if (respUpload.ok) {
-           const driveData = await respUpload.json();
-           // Optional: Also fetch the file to get WebViewLink or just use ID
-           driveLink = "https://drive.google.com/file/d/" + driveData.id;
-        } else {
-           console.warn("Google Drive upload failed:", await respUpload.text());
-        }
-      }
-    }
-
+    // We bypass client-side Google Drive upload and let backend/N8N handle the file data directly
     const payload = {
       vendedor: loggedUser,
       dataFalta,
@@ -1485,6 +1430,7 @@ export default function App() {
           <AbsencesPage
             absences={absences}
             isAdmin={userRole === "admin"}
+            loggedUser={loggedUser!}
             onRegisterAbsence={handleRegisterAbsence}
             onUpdateAbsence={handleUpdateAbsence} />
         );

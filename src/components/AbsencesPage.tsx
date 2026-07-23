@@ -12,13 +12,15 @@ interface AbsencesPageProps {
   onRegisterAbsence: (date: string, motivo: string, obs: string, fileData?: string, fileName?: string, mimeType?: string) => Promise<string>;
   onUpdateAbsence?: (id: string, status: string) => Promise<void>;
   isAdmin: boolean;
+  loggedUser: string;
 }
 
 export default function AbsencesPage({
   absences,
   onRegisterAbsence,
   onUpdateAbsence,
-  isAdmin
+  isAdmin,
+  loggedUser
 }: AbsencesPageProps) {
   const [absenceDate, setAbsenceDate] = useState("");
   const [absenceMotivo, setAbsenceMotivo] = useState("");
@@ -81,6 +83,8 @@ export default function AbsencesPage({
         return "bg-amber-50 text-amber-700 border-amber-250";
     }
   };
+
+  const visibleAbsences = isAdmin ? absences : absences.filter(a => a.vendedor === loggedUser);
 
   return (
     <div id="absences-viewport" className="space-y-6">
@@ -178,7 +182,7 @@ export default function AbsencesPage({
           className="w-full py-3 bg-sky-900 override-bg-sky-900 hover:bg-sky-950 text-white rounded-xl text-xs font-bold leading-none disabled:opacity-40 transition active:scale-98 flex items-center justify-center gap-2 cursor-pointer shadow"
         >
           <Send className="w-3.5 h-3.5" />
-          {submitting ? "Transmitindo Justificativa..." : "ENVIAR SOLICITAÇÃO AO RH"}
+          {submitting ? "Transmitindo Justificativa..." : "ENVIAR AO GESTOR"}
         </button>
         <p className="text-[9px] text-slate-400 text-center uppercase tracking-wide leading-none mt-1">Um e-mail é disparado ao gestor de forma automatizada.</p>
       </form>
@@ -191,8 +195,8 @@ export default function AbsencesPage({
         </h3>
 
         <div className="space-y-2 pb-10">
-          {absences.length > 0 ? (
-            absences.map((abs, idx) => (
+          {visibleAbsences.length > 0 ? (
+            visibleAbsences.map((abs, idx) => (
               <div key={idx} className="card-modern border border-slate-100 rounded-xl p-3.5 space-y-1.5 shadow-sm">
                 <div className="flex justify-between items-start gap-4">
                   <div className="font-extrabold text-xs text-slate-800">{abs.motivo}</div>
