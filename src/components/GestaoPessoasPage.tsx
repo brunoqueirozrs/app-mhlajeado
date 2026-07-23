@@ -75,6 +75,12 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSavingSync, setIsSavingSync] = useState(false);
   const [syncSuccessMsg, setSyncSuccessMsg] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
+
+  const showInfoMsg = (msg: string) => {
+    setInfoMsg(msg);
+    setTimeout(() => setInfoMsg(null), 5000);
+  };
 
   const showSyncSuccess = (msg: string) => {
     setSyncSuccessMsg(msg);
@@ -438,7 +444,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
 
   const handlePrintReport = () => {
     if (window.self !== window.top) {
-      alert("Para imprimir ou salvar em PDF, abra o sistema em uma nova guia clicando no ícone de 'Nova Guia' (canto superior direito do painel de preview).");
+      showInfoMsg("⚠️ Para imprimir em PDF, abra o sistema em uma nova guia clicando no ícone no canto superior direito do preview.");
     } else {
       setTimeout(() => {
         window.print();
@@ -1764,6 +1770,12 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                 <div className="fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 z-50 animate-fade-in">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-sm font-bold">Sincronizando com Firestore...</span>
+                </div>
+              )}
+              {infoMsg && (
+                <div className="fixed bottom-4 right-4 bg-amber-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 z-50 animate-fade-in max-w-sm">
+                  <AlertCircle className="w-6 h-6 shrink-0" />
+                  <span className="text-sm font-bold">{infoMsg}</span>
                 </div>
               )}
               {syncSuccessMsg && (
