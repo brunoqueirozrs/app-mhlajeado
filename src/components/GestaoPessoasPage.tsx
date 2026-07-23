@@ -79,7 +79,14 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
 
 
   // If not admin, the user can only see their own profile.
-  const loggedVendor = vendors.find(v => v.nome === loggedUser);
+  let loggedVendor = vendors.find(v => v.nome === loggedUser);
+  if (!isAdmin && !loggedVendor) {
+    loggedVendor = {
+      id: "usr_" + loggedUser.replace(/\s+/g, '_').toLowerCase(),
+      nome: loggedUser,
+      meta: 0
+    };
+  }
   const effectiveVendorId = isAdmin ? selectedVendorId : loggedVendor?.id;
   const selectedVendor = isAdmin ? (vendors.find(v => v.id === selectedVendorId) || vendors[0]) : loggedVendor;
 
@@ -140,30 +147,42 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
       const updated = [...perfilComerciais];
       updated[existingIndex] = newRecord;
       setIsSavingSync(true);
-      await Promise.all(updated.map(pc => setDoc(doc(db, 'perfil_comerciais', pc.id), pc)));
-      await addDoc(collection(db, 'test_results'), {
-        vendorId: selectedVendor.id,
-        vendorName: selectedVendor.nome,
-        type: 'perfil_comercial',
-        date: new Date().toISOString(),
-        summary: 'Perfil Comercial atualizado',
-        details: updated
-      });
-      setIsSavingSync(false);
-      showSyncSuccess('Perfil Comercial salvo com sucesso!');
+      try {
+        await Promise.all(updated.map(pc => setDoc(doc(db, 'perfil_comerciais', pc.id), pc)));
+        await addDoc(collection(db, 'test_results'), {
+          vendorId: selectedVendor.id,
+          vendorName: selectedVendor.nome,
+          type: 'perfil_comercial',
+          date: new Date().toISOString(),
+          summary: 'Perfil Comercial Atualizado',
+          details: updated
+        });
+        showSyncSuccess('Perfil Comercial salvo com sucesso!');
+      } catch(e) {
+        console.error(e);
+        alert("Erro ao salvar Perfil Comercial");
+      } finally {
+        setIsSavingSync(false);
+      }
     } else {
       setIsSavingSync(true);
-      await setDoc(doc(db, 'perfil_comerciais', newRecord.id), newRecord);
-      await addDoc(collection(db, 'test_results'), {
-        vendorId: selectedVendor.id,
-        vendorName: selectedVendor.nome,
-        type: 'perfil_comercial',
-        date: new Date().toISOString(),
-        summary: 'Novo Perfil Comercial',
-        details: newRecord
-      });
-      setIsSavingSync(false);
-      showSyncSuccess('Perfil Comercial salvo com sucesso!');
+      try {
+        await setDoc(doc(db, 'perfil_comerciais', newRecord.id), newRecord);
+        await addDoc(collection(db, 'test_results'), {
+          vendorId: selectedVendor.id,
+          vendorName: selectedVendor.nome,
+          type: 'perfil_comercial',
+          date: new Date().toISOString(),
+          summary: 'Novo Perfil Comercial',
+          details: newRecord
+        });
+        showSyncSuccess('Perfil Comercial salvo com sucesso!');
+      } catch(e) {
+        console.error(e);
+        alert("Erro ao salvar Perfil Comercial");
+      } finally {
+        setIsSavingSync(false);
+      }
     }
     setIsEditingPerfilComercial(false);
   };
@@ -188,17 +207,23 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
         competencias: newCompetencias
       };
       setIsSavingSync(true);
-      await Promise.all(updated.map(c => setDoc(doc(db, 'competencias', c.id), c)));
-      await addDoc(collection(db, 'test_results'), {
-        vendorId: selectedVendor.id,
-        vendorName: selectedVendor.nome,
-        type: 'competencias',
-        date: new Date().toISOString(),
-        summary: 'Avaliação de Competências atualizada',
-        details: updated
-      });
-      setIsSavingSync(false);
-      showSyncSuccess('Competências salvas com sucesso!');
+      try {
+        await Promise.all(updated.map(c => setDoc(doc(db, 'competencias', c.id), c)));
+        await addDoc(collection(db, 'test_results'), {
+          vendorId: selectedVendor.id,
+          vendorName: selectedVendor.nome,
+          type: 'competencias',
+          date: new Date().toISOString(),
+          summary: 'Competências Atualizadas',
+          details: updated
+        });
+        showSyncSuccess('Competências salvas com sucesso!');
+      } catch(e) {
+        console.error(e);
+        alert("Erro ao salvar Competências");
+      } finally {
+        setIsSavingSync(false);
+      }
     } else {
       
     const newComp: CompetenciaAvaliacao = {
@@ -209,17 +234,23 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
         competencias: newCompetencias
       };
     setIsSavingSync(true);
-    await setDoc(doc(db, 'competencias', newComp.id), newComp);
-    await addDoc(collection(db, 'test_results'), {
-      vendorId: selectedVendor.id,
-      vendorName: selectedVendor.nome,
-      type: 'competencias',
-      date: new Date().toISOString(),
-      summary: 'Nova Avaliação de Competências',
-      details: newComp
-    });
-    setIsSavingSync(false);
-    showSyncSuccess('Competências salvas com sucesso!');
+    try {
+      await setDoc(doc(db, 'competencias', newComp.id), newComp);
+      await addDoc(collection(db, 'test_results'), {
+        vendorId: selectedVendor.id,
+        vendorName: selectedVendor.nome,
+        type: 'competencias',
+        date: new Date().toISOString(),
+        summary: 'Novas Competências',
+        details: newComp
+      });
+      showSyncSuccess('Competências salvas com sucesso!');
+    } catch(e) {
+      console.error(e);
+      alert("Erro ao salvar Competências");
+    } finally {
+      setIsSavingSync(false);
+    }
     }
     
     setIsTakingCompetenciasTest(false);
@@ -293,18 +324,24 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
     };
 
     setIsSavingSync(true);
-    await setDoc(doc(db, 'disc_results', newRes.id), newRes);
-    await addDoc(collection(db, 'test_results'), {
-      vendorId: selectedVendor.id,
-      vendorName: selectedVendor.nome,
-      type: 'disc',
-      date: new Date().toISOString(),
-      summary: `Perfil: ${newRes.perfilAnimal}`,
-      details: newRes
-    });
-    setIsSavingSync(false);
-    showSyncSuccess('Teste DISC salvo com sucesso!');
-    setIsTakingTest(false);
+    try {
+      await setDoc(doc(db, 'disc_results', newRes.id), newRes);
+      await addDoc(collection(db, 'test_results'), {
+        vendorId: selectedVendor.id,
+        vendorName: selectedVendor.nome,
+        type: 'disc',
+        date: new Date().toISOString(),
+        summary: `Perfil: ${newRes.perfilAnimal}`,
+        details: newRes
+      });
+      showSyncSuccess('Teste DISC salvo com sucesso!');
+      setIsTakingTest(false);
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao salvar teste DISC.");
+    } finally {
+      setIsSavingSync(false);
+    }
   };
 
   const handleSavePdi = async () => {
@@ -382,17 +419,23 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
           recomendacoesPdi: ""
         };
         setIsSavingSync(true);
-        await setDoc(doc(db, 'raioxes', newRx.id), newRx);
-        await addDoc(collection(db, 'test_results'), {
-          vendorId: selectedVendor.id,
-          vendorName: selectedVendor.nome,
-          type: 'raiox',
-          date: new Date().toISOString(),
-          summary: 'Análise de Raio-X com IA concluída',
-          details: newRx
-        });
-        setIsSavingSync(false);
-        showSyncSuccess('Raio-X salvo com sucesso!');
+        try {
+          await setDoc(doc(db, 'raioxes', newRx.id), newRx);
+          await addDoc(collection(db, 'test_results'), {
+            vendorId: selectedVendor.id,
+            vendorName: selectedVendor.nome,
+            type: 'raiox',
+            date: new Date().toISOString(),
+            summary: 'Novo Raio-X Gerado',
+            details: newRx
+          });
+          showSyncSuccess('Raio-X salvo com sucesso!');
+        } catch(e) {
+          console.error(e);
+          alert("Erro ao salvar Raio-X");
+        } finally {
+          setIsSavingSync(false);
+        }
       }
     } catch (e) {
       console.error("Erro ao gerar Raio-X", e);
@@ -782,12 +825,14 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                               <span className="text-sm font-bold text-slate-700">Predição da IA (via conversas Coach)</span>
                             </div>
                             
-                            <div className="mt-8 p-4 bg-orange-50 rounded-xl border border-orange-100">
-                              <h4 className="text-sm font-bold text-orange-800 mb-2">Análise de Gap</h4>
-                              <p className="text-sm text-orange-700">
-                                A autoavaliação em <strong>Fechamento</strong> é maior que a percepção do Gestor e da IA. Recomenda-se alinhar expectativas e aplicar Role-play para calibrar a visão de performance em campo.
-                              </p>
-                            </div>
+                            <AIParecerBlock 
+                              title="Análise de Gap"
+                              message={
+                                <>
+                                  A autoavaliação em <strong>Fechamento</strong> é maior que a percepção do Gestor e da IA. Recomenda-se alinhar expectativas e aplicar Role-play para calibrar a visão de performance em campo.
+                                </>
+                              }
+                            />
                           </div>
                         </div>
                       ) : (
@@ -877,6 +922,13 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                               </ul>
                             </div>
                           </div>
+                          <AIParecerBlock 
+                            message={
+                              <>
+                                Com base nos dados de conversão e pontos fortes, o vendedor demonstra alta resiliência, porém as áreas de melhoria apontam gargalos no contorno de objeções de preço. Recomenda-se acompanhamento prático focado em técnicas de ancoragem.
+                              </>
+                            }
+                          />
                         </div>
                       ) : (
                         <div className="p-12 flex flex-col items-center justify-center text-center">
@@ -1140,6 +1192,14 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                     : "Baixa aderência. O esforço comportamental exigido em campo pode gerar desgaste rápido. Recomenda-se alinhamento de expectativas ou considerar realocação para Inside Sales."}
                </p>
             </div>
+            
+            <AIParecerBlock 
+              message={
+                <>
+                  Com base na análise do Fit de Cargo e perfil comportamental, o Agente IA indica que o desempenho natural está {fitPercentage > 75 ? "fortemente alinhado" : "parcialmente alinhado"} com as exigências da posição. Sugere-se acompanhar de perto a evolução nas áreas de maior discrepância.
+                </>
+              }
+            />
           </div>
         </div>
       </div>
@@ -1220,6 +1280,14 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
               <p className="text-xs text-emerald-600 mt-4 font-medium">Alto potencial para assumir supervisão.</p>
             </div>
           </div>
+          
+          <AIParecerBlock 
+            message={
+              <>
+                O cruzamento do Flight Risk (baixo) com o High Potential (alto) aponta para um talento-chave (Top Performer). O Agente IA recomenda que este colaborador seja incluído imediatamente em programas de liderança (pipeline de sucessão) para garantir sua retenção a longo prazo.
+              </>
+            }
+          />
         </div>
       </div>
     );
@@ -1268,6 +1336,14 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
               </div>
             </div>
           </div>
+          
+          <AIParecerBlock 
+            message={
+              <>
+                A avaliação de Clima indica uma fortíssima confiança na Liderança Direta, mas o gargalo em <strong>Ferramentas de Trabalho</strong> está gerando insatisfação. O Agente IA recomenda que o gestor atue como facilitador para prover infraestrutura básica (ex: smartphone, materiais) de imediato.
+              </>
+            }
+          />
         </div>
       </div>
     );
@@ -1323,6 +1399,14 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                </p>
             </div>
           </div>
+          
+          <AIParecerBlock 
+            message={
+              <>
+                A queda no indicador de carga correlaciona-se com a recente expansão de raio de atuação. O Agente IA sugere otimização do roteiro de visitas e revisão das metas da sprint atual para evitar risco iminente de burnout.
+              </>
+            }
+          />
         </div>
       </div>
     );
@@ -1380,6 +1464,14 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                 </li>
               </ul>
             </div>
+            
+            <AIParecerBlock 
+              message={
+                <>
+                  O Agente IA identificou que a assimetria na <strong>Inteligência Emocional</strong> pode ser a causa raiz da fricção relatada na última sprint. Recomendamos priorizar este ponto no próximo ciclo de PDI para evitar impactos no clima do time.
+                </>
+              }
+            />
           </div>
         </div>
       </div>
@@ -1418,6 +1510,14 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
           <p className="text-sm text-slate-600 bg-violet-50 p-4 rounded-lg border border-violet-100 text-violet-800">
             <strong>Resumo:</strong> O colaborador apresenta excelente nível de automotivação, lidando bem com metas desafiadoras. O ponto de desenvolvimento encontra-se na <strong>Empatia</strong>, podendo gerar atritos em interações com clientes mais sensíveis.
           </p>
+          
+          <AIParecerBlock 
+            message={
+              <>
+                Notamos um perfil de alta tração (Automotivação), que pode ocasionalmente atropelar a comunicação com o cliente (Empatia 68%). O Agente IA recomenda atividades práticas de escuta ativa para balancear o fechamento agressivo com a compreensão da dor do lead.
+              </>
+            }
+          />
         </div>
       </div>
     );
@@ -1476,6 +1576,14 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
               </button>
             </div>
           </div>
+          
+          <AIParecerBlock 
+            message={
+              <>
+                A fluência técnica sobre o produto é excelente (95%), garantindo autoridade nas vendas. No entanto, o gargalo em sistemas (60%) sugere que a lentidão na emissão do contrato pode estar esfriando vendas no fechamento. Recomendamos treinamento prático no app.
+              </>
+            }
+          />
         </div>
       </div>
     );
@@ -1518,6 +1626,14 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                 Perfil altamente <strong>Extrovertido e Consciencioso</strong>, com baixo índice de Neuroticismo (alta estabilidade emocional). Excelente alinhamento para trabalho externo sob pressão (PAP). O nível mediano de Amabilidade o torna um bom negociador, não cedendo facilmente em descontos.
               </p>
             </div>
+            
+            <AIParecerBlock 
+              message={
+                <>
+                  Os traços do Big Five corroboram a forte adequação comercial. A alta conscienciosidade garante disciplina na rota, enquanto o baixo neuroticismo confere blindagem contra a rejeição (um fator chave em porta-a-porta). Este é um perfil âncora para expansão.
+                </>
+              }
+            />
           </div>
         </div>
       </div>
