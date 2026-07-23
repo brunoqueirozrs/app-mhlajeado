@@ -9,6 +9,7 @@ import { DISC_QUESTIONS } from '../data/discQuestions';
 import CompetenciasQuestionnaire from './CompetenciasQuestionnaire';
 import PerfilComercialForm from './PerfilComercialForm';
 import RolePlayIA from './RolePlayIA';
+import { AIParecerBlock } from './AIParecerBlock';
 
 
 interface GestaoPessoasPageProps {
@@ -45,6 +46,18 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
       setPerfilComerciais(snapshot.docs.map(doc => doc.data() as PerfilComercial));
     });
 
+    // Simulando um tempo de carregamento para garantir que os dados do Firebase chegaram
+    // Na prática, onSnapshot dispara imediatamente com o cache ou os dados da rede
+    setTimeout(() => {
+      console.log("=== DEBUG RH ===");
+      console.log("Vendedores carregados da API:", vendors);
+      console.log("Usuário logado:", loggedUser);
+      console.log("É Admin?", isAdmin);
+      console.log("selectedVendor final:", selectedVendor);
+      console.log("loggedVendor:", loggedVendor);
+      setIsLoadingData(false);
+    }, 1500);
+
     return () => {
       unsubDisc();
       unsubPdi();
@@ -59,6 +72,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
   const [isTakingCompetenciasTest, setIsTakingCompetenciasTest] = useState(false);
   const [isEditingPerfilComercial, setIsEditingPerfilComercial] = useState(false);
   const [isGeneratingRaiox, setIsGeneratingRaiox] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSavingSync, setIsSavingSync] = useState(false);
   const [syncSuccessMsg, setSyncSuccessMsg] = useState<string | null>(null);
 
@@ -101,29 +115,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
     }
   }, [isAdmin, vendors, loggedUser, selectedVendorId]);
 
-  useEffect(() => {
-    // Popula mocks iniciais se vazio
-    if (vendors.length > 0 && discResults.length === 0) {
-      setDiscResults(vendors.map((v, i) => ({
-        id: `disc_${i}`, vendorId: v.id, data: new Date().toISOString(),
-        d: 20 + (i * 5) % 80, i: 30 + (i * 7) % 70, s: 15 + (i * 3) % 85, c: 25 + (i * 11) % 75, perfilPrimario: "I", perfilSecundario: "D", perfilAnimal: "Águia"
-      })));
-      setPdis(vendors.map((v, i) => ({
-        id: `pdi_${i}`, vendorId: v.id, competencia: "Fechamento de Vendas",
-        situacaoAtual: 3, meta: "Chegar na taxa de conversão de 15%", acaoCombinada: "Role-play 1x por semana com o coordenador",
-        prazo: "2024-12-31", status: "em_andamento", dataCriacao: new Date().toISOString(), dataAtualizacao: new Date().toISOString()
-      })));
-      setCompetencias([]);
-      setPerfilComerciais(vendors.map((v, i) => ({
-        id: `pc_${i}`, vendorId: v.id, data: new Date().toISOString(),
-        gargaloPrincipal: "Conversão na etapa de Quebra de Objeções",
-        taxaConversaoMedia: 8.5,
-        ticketMedio: 120,
-        pontosFortesCampo: ["Abertura carismática", "Conhecimento técnico do plano"],
-        areasMelhoriaCampo: ["Contorno de objeção sobre preço", "Urgência de fechamento"]
-      })));
-    }
-  }, [vendors]);
+
 
   const vendorDisc = selectedVendor ? discResults.find(d => d.vendorId === selectedVendor.id) : null;
   const vendorPdis = selectedVendor ? pdis.filter(p => p.vendorId === selectedVendor.id) : [];
@@ -724,7 +716,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                             <h4 className="text-lg font-bold text-slate-700">Sem metas ativas</h4>
                           </div>
                         ) : (
-                          vendorPdis.map(pdi => (
+                          (vendorPdis || []).map(pdi => (
                             <div key={pdi.id} className="border border-slate-200 rounded-xl p-4 flex flex-col gap-3 relative">
                               <div className="flex justify-between items-start">
                                 <div>
@@ -794,7 +786,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                           <div className="h-80 w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                              <RadarChart cx="50%" cy="50%" outerRadius="75%" data={vendorCompetencias.competencias}>
+                              <RadarChart cx="50%" cy="50%" outerRadius="75%" data={vendorCompetencias?.competencias || []}>
                                 <PolarGrid />
                                 <PolarAngleAxis dataKey="nome" tick={{fill: '#475569', fontSize: 10, fontWeight: 'bold'}} />
                                 <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
@@ -899,7 +891,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                                 Pontos Fortes (Atendimento)
                               </h4>
                               <ul className="space-y-3">
-                                {vendorPerfilComercial.pontosFortesCampo.map((p, i) => (
+                                {(vendorPerfilComercial.pontosFortesCampo || []).map((p, i) => (
                                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
                                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                                      {p}
@@ -913,7 +905,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
                                 Áreas de Melhoria (Atendimento)
                               </h4>
                               <ul className="space-y-3">
-                                {vendorPerfilComercial.areasMelhoriaCampo.map((p, i) => (
+                                {(vendorPerfilComercial.areasMelhoriaCampo || []).map((p, i) => (
                                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
                                      <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
                                      {p}
@@ -1062,7 +1054,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
               <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
                 <Brain className="w-5 h-5 text-rose-500" /> Análise Qualitativa da IA
               </h4>
-              {vendorRaiox.map(rx => (
+              {(vendorRaiox || []).map(rx => (
                 <div key={rx.id} className="border border-slate-200 rounded-xl p-5 relative overflow-hidden bg-white shadow-sm">
                   <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
                   <div className="prose prose-sm prose-slate max-w-none prose-headings:font-black prose-h2:text-indigo-900 prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3 prose-p:text-slate-700 prose-li:text-slate-700 prose-strong:text-slate-900 prose-ul:my-2">
@@ -1643,6 +1635,15 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
 
   return (
     <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-6 print:p-0 print:m-0 print:max-w-none">
+      {isLoadingData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-xl border border-slate-100">
+            <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+            <h3 className="text-lg font-bold text-slate-800">Carregando dados do RH...</h3>
+            <p className="text-sm text-slate-500">Sincronizando com Firebase</p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
@@ -1674,11 +1675,11 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
               </div>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-800">Colaborador: {selectedVendor.nome}</h2>
+                  <h2 className="text-xl font-bold text-slate-800">Colaborador: {selectedVendor?.nome || "Sem Nome"}</h2>
                   <p className="text-slate-600 mt-1">Cargo: Consultor Comercial (PAP) | Status: Ativo</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xl">
-                  {selectedVendor.nome.substring(0, 2).toUpperCase()}
+                  {(selectedVendor?.nome || "US").substring(0, 2).toUpperCase()}
                 </div>
               </div>
             </div>
@@ -1687,7 +1688,7 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-6 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-black text-xl">
-                  {selectedVendor.nome.substring(0, 2).toUpperCase()}
+                  {(selectedVendor?.nome || "US").substring(0, 2).toUpperCase()}
                 </div>
                 
                 <div className="flex flex-col">

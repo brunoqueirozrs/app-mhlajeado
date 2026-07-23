@@ -1,12 +1,10 @@
 const fs = require('fs');
 let code = fs.readFileSync('src/components/GestaoPessoasPage.tsx', 'utf8');
 
-const regex = /const handlePrintPdf = async \(\) => \{[\s\S]*?\}\s*?\};\s*const renderRolePlay/m;
-const replacement = `const handlePrintPdf = () => {
-    window.print();
-  };
+if (!code.includes("import AIParecerBlock from './AIParecerBlock';")) {
+  code = code.replace("import RolePlayIA from './RolePlayIA';", "import RolePlayIA from './RolePlayIA';\nimport AIParecerBlock from './AIParecerBlock';");
+}
 
-  const renderRolePlay`;
+code = code.replace(/\{extendedVendors\.map/g, '{vendors.map');
 
-code = code.replace(regex, replacement);
 fs.writeFileSync('src/components/GestaoPessoasPage.tsx', code);
