@@ -230,7 +230,7 @@ async function safeGenerateContent(options: any): Promise<{ text: string }> {
   // Try Gemini
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents,
       config: {
         systemInstruction,
@@ -239,6 +239,7 @@ async function safeGenerateContent(options: any): Promise<{ text: string }> {
     });
     return { text: response.text || "" };
   } catch (err: any) {
+    console.log("[IA] Erro original do Gemini:", err.message);
     console.log("[IA] Alternando para modelos de fallback devido a limites de cota/rede.");
     
     // Prepare OpenAI-compatible messages array
@@ -298,10 +299,7 @@ async function safeGenerateContent(options: any): Promise<{ text: string }> {
     const openRouterKey = "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";
     try {
       const orModels = [
-        "openrouter/free",
-        "google/gemma-4-31b-it:free",
-        "meta-llama/llama-3.3-70b-instruct:free",
-        "google/gemma-4-26b-a4b-it:free"
+        "openrouter/auto", "google/gemma-2-9b-it:free", "mistralai/mistral-7b-instruct:free", "meta-llama/llama-3-8b-instruct:free"
       ];
       for (const orModel of orModels) {
         console.log(`[IA] Tentando fallback com OpenRouter (${orModel})...`);
@@ -2575,7 +2573,7 @@ Objeção do cliente inserida pelo vendedor: "${input}"`;
     if (!ai) throw new Error("AI Client not initialized");
 
     const result = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
     
@@ -3532,7 +3530,7 @@ Orientações:
 - Máximo de 7 linhas.`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -3612,7 +3610,7 @@ app.post("/api/gemini/combatObjection", async (req, res) => {
 Gere uma contramedida persuasiva e empática em até 4 linhas para desarmar a objeção e reatar a negociação.`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -3658,7 +3656,7 @@ Por favor, faça uma análise sintética, com viés acionável e focada em resul
 Seja direto, profissional, e formate sua resposta em Markdown. Sem textão.`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -3704,7 +3702,7 @@ Um texto pronto, amigável (tom gaúcho da região, sem exageros), focado em que
 Responda de forma direta. Formatação em Markdown. Sem textão introdutório.`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -3748,7 +3746,7 @@ Orientações:
 - Máximo 8 linhas, use emojis (😊, 🚀, 📶, 💙).`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -3777,7 +3775,7 @@ app.post("/api/gemini/coach", async (req, res) => {
   try {
     const prompt = "Dê uma frase motivacional curta, poderosa e inspiradora para um vendedor de internet no porta a porta de campo hoje. Máximo 2 linhas.";
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -3809,7 +3807,7 @@ Tom: [Emoção predominante - ex: Receptivo, Frustrado, Irritado, Desinteressado
 Ação Sugerida: [Uma linha curta de conselho].`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
     return res.json({ status: "success", text: response.text });
@@ -3831,7 +3829,7 @@ Gere EXATAMENTE 3 opções curtas de resposta para o vendedor PAP da MHNET usar 
 ]`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
@@ -3864,7 +3862,7 @@ Linha 2: "Último contato foi sobre [Assunto]."
 Linha 3: "Sugerimos abordagem com foco em [Ação/Argumento]."`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
     return res.json({ status: "success", text: response.text });
@@ -3901,7 +3899,7 @@ A mensagem deve:
 Não seja longo demais.`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
     return res.json({ status: "success", text: response.text });
@@ -3951,7 +3949,7 @@ Formato OBRIGATÓRIO de saída é APENAS UM ARRAY JSON com 3 objetos, nada mais,
 `;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
 
@@ -4007,7 +4005,7 @@ app.post("/api/gemini/chat", async (req, res) => {
     }
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: chatContents,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -4050,7 +4048,7 @@ app.post("/api/gemini/analyzeCompetitor", async (req, res) => {
       : `Crie um argumento de vendas/comparativo matador contra o concorrente ${name}. Cite 2 desvantagens típicas dele (como suporte lento de callcenter e taxas ocultas) e 2 vantagens da MHNET (suporte no mesmo dia e técnicos locais). Máximo 5 linhas.`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -4130,7 +4128,7 @@ Gere informações precisas, realistas e úteis no formato JSON com a seguinte e
 IMPORTANTE: Retorne APENAS o objeto JSON puro e válido, sem formatações de markdown como \`\`\`json ou explicações externas. Garanta que todas as aspas estejam escapadas corretamente e que seja um JSON perfeitamente parseável.`;
   try {
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -4261,7 +4259,7 @@ Escreva uma análise direta contendo:
 Foque no atendimento presencial local MHNET Fibra!`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -4549,7 +4547,7 @@ Responda usando formatação Markdown. Seja persuasivo, encorajador e forneça e
 `;
 
     const result = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
     
@@ -4612,7 +4610,7 @@ app.post("/api/gemini/generateRouteBriefing", async (req, res) => {
     }`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: MHNET_CONTEXT,
@@ -4705,7 +4703,7 @@ app.post("/api/agente/consulta", async (req, res) => {
 
     try {
       const response = await safeGenerateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.0-flash",
         contents: sessao.historico,
         config: {
           systemInstruction: SYSTEM_PROMPT_ESTRATEGICO,
@@ -4956,7 +4954,7 @@ Interesse/Plano: ${lead.planoAtual || 'Desconhecido'}
 Observação: ${lead.observacao || 'Nenhuma'}
 Crie uma mensagem muito curta (max 3 linhas) com uma dica de abordagem criativa para o vendedor (${lead.vendedor}) reativar/fechar esta venda.`;
             const result = await safeGenerateContent({
-               model: "gemini-2.5-flash",
+               model: "gemini-2.0-flash",
                contents: prompt,
             });
             if (result.text) iaMessage = result.text.trim();
@@ -5326,7 +5324,7 @@ async function syncInternalProtocolsFromGoogleSheet() {
           const row = rows[i];
           if (!row[0] && !row[1] && !row[2]) continue;
           
-          const id = row[4] || ('fallback-' + i + '-' + (row[0] || '').replace(/[^a-zA-Z0-9]/g, ''));
+          const id = row[4] || ('fallback-' + (row[0] || '').replace(/[^a-zA-Z0-9]/g, '') + '-' + (row[2] || '').replace(/[^a-zA-Z0-9]/g, ''));
           const localItem = internalProtocols.find(p => p.id === id) || ({} as any);
 
           queue.push({
@@ -5511,14 +5509,16 @@ async function syncInstallationQueueFromGoogleSheet() {
           const row = rows[i];
           if (!row[0] && !row[2] && !row[3]) continue;
           
+          const id = row[6] || ('fallback-' + (row[3] || '').replace(/[^a-zA-Z0-9]/g, '') + '-' + (row[2] || '').replace(/[^a-zA-Z0-9]/g, ''));
+          const localItem = localInstallationQueue.find(p => p.id === id) || ({} as any);
           queue.push({
-            dataAdicao: row[0] || "",
-            status: row[1] || "Pendente",
-            cliente: row[2] || "-",
-            protocolo: row[3] || "-",
-            vendedor: row[4] || "-",
-            observacoes: row[5] || "-",
-            id: row[6] || Date.now().toString() + Math.random().toString(36).substr(2, 5)
+            dataAdicao: row[0] || localItem.dataAdicao || "",
+            status: row[1] || localItem.status || "Pendente",
+            cliente: row[2] || localItem.cliente || "-",
+            protocolo: row[3] || localItem.protocolo || "-",
+            vendedor: row[4] || localItem.vendedor || "-",
+            observacoes: row[5] || localItem.observacoes || "-",
+            id: id
           });
         }
       }
@@ -5527,6 +5527,14 @@ async function syncInstallationQueueFromGoogleSheet() {
       const notInGas = localInstallationQueue.filter(q => !existingIds.has(q.id));
       
       localInstallationQueue = [...notInGas, ...queue.reverse()];
+      
+      // Deduplicate by ID
+      const seen = new Set();
+      localInstallationQueue = localInstallationQueue.filter(p => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      });
       writeJSONDb("installationsQueue.json", localInstallationQueue);
       
       lastInstallationQueueSyncTime = Date.now();
@@ -5747,7 +5755,7 @@ Plano de ação focado para o colaborador:
 `;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction,
@@ -5784,7 +5792,7 @@ Com base nisso, escreva um diagnóstico gerencial de no MÁXIMO 3 parágrafos co
 Seja direto, profissional e focado em resultados. Não use saudações, vá direto ao ponto.`;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: "Você é um gestor financeiro sênior especializado em ISP local.",
@@ -5820,7 +5828,7 @@ app.post("/api/ai/roleplay/chat", async (req, res) => {
     }));
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: formattedMessages,
       config: {
         systemInstruction: `Atue como cliente no roleplay. Responda de forma curta (máx 3 frases), natural, como alguém falando no portão de casa. 
@@ -5868,7 +5876,7 @@ app.post("/api/ai/roleplay/evaluate", async (req, res) => {
     `;
 
     const response = await safeGenerateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         systemInstruction: "Você é um treinador sênior de vendas PAP (Porta a Porta). Avalie com rigor e precisão, focado na conversão e nas técnicas de vendas.",

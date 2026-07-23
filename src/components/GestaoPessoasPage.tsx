@@ -1730,11 +1730,6 @@ export default function GestaoPessoasPage({ vendors, loggedUser, isAdmin }: Gest
               </div>
 
               <div className="flex items-center gap-2 print:hidden">
-                {isAdmin && (
-                  <button onClick={() => alert("Protocolo adicionado na fila de monitoramento!")} className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl shadow-sm flex items-center gap-2 transition-colors">
-                    <ClipboardList className="w-4 h-4" /> Monitoramento
-                  </button>
-                )}
                 {vendorTab !== "modulos" ? (
                   <button
                     onClick={() => setVendorTab("modulos")}

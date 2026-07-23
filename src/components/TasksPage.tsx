@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { CheckSquare, Trash2, Calendar, LayoutGrid, List, Smile, GripVertical } from "lucide-react";
+import { CheckSquare, Trash2, Calendar, LayoutGrid, List, Smile, GripVertical, Plus, X } from "lucide-react";
 import { Task } from "../types";
 import ConfirmModal from "./ConfirmModal";
 
@@ -256,9 +256,17 @@ export default function TasksPage({
           </button>
           <button 
             onClick={() => setIsAdding(!isAdding)}
-            className="p-1.5 px-3 bg-sky-900 text-white rounded-lg hover:bg-sky-950 flex items-center justify-center font-bold text-xs transition"
+            className={`px-4 py-1.5 rounded-lg flex items-center justify-center font-extrabold text-[11px] uppercase tracking-wider transition-all shadow-md active:scale-95 ${
+              isAdding 
+                ? "bg-slate-200 text-slate-700 hover:bg-slate-300" 
+                : "bg-gradient-to-r from-sky-600 to-sky-500 text-white hover:from-sky-500 hover:to-sky-400 shadow-sky-900/30 ring-1 ring-sky-400/50"
+            }`}
           >
-            {isAdding ? "Fechar" : "➕ Nova"}
+            {isAdding ? (
+              <><X className="w-3.5 h-3.5 mr-1" /> Cancelar</>
+            ) : (
+              <><Plus className="w-3.5 h-3.5 mr-1" /> Nova Tarefa</>
+            )}
           </button>
         </div>
       </div>

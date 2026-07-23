@@ -17,6 +17,7 @@ interface KaizenItem {
 }
 
 interface Props {
+  onBackToDashboard?: () => void;
   loggedUser: string;
 }
 

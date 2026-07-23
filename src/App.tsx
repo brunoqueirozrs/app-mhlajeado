@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Terminal, 
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Terminal, Database, CheckCircle, 
   Bot, Wifi, WifiOff, RefreshCw, LogOut, Loader2, Award, ClipboardList, 
   MapPin, Users, HelpCircle, Activity, Info, CalendarDays, BookOpen, User, Lock, Sparkles, Coins, Download, Sliders, Link, Calculator, Lightbulb, UserCheck, Store, FileSpreadsheet, Zap
 , Archive, Search, X, FileText, Sun, Moon } from 'lucide-react';
@@ -41,7 +42,9 @@ import { AdminN8NPage } from "./components/AdminN8NPage";
 import AdminLogsPage from "./components/AdminLogsPage";
 import AdminTestResultsPage from "./components/AdminTestResultsPage";
 import GestaoPessoasPage from "./components/GestaoPessoasPage";
+import DatabaseCentralPage from "./components/DatabaseCentralPage";
 import CalculoMultaPage from "./components/CalculoMultaPage";
+import KaizenPage from "./components/KaizenPage";
 import PosVendaPage from "./components/PosVendaPage";
 import MatrizObjecoesPage from "./components/MatrizObjecoesPage";
 import TradePage from "./components/TradePage";
@@ -84,6 +87,7 @@ export default function App() {
 
   // Global Syncing state
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
@@ -102,7 +106,7 @@ export default function App() {
 
   // Navigation Trackings
   const [activeTab, setActiveTab] = useState<
-    "dashboard" | "leads" | "cadastroLead" | "ftta" | "tasks" | "indicators" | "base" | "competitors" | "objections" | "absences" | "materials" | "cobrancas" | "vendedores" | "installations" | "installations_queue" | "admin_n8n" | "calculo_multa" | "planos" | "rotas" | "estrategia" | "kaizen" | "pos_venda" | "matriz_objecoes" | "trade" | "leads_frios" | "protocolos_internos" | "admin_logs" | "admin_tests" | "gestao_pessoas"
+    "dashboard" | "leads" | "cadastroLead" | "ftta" | "tasks" | "indicators" | "base" | "competitors" | "objections" | "absences" | "materials" | "cobrancas" | "vendedores" | "installations" | "installations_queue" | "admin_n8n" | "calculo_multa" | "planos" | "rotas" | "estrategia" | "kaizen" | "pos_venda" | "matriz_objecoes" | "trade" | "leads_frios" | "protocolos_internos" | "admin_logs" | "admin_tests" | "gestao_pessoas" | "database_central"
   >("dashboard");
   const [leadsFilterSeller, setLeadsFilterSeller] = useState<string | null>(null);
   const [isExternalPartnerMode, setIsExternalPartnerMode] = useState(false);
@@ -235,6 +239,19 @@ export default function App() {
   }, []);
 
 
+
+  useEffect(() => {
+    console.log("[App.tsx] activeTab changed:", activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    console.log("[App.tsx] userRole changed:", userRole);
+  }, [userRole]);
+
+  useEffect(() => {
+    console.log("[App.tsx] loggedUser changed:", loggedUser);
+  }, [loggedUser]);
+
   // Monitor online network connectivity
   useEffect(() => {
     const goOnline = () => setIsOnline(true);
@@ -351,6 +368,7 @@ export default function App() {
     } finally {
       setLoading(false);
       setIsSyncing(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -1354,6 +1372,8 @@ export default function App() {
         return <AdminLogsPage />;
       case "admin_tests":
         return <AdminTestResultsPage />;
+      case "database_central":
+        return <DatabaseCentralPage />;
       case "gestao_pessoas":
         return <GestaoPessoasPage vendors={registeredVendors} loggedUser={loggedUser!} isAdmin={userRole === "admin"} />;
       case "leads":
@@ -1476,6 +1496,8 @@ export default function App() {
         return <TradePage loggedUser={loggedUser!} isAdmin={userRole === "admin"} />;
       case "leads_frios":
         return <LeadsFriosTab isAdmin={userRole === "admin"} vendors={availableVendors} loggedUser={loggedUser!} />;
+      case "kaizen":
+        return <KaizenPage loggedUser={loggedUser!} onBackToDashboard={() => setActiveTab("dashboard")} />;
       case "estrategia":
         return (
           <EstrategiaPage loggedUser={loggedUser} />
@@ -1743,15 +1765,27 @@ export default function App() {
                   <Link className="w-4 h-4 shrink-0 text-white" />
                   <span>Integrações N8N</span>
                 </button>
-                <button onClick={() => setActiveTab("admin_tests")}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
-                    activeTab === "admin_tests" 
-                      ? "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold shadow-md shadow-indigo-900/20" 
-                      : "text-white hover:bg-slate-900"
-                  }`}>
-                  <FileText className="w-4 h-4 shrink-0 text-white" />
-                  <span>Testes & Avaliações</span>
-                </button>
+                
+              <button onClick={() => setActiveTab("admin_tests")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  activeTab === "admin_tests" 
+                    ? "bg-rose-600 text-white font-bold shadow-md shadow-rose-950" 
+                    : "text-white hover:bg-slate-900"
+                }`}>
+                <CheckCircle className="w-4 h-4 shrink-0 text-white" />
+                <span>Históricos de Testes</span>
+              </button>
+
+              <button onClick={() => setActiveTab("database_central")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  activeTab === "database_central" 
+                    ? "bg-rose-600 text-white font-bold shadow-md shadow-rose-950" 
+                    : "text-white hover:bg-slate-900"
+                }`}>
+                <Database className="w-4 h-4 shrink-0 text-white" />
+                <span>Base dados</span>
+              </button>
+
                 <button onClick={() => setActiveTab("admin_logs")}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                     activeTab === "admin_logs" 
@@ -2064,13 +2098,15 @@ export default function App() {
             )}
           </div>
 
-          {loading && leads.length === 0 ? (
+          {isInitialLoad ? (
             <div className="flex flex-col items-center justify-center py-24 text-slate-400 text-xs font-sans space-y-4">
               <Loader2 className="w-8 h-8 text-sky-600 animate-spin" />
               <p className="font-bold uppercase tracking-wider text-[10px] text-slate-500">Sincronizando Leads via Google Sheets...</p>
             </div>
           ) : (
-            renderActivePage()
+            <ErrorBoundary>
+              {renderActivePage()}
+            </ErrorBoundary>
           )}
         </main>
 
