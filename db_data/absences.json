@@ -1,0 +1,173 @@
+[
+  {
+    "id": "1",
+    "vendedor": "Consultor",
+    "dataFalta": "23/03/2026",
+    "motivo": "CONSULTA MÉDICA",
+    "status": "ENVIADO",
+    "observacao": "Consulta",
+    "link": "https://drive.google.com/file/d/1IGAe1VjTpNO2GLSl0AQtW60N4KgwkLeD/view?usp=drivesdk"
+  },
+  {
+    "id": "2",
+    "vendedor": "Consultor",
+    "dataFalta": "23/03/2026",
+    "motivo": "CONSULTA MÉDICA",
+    "status": "ENVIADO",
+    "observacao": "Consulta",
+    "link": "https://drive.google.com/file/d/1AYdt8mASClOtZ2L1pWOwFXSFwNzNMael/view?usp=drivesdk"
+  },
+  {
+    "id": "3",
+    "vendedor": "Consultor",
+    "dataFalta": "23/03/2026",
+    "motivo": "CONSULTA MÉDICA",
+    "status": "ENVIADO",
+    "observacao": "Consulta",
+    "link": "https://drive.google.com/file/d/1S1pDCGbN1Jw3ULbimgscVfjYmJMTkT-i/view?usp=drivesdk"
+  },
+  {
+    "id": "4",
+    "vendedor": "Consultor",
+    "dataFalta": "23/03/2026",
+    "motivo": "CONSULTA MÉDICA",
+    "status": "ENVIADO",
+    "observacao": "Consulta",
+    "link": "https://drive.google.com/file/d/1zXoCwoQrZa-Bz1QTvFY-R7a8UZmhBfo5/view?usp=drivesdk"
+  },
+  {
+    "id": "5",
+    "vendedor": "Consultor",
+    "dataFalta": "24/03/2026",
+    "motivo": "CONSULTA MÉDICA",
+    "status": "ENVIADO",
+    "observacao": "irei na consulta",
+    "link": ""
+  },
+  {
+    "id": "6",
+    "vendedor": "Consultor",
+    "dataFalta": "26/03/2026",
+    "motivo": "SOLICITAÇÃO DE SAIDA EMERGENCIA",
+    "status": "ENVIADO",
+    "observacao": "teste",
+    "link": "https://drive.google.com/file/d/1yal4iZJwRtDci-jOvoJJdcGVMYFs75N0/view?usp=drivesdk"
+  },
+  {
+    "id": "7",
+    "vendedor": "Consultor",
+    "dataFalta": "26/03/2026",
+    "motivo": "AJUSTE DE PONTO",
+    "status": "ENVIADO",
+    "observacao": "Teste",
+    "link": ""
+  },
+  {
+    "id": "8",
+    "vendedor": "Consultor",
+    "dataFalta": "26/03/2026",
+    "motivo": "SOLICITAÇÃO DE SAIDA EMERGENCIA",
+    "status": "ENVIADO",
+    "observacao": "Indo no despachante Marina ao lado da Rodoviária",
+    "link": ""
+  },
+  {
+    "id": "9",
+    "vendedor": "Consultor",
+    "dataFalta": "ENVIADO",
+    "motivo": "2026-03-28",
+    "status": "Aguardando",
+    "observacao": "Precisei ir com urgência",
+    "link": "CONSULTA MÉDICA"
+  },
+  {
+    "id": "10",
+    "vendedor": "Consultor",
+    "dataFalta": "02/04/2026",
+    "motivo": "OUTROS",
+    "status": "ENVIADO",
+    "observacao": "Sai na parte da tarde para uma consulta com uma Tricologista",
+    "link": ""
+  },
+  {
+    "id": "11",
+    "vendedor": "Consultor",
+    "dataFalta": "13/04/2026",
+    "motivo": "SOLICITAÇÃO DE SAIDA EMERGENCIA",
+    "status": "ENVIADO",
+    "observacao": "Colaboradora teve que sair, pois não estava se sentindo bem.",
+    "link": ""
+  },
+  {
+    "id": "12",
+    "vendedor": "Consultor",
+    "dataFalta": "13/04/2026",
+    "motivo": "ENCAMINHAMENTO DE ATESTADO",
+    "status": "ENVIADO",
+    "observacao": "UPA",
+    "link": "https://drive.google.com/file/d/1SNlEuGWirDu2DFw6rY1206YBJCv9ybLu/view?usp=drivesdk"
+  },
+  {
+    "id": "13",
+    "vendedor": "Consultor",
+    "dataFalta": "22/04/2026",
+    "motivo": "SOLICITAÇÃO DE SAIDA EMERGENCIA",
+    "status": "ENVIADO",
+    "observacao": "Motivos pessoais",
+    "link": ""
+  },
+  {
+    "id": "14",
+    "vendedor": "Consultor",
+    "dataFalta": "07/05/2026",
+    "motivo": "ENCAMINHAMENTO DE ATESTADO",
+    "status": "ENVIADO",
+    "observacao": "Dia 7/05 e 8/05",
+    "link": ""
+  },
+  {
+    "id": "15",
+    "vendedor": "Consultor",
+    "dataFalta": "07/05/2026",
+    "motivo": "ENCAMINHAMENTO DE ATESTADO",
+    "status": "ENVIADO",
+    "observacao": "7/05 e 8/05",
+    "link": "https://drive.google.com/file/d/1zJo5CjUr-N1pcQZJphdPWjeRD73hNOSt/view?usp=drivesdk"
+  },
+  {
+    "id": "16",
+    "vendedor": "Consultor",
+    "dataFalta": "2026-07-25",
+    "motivo": "Teste Sheets Append",
+    "status": "Aprovado",
+    "observacao": "",
+    "link": "https://drive.google.com/file/d/1L-EMWjYVYVO-qMMKQvVRRmPkNnhqeJdT/view?usp=drivesdk"
+  },
+  {
+    "id": "1784918560007mu0k7",
+    "vendedor": "Ana Paula Rodrigues",
+    "dataFalta": "2026-07-24",
+    "motivo": "Teste Final OAuth Ana",
+    "status": "Aguardando",
+    "observacao": "",
+    "link": "https://drive.google.com/file/d/1WZoFE7BIw-ZlCnzInFFq9sSe5oBK_pKy/view?usp=drivesdk"
+  },
+  {
+    "id": "17849197998717iruh",
+    "vendedor": "Bruno Teste",
+    "dataFalta": "2026-07-24",
+    "motivo": "Teste Aprovação",
+    "status": "Aguardando",
+    "observacao": "",
+    "link": "https://drive.google.com/file/d/1px8S3bBQ6tzix8OVDEFjUPDs6XgG2Ctu/view?usp=drivesdk"
+  },
+  {
+    "id": "1784919935611iwf3z",
+    "vendedor": "Bruno Sheet Test",
+    "dataFalta": "2026-07-25",
+    "motivo": "Teste Sheets Append",
+    "status": "Aprovado",
+    "observacao": "",
+    "link": "https://drive.google.com/file/d/1L-EMWjYVYVO-qMMKQvVRRmPkNnhqeJdT/view?usp=drivesdk"
+  }
+]
