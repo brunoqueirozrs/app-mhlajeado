@@ -2994,7 +2994,7 @@ async function syncAbsencesFromGoogleSheet() {
     if (rows.length > 1) {
       const headers = rows[0].map((h) => h.trim().toLowerCase());
       const dateIdx = headers.findIndex(h => h.includes("data"));
-      const vendorIdx = headers.findIndex(h => h.includes("vendedor") || h.includes("nome") || h.includes("colaborador"));
+      const vendorIdx = headers.findIndex(h => h.includes("vendedor") || h.includes("nome"));
       const motivoIdx = headers.findIndex(h => h.includes("motivo"));
       const statusIdx = headers.findIndex(h => h.includes("status"));
       const obsIdx = headers.findIndex(h => h.includes("obs"));
@@ -3074,7 +3074,7 @@ app.get("/api/drive/callback", async (req, res) => {
   );
   
   try {
-    const { tokens } = await oauth2Client.getToken(code as string);
+    const { tokens } = await oauth2Client.getToken(code);
     res.send(`
       <div style="font-family: sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
         <h2 style="color: #0284c7;">Autenticação concluída com sucesso!</h2>
@@ -3089,90 +3089,6 @@ app.get("/api/drive/callback", async (req, res) => {
   }
 });
 
-
-async function appendAbsenceToSheet(absence) {
-  try {
-    const { google } = await import("googleapis");
-    const auth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
-    );
-    auth.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-    const sheets = google.sheets({ version: 'v4', auth });
-    
-    const spreadsheetId = '19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w';
-    
-    // A: Carimbo, B: Colaborador, C: Motivo, D: Link Anexo, E: Obs, F: Data Ocorrência, G: Status, H: ID Local
-    const values = [
-      [
-        new Date().toLocaleString('pt-BR'), 
-        absence.vendedor, 
-        absence.motivo, 
-        absence.link || absence.driveLink || "", 
-        absence.observacao, 
-        absence.dataFalta, 
-        absence.status,
-        absence.id // We append the ID to column H so we can find it later!
-      ]
-    ];
-    
-    await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: 'Acompanhamento de Faltas!A:H',
-      valueInputOption: 'USER_ENTERED',
-      requestBody: { values }
-    });
-    console.log("[SHEETS] Appended absence to sheet");
-  } catch (e) {
-    console.error("[SHEETS] Failed to append absence:", e.message);
-  }
-}
-
-async function updateAbsenceStatusInSheet(absenceId, newStatus) {
-  try {
-    const { google } = await import("googleapis");
-    const auth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
-    );
-    auth.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-    const sheets = google.sheets({ version: 'v4', auth });
-    const spreadsheetId = '19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w';
-    
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: 'Acompanhamento de Faltas!A:H',
-    });
-    const rows = res.data.values;
-    
-    let rowIndex = -1;
-    // We will find by ID in column H (index 7), or if missing, try to match by data.
-    // Row 1 is header, so rows[0] is header.
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
-      // If it has our ID in col H
-      if (r[7] === absenceId || String(i) === absenceId) {
-        rowIndex = i + 1; // API rows are 1-indexed
-        break;
-      }
-    }
-    
-    if (rowIndex !== -1) {
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `Acompanhamento de Faltas!G${rowIndex}`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values: [[newStatus]] }
-      });
-      console.log(`[SHEETS] Updated absence status at row ${rowIndex}`);
-    } else {
-      console.log(`[SHEETS] Could not find row for absence ${absenceId} to update status`);
-    }
-  } catch (e) {
-    console.error("[SHEETS] Failed to update absence status:", e.message);
-  }
-}
-
 app.post("/api/absences", async (req, res) => {
   const abs = req.body;
   const newAbsence = {
@@ -3182,7 +3098,7 @@ app.post("/api/absences", async (req, res) => {
     motivo: abs.motivo || "Falta Particular",
     status: "Aguardando",
     observacao: abs.observacao || "",
-    link: (abs.driveLink || abs.link) || ""
+    link: abs.driveLink || ""
   };
   absences.push(newAbsence);
   writeJSONDb("absences.json", absences);
@@ -3197,8 +3113,7 @@ app.post("/api/absences", async (req, res) => {
 
 
 
-
-  let uploadedDriveLink = (abs.driveLink || abs.link) || "";
+  let uploadedDriveLink = abs.driveLink || "";
   if (abs.fileData && abs.fileName && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN) {
     try {
       const { google } = await import("googleapis");
@@ -3279,45 +3194,8 @@ app.post("/api/absences", async (req, res) => {
       console.error("[DRIVE] Failed to upload using OAuth2:", e.message);
     }
   }
-  
-  // Append to Google Sheets now that we have the drive link
-  const finalAbsence = absences.find(a => a.id === newAbsence.id) || newAbsence;
-  await appendAbsenceToSheet(finalAbsence);
 
 
-
-
-
-  res.json({ status: "success" });
-});
-
-
-function triggerApprovalWebhook(absence) {
-  if (process.env.PAUSE_ALL_N8N_WEBHOOKS === "true" || process.env.PAUSE_ABSENCE_APPROVAL_JOB === "true") return;
-  const isTest = process.env.USE_N8N_TEST_ABSENCE_APPROVAL === "true";
-  let webhookUrl = isTest 
-     ? (process.env.N8N_TEST_ABSENCE_APPROVAL_WEBHOOK_URL || "https://n8n-url-placeholder/webhook-test/absence-approval") 
-     : (process.env.N8N_ABSENCE_APPROVAL_WEBHOOK_URL || "https://n8n-url-placeholder/webhook/absence-approval");
-  
-  if (webhookUrl && webhookUrl !== "https://n8n-url-placeholder/webhook/absence-approval" && webhookUrl !== "") {
-      const payload = {
-          vendedor: absence.vendedor,
-          telefone: "", // N8N will look this up, or add it later
-          mensagem: "Seu atestado/comprovante referente sua ausencia/falta foi devidamente encaminhado ao RH",
-          dataFalta: absence.dataFalta,
-          motivo: absence.motivo,
-          id: absence.id
-      };
-      fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-      }).catch(e => console.error("[N8N] Webhook Absence Approval failed:", e));
-  }
-}
-
-
-async function sendAbsenceEmail(abs: any) {
   let emailStatus = "simulated";
   let emailError = null;
 
@@ -3346,10 +3224,10 @@ async function sendAbsenceEmail(abs: any) {
        });
     }
 
-    const driveLinkHtml = (abs.driveLink || abs.link) 
+    const driveLinkHtml = abs.driveLink 
       ? `
         <div style="text-align: center; margin: 25px 0;">
-            <a href="${(abs.driveLink || abs.link)}" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-family: sans-serif;">Visualizar Comprovante no Drive</a>
+            <a href="${abs.driveLink}" style="display: inline-block; background-color: #0284c7; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-family: sans-serif;">Visualizar Comprovante no Drive</a>
         </div>
         `
       : "";
@@ -3469,7 +3347,11 @@ async function sendAbsenceEmail(abs: any) {
 
                 ${driveLinkHtml}
 
-
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
+                    <h3 style="margin: 0 0 15px 0; color: #18181b; font-size: 16px;">Ação de Gerência</h3>
+                    <a href="https://${req.get("host")}/api/absences/action?id=${newAbsence.id}&action=approve" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; font-family: sans-serif; margin-right: 10px;">Aprovar Falta</a>
+                    <a href="https://${req.get("host")}/api/absences/action?id=${newAbsence.id}&action=reject" style="display: inline-block; background-color: #dc2626; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; font-family: sans-serif;">Rejeitar Falta</a>
+                </div>
             </div>
             
             <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 13px; color: #64748b; border-top: 1px solid #e2e8f0;">
@@ -3500,24 +3382,47 @@ async function sendAbsenceEmail(abs: any) {
       emailError = "Credenciais inválidas: Por favor certifique-se de usar a 'Senha de Aplicativo' (App Password) da sua Conta do Google se estiver usando o Gmail.";
     }
   }
-  return { emailStatus, emailError };
+
+  res.json({ status: "success", emailStatus, emailError });
+});
+
+
+function triggerApprovalWebhook(absence) {
+  if (process.env.PAUSE_ALL_N8N_WEBHOOKS === "true" || process.env.PAUSE_ABSENCE_APPROVAL_JOB === "true") return;
+  const isTest = process.env.USE_N8N_TEST_ABSENCE_APPROVAL === "true";
+  let webhookUrl = isTest 
+     ? (process.env.N8N_TEST_ABSENCE_APPROVAL_WEBHOOK_URL || "https://n8n-url-placeholder/webhook-test/absence-approval") 
+     : (process.env.N8N_ABSENCE_APPROVAL_WEBHOOK_URL || "https://n8n-url-placeholder/webhook/absence-approval");
+  
+  if (webhookUrl && webhookUrl !== "https://n8n-url-placeholder/webhook/absence-approval" && webhookUrl !== "") {
+      const vendorData = vendors.find((v: any) => v.nome.toLowerCase() === absence.vendedor.toLowerCase());
+      const payload = {
+          vendedor: absence.vendedor,
+          telefone: vendorData ? vendorData.telefone : "",
+          mensagem: "Seu atestado/comprovante referente sua ausencia/falta foi devidamente encaminhado ao RH",
+          dataFalta: absence.dataFalta,
+          motivo: absence.motivo,
+          id: absence.id
+      };
+      fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+      }).catch(e => console.error("[N8N] Webhook Absence Approval failed:", e));
+  }
 }
 
-app.patch("/api/absences/:id", async (req, res) => {
+app.patch("/api/absences/:id", (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   const idx = absences.findIndex((a: any) => a.id === id);
   if (idx !== -1) {
     absences[idx].status = status;
     writeJSONDb("absences.json", absences);
-    
-    await updateAbsenceStatusInSheet(id, status);
-    let emailResult = { emailStatus: "not_sent", emailError: null };
     if (status === "Aprovado" || status.toLowerCase() === "aprovado") {
       triggerApprovalWebhook(absences[idx]);
-      emailResult = await sendAbsenceEmail(absences[idx]);
     }
-    res.json({ status: "success", absence: absences[idx], ...emailResult });
+    res.json({ status: "success", absence: absences[idx] });
   } else {
     res.status(404).json({ status: "error", message: "Absence not found" });
   }
