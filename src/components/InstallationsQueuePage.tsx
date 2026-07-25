@@ -4,6 +4,7 @@ import {
   ClipboardList,
   CheckCircle,
   Clock,
+  Timer,
   Check,
   RefreshCw,
   Filter,
@@ -28,6 +29,32 @@ const formatDataDisplay = (val: string) => {
   return val;
 };
 
+const getTempoEmAberto = (dataAdicao: string, status: string) => {
+  if (status === 'Concluido' || !dataAdicao) return null;
+  let itemTime = 0;
+  const match1 = dataAdicao.match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
+  if (match1) itemTime = new Date(Number(match1[3]), Number(match1[2]) - 1, Number(match1[1]), Number(match1[4]), Number(match1[5])).getTime();
+  else {
+    const match2 = dataAdicao.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+    if (match2) itemTime = new Date(Number(match2[3]), Number(match2[2]) - 1, Number(match2[1]), Number(match2[4]), Number(match2[5]), Number(match2[6])).getTime();
+    else {
+      const parsed = Date.parse(dataAdicao);
+      if (!isNaN(parsed)) itemTime = parsed;
+    }
+  }
+  if (!itemTime) return null;
+  const diffHours = (Date.now() - itemTime) / (1000 * 60 * 60);
+  if (diffHours < 1) return 'Menos de 1h';
+  if (diffHours < 24) return `${Math.floor(diffHours)}h em aberto`;
+  return `${Math.floor(diffHours / 24)}d ${Math.floor(diffHours % 24)}h em aberto`;
+};
+
+interface HistoricoItem {
+  data: string;
+  vendedor: string;
+  texto: string;
+}
+
 interface QueueItem {
   id: string;
   cliente: string;
@@ -36,9 +63,14 @@ interface QueueItem {
   status: "Pendente" | "Concluido" | "Atrasado";
   vendedor: string;
   observacoes: string;
+  historico?: HistoricoItem[];
 }
 
-export default function InstallationsQueuePage() {
+interface InstallationsQueuePageProps {
+  loggedUser: string;
+}
+
+export default function InstallationsQueuePage({ loggedUser }: InstallationsQueuePageProps) {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("Pendente");
@@ -49,6 +81,33 @@ export default function InstallationsQueuePage() {
   const [isAddingProtocol, setIsAddingProtocol] = useState(false);
   const [newProtocol, setNewProtocol] = useState({ cliente: '', protocolo: '', vendedor: '', observacoes: '' });
   const [isSubmittingProtocol, setIsSubmittingProtocol] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<QueueItem | null>(null);
+  const [newHistoryText, setNewHistoryText] = useState("");
+  const [isSubmittingHistory, setIsSubmittingHistory] = useState(false);
+
+  const handleAddHistory = async () => {
+    if (!newHistoryText.trim() || !selectedItem) return;
+    setIsSubmittingHistory(true);
+    try {
+      const res = await fetch(`/api/installations-queue/${selectedItem.id}/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: newHistoryText, vendedor: loggedUser }),
+      });
+      if (res.ok) {
+        setNewHistoryText("");
+        const data = await res.json();
+        setSelectedItem({ ...selectedItem, historico: data.historico });
+        loadQueue();
+      } else {
+        alert("Erro ao adicionar histórico.");
+      }
+    } catch (e) {
+      alert("Erro de conexão.");
+    } finally {
+      setIsSubmittingHistory(false);
+    }
+  };
 
 
   const loadQueue = async () => {
@@ -314,7 +373,8 @@ export default function InstallationsQueuePage() {
           filteredQueue.map((item) => (
             <div
               key={item.id}
-              className="card-modern rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col relative overflow-hidden bg-white"
+              className="card-modern rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col relative overflow-hidden bg-white hover:border-sky-300 transition-colors cursor-pointer group"
+              onClick={() => setSelectedItem(item)}
             >
               <div>
                 <div className="flex justify-between items-start mb-4">
@@ -338,9 +398,17 @@ export default function InstallationsQueuePage() {
                     )}
                     {item.status}
                   </span>
-                  <span className="text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md">
-                    {formatDataDisplay(item.dataAdicao)}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md">
+                      {formatDataDisplay(item.dataAdicao)}
+                    </span>
+                    {getTempoEmAberto(item.dataAdicao, item.status) && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 ${item.status === 'Atrasado' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+                        <Timer className="w-3 h-3" />
+                        {getTempoEmAberto(item.dataAdicao, item.status)}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-3 mb-6 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
@@ -382,7 +450,7 @@ export default function InstallationsQueuePage() {
               {item.status !== "Concluido" && (
                 <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                   <button
-                    onClick={() => handleDelete(item.id)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
 
                     disabled={isDeleting === item.id}
                     className="text-xs font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-2.5 rounded-xl flex items-center justify-center transition-colors"
@@ -390,12 +458,12 @@ export default function InstallationsQueuePage() {
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <button className="flex-1 text-xs font-bold text-sky-600 hover:text-sky-700 bg-sky-50 hover:bg-sky-100 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors">
+                  <button onClick={(e) => e.stopPropagation()} className="flex-1 text-xs font-bold text-sky-600 hover:text-sky-700 bg-sky-50 hover:bg-sky-100 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors">
                     <PhoneCall className="w-4 h-4" />
                     Ligar
                   </button>
                   <button
-                    onClick={() => setFinalizeId(item.id)}
+                    onClick={(e) => { e.stopPropagation(); setFinalizeId(item.id); }}
                     className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
                   >
                     <CheckCircle className="w-4 h-4" />
@@ -456,6 +524,127 @@ export default function InstallationsQueuePage() {
               >
                 <CheckCircle className="w-4 h-4" />
                 Concluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Details Modal */}
+      {selectedItem && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedItem(null)}>
+          <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setSelectedItem(null)} className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center border border-sky-100 text-sky-600">
+                <ClipboardList className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-800">Detalhes do Protocolo</h3>
+                <p className="text-sm font-medium text-slate-500">Informações completas do chamado</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</span>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg ${
+                      selectedItem.status === "Concluido"
+                        ? "bg-[#E6FAF1] text-[#00A86B]"
+                        : selectedItem.status === "Atrasado"
+                          ? "bg-rose-100 text-rose-700"
+                          : "bg-amber-100 text-amber-700"
+                    }`}>
+                      {selectedItem.status}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Data Adição</span>
+                    <span className="text-sm font-bold text-slate-700">{formatDataDisplay(selectedItem.dataAdicao)}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Protocolo</span>
+                    <span className="text-sm font-bold text-sky-700 break-words font-mono">{selectedItem.protocolo}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente</span>
+                    <span className="text-sm font-bold text-slate-800">{selectedItem.cliente || "-"}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Consultor Responsável</span>
+                    <span className="text-sm font-bold text-slate-700">{selectedItem.vendedor}</span>
+                  </div>
+                  {getTempoEmAberto(selectedItem.dataAdicao, selectedItem.status) && (
+                    <div className="col-span-2">
+                      <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tempo na Fila</span>
+                      <span className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                        <Timer className="w-4 h-4 text-amber-500" />
+                        {getTempoEmAberto(selectedItem.dataAdicao, selectedItem.status)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {selectedItem.observacoes && selectedItem.observacoes !== "-" && (
+                <div>
+                  <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Observações Adicionais</span>
+                  <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/50 text-sm font-medium text-slate-700 whitespace-pre-wrap">
+                    {selectedItem.observacoes}
+                  </div>
+                </div>
+              )}
+              
+              <div className="border-t border-slate-200/60 pt-6 mt-6">
+                <span className="block text-xs font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-sky-500" /> Histórico de Manutenção
+                </span>
+                
+                <div className="flex gap-2 mb-6">
+                  <input
+                    type="text"
+                    value={newHistoryText}
+                    onChange={e => setNewHistoryText(e.target.value)}
+                    placeholder="Ex: Liguei pro cliente, confirmou que equipe já esteve lá."
+                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition-all"
+                  />
+                  <button 
+                    onClick={handleAddHistory}
+                    disabled={isSubmittingHistory || !newHistoryText.trim()}
+                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 disabled:bg-sky-400 text-white text-sm font-bold rounded-xl shadow-sm transition-all whitespace-nowrap"
+                  >
+                    Adicionar
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {(!selectedItem.historico || selectedItem.historico.length === 0) ? (
+                    <div className="text-center py-6 text-slate-400 text-sm font-medium">Nenhum histórico registrado.</div>
+                  ) : (
+                    selectedItem.historico.map((hist, idx) => (
+                      <div key={idx} className="relative pl-6">
+                        <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-sky-400"></div>
+                        {idx !== selectedItem.historico!.length - 1 && (
+                          <div className="absolute left-[3px] top-4 bottom-[-16px] w-[2px] bg-sky-100"></div>
+                        )}
+                        <div className="mb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">{hist.data}</div>
+                        <div className="text-sm text-slate-700 bg-slate-50 border border-slate-100 p-3 rounded-xl rounded-tl-none inline-block">
+                          <span className="font-bold text-sky-700 mr-2">({hist.vendedor})</span> 
+                          {hist.texto}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <button onClick={() => setSelectedItem(null)} className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl shadow-sm transition-all">
+                Fechar
               </button>
             </div>
           </div>

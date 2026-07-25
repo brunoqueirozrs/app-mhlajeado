@@ -5829,6 +5829,7 @@ async function syncInstallationQueueFromGoogleSheet() {
             protocolo: row[3] || localItem.protocolo || "-",
             vendedor: row[4] || localItem.vendedor || "-",
             observacoes: row[5] || localItem.observacoes || "-",
+            historico: localItem.historico || [],
             id: id
           });
         }
@@ -5839,11 +5840,12 @@ async function syncInstallationQueueFromGoogleSheet() {
       
       localInstallationQueue = [...notInGas, ...queue.reverse()];
       
-      // Deduplicate by ID
+      // Deduplicate by Protocolo + Cliente (stronger deduplication against GS duplicates)
       const seen = new Set();
       localInstallationQueue = localInstallationQueue.filter(p => {
-        if (seen.has(p.id)) return false;
-        seen.add(p.id);
+        const key = (p.protocolo || '') + '-' + (p.cliente || '');
+        if (seen.has(key)) return false;
+        seen.add(key);
         return true;
       });
       writeJSONDb("installationsQueue.json", localInstallationQueue);
@@ -5951,6 +5953,38 @@ app.post("/api/installations-queue", async (req, res) => {
     res.status(500).json({ error: "Failed to save to queue" });
   }
 });
+app.post("/api/installations-queue/:id/history", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { texto, vendedor } = req.body;
+    if (!texto || !vendedor) return res.status(400).json({ error: "Missing required fields" });
+
+    const index = localInstallationQueue.findIndex(q => q.id === id);
+    if (index !== -1) {
+      if (!localInstallationQueue[index].historico) {
+        localInstallationQueue[index].historico = [];
+      }
+      
+      const newEntry = {
+        data: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }).substring(0, 16),
+        vendedor,
+        texto
+      };
+      
+      // prepend so the latest is on top
+      localInstallationQueue[index].historico.unshift(newEntry);
+      
+      writeJSONDb("installationsQueue.json", localInstallationQueue);
+      
+      res.json({ success: true, historico: localInstallationQueue[index].historico });
+    } else {
+      res.status(404).json({ error: "Not found" });
+    }
+  } catch (e) {
+    res.status(500).json({ error: "Failed to add history" });
+  }
+});
+
 app.post("/api/installations-queue/:id/finalize", async (req, res) => {
   try {
     const id = req.params.id;

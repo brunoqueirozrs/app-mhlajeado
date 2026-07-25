@@ -1493,7 +1493,7 @@ export default function App() {
             userRole={userRole} />
         );
       case "installations_queue":
-        return <InstallationsQueuePage />;
+        return <InstallationsQueuePage loggedUser={loggedUser!} />;
       case "protocolos_internos":
         return <InternalProtocolsPage />;
       case "admin_n8n":
