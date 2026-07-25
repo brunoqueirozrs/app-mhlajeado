@@ -3074,7 +3074,8 @@ app.get("/api/drive/callback", async (req, res) => {
   );
   
   try {
-    const { tokens } = await oauth2Client.getToken(code);
+    const codeString = typeof code === 'string' ? code : String(code);
+    const { tokens } = await oauth2Client.getToken(codeString);
     res.send(`
       <div style="font-family: sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
         <h2 style="color: #0284c7;">Autenticação concluída com sucesso!</h2>
@@ -3201,6 +3202,12 @@ app.post("/api/absences", async (req, res) => {
 
   // Send email via nodemailer
   try {
+    console.log("[EMAIL DEBUG] Iniciando processo de envio de email para:", abs.vendedor);
+    console.log("[EMAIL DEBUG] SMTP_USER está definido?", !!process.env.SMTP_USER);
+    console.log("[EMAIL DEBUG] SMTP_PASS está definido?", !!process.env.SMTP_PASS);
+    console.log("[EMAIL DEBUG] SMTP_HOST:", process.env.SMTP_HOST || "smtp.gmail.com");
+    console.log("[EMAIL DEBUG] SMTP_PORT:", process.env.SMTP_PORT || 587);
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.gmail.com",
       port: Number(process.env.SMTP_PORT) || 587,
@@ -3209,6 +3216,8 @@ app.post("/api/absences", async (req, res) => {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      logger: true, // Habilita logs internos do nodemailer
+      debug: true, // Inclui o tráfego SMTP
     });
 
     const hasCredentials = !!process.env.SMTP_USER && !!process.env.SMTP_PASS;
@@ -3365,8 +3374,12 @@ app.post("/api/absences", async (req, res) => {
       attachments
     };
 
-    if (hasCredentials && process.env.SMTP_USER !== "seu-email@gmail.com") {
-      await transporter.sendMail(mailOptions);
+    if (hasCredentials) {
+      console.log("[EMAIL DEBUG] Verificando conexão SMTP...");
+      await transporter.verify();
+      console.log("[EMAIL DEBUG] Conexão SMTP verificada com sucesso, enviando email...");
+      const info = await transporter.sendMail(mailOptions);
+      console.log("[EMAIL DEBUG] Email enviado. Resposta do servidor:", info.response);
       console.log("Email enviado automaticamente para bruno.queiroz@mhnet.com.br");
       emailStatus = "sent";
     } else {
@@ -3375,11 +3388,11 @@ app.post("/api/absences", async (req, res) => {
       emailError = "Credenciais SMTP não foram alteradas (ainda estão como padrão) ou estão vazias.";
     }
   } catch (error: any) {
-    console.error("Erro ao enviar email de justificativa:", error.message);
+    console.error("[EMAIL DEBUG] Falha no processo de envio do e-mail:", error);
     emailStatus = "error";
     emailError = error.message;
     if (error.responseCode === 535) {
-      emailError = "Credenciais inválidas: Por favor certifique-se de usar a 'Senha de Aplicativo' (App Password) da sua Conta do Google se estiver usando o Gmail.";
+      emailError = "Credenciais inválidas: Verifique se o SMTP_USER está correto e se o SMTP_PASS é uma 'Senha de Aplicativo' (App Password) válida.";
     }
   }
 
@@ -3411,6 +3424,19 @@ function triggerApprovalWebhook(absence) {
       }).catch(e => console.error("[N8N] Webhook Absence Approval failed:", e));
   }
 }
+
+
+app.delete("/api/absences/:id", (req, res) => {
+  const { id } = req.params;
+  const initialLength = absences.length;
+  absences = absences.filter((a: any) => a.id !== id);
+  if (absences.length !== initialLength) {
+    writeJSONDb("absences.json", absences);
+    res.json({ status: "success", message: "Absence deleted" });
+  } else {
+    res.status(404).json({ status: "error", message: "Absence not found" });
+  }
+});
 
 app.patch("/api/absences/:id", (req, res) => {
   const { id } = req.params;
@@ -4261,6 +4287,52 @@ app.post("/api/gemini/chat", async (req, res) => {
       message: "Falha na comunicação com a IA.",
       text: fallback,
       answer: fallback,
+    });
+  }
+});
+
+
+app.get("/api/debug/smtp", async (req, res) => {
+  const nodemailer = await import("nodemailer");
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+      logger: true,
+      debug: true,
+    });
+
+    console.log("[SMTP DEBUG] Iniciando verificação...");
+    await transporter.verify();
+    console.log("[SMTP DEBUG] Conexão bem-sucedida!");
+    res.json({
+      status: "success",
+      message: "Conexão com servidor SMTP realizada com sucesso.",
+      config: {
+        user: process.env.SMTP_USER ? "Definido" : "Ausente",
+        pass: process.env.SMTP_PASS ? "Definido" : "Ausente",
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT
+      }
+    });
+  } catch (error: any) {
+    console.error("[SMTP DEBUG] Erro na verificação:", error.message);
+    res.status(500).json({
+      status: "error",
+      message: "Falha na conexão com o servidor SMTP",
+      error: error.message,
+      code: error.code || error.responseCode,
+      config: {
+        user: process.env.SMTP_USER ? "Definido" : "Ausente",
+        pass: process.env.SMTP_PASS ? "Definido" : "Ausente",
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT
+      }
     });
   }
 });

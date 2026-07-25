@@ -148,26 +148,44 @@
     "vendedor": "Ana Paula Rodrigues",
     "dataFalta": "2026-07-24",
     "motivo": "Teste Final OAuth Ana",
-    "status": "Aguardando",
+    "status": "Aprovado",
     "observacao": "",
     "link": "https://drive.google.com/file/d/1WZoFE7BIw-ZlCnzInFFq9sSe5oBK_pKy/view?usp=drivesdk"
   },
   {
-    "id": "17849197998717iruh",
-    "vendedor": "Bruno Teste",
+    "id": "1784923795651whldz",
+    "vendedor": "ANA PAULA RODRIGUES",
     "dataFalta": "2026-07-24",
-    "motivo": "Teste Aprovação",
-    "status": "Aguardando",
-    "observacao": "",
-    "link": "https://drive.google.com/file/d/1px8S3bBQ6tzix8OVDEFjUPDs6XgG2Ctu/view?usp=drivesdk"
+    "motivo": "CONSULTA MÉDICA",
+    "status": "Aprovado",
+    "observacao": "teste de frenbte",
+    "link": "https://drive.google.com/file/d/1TdF4rs_Ts83dtk-QJODb8s1hQ0SIrres/view?usp=drivesdk"
   },
   {
-    "id": "1784919935611iwf3z",
-    "vendedor": "Bruno Sheet Test",
+    "id": "1784924381358axh9t",
+    "vendedor": "JOÃO VICTHOR SADER",
+    "dataFalta": "2026-07-24",
+    "motivo": "BENEFÍCIO - DAY OFF",
+    "status": "Aguardando",
+    "observacao": "estou em dey off",
+    "link": "https://drive.google.com/file/d/1fL12qMn2irh3UwVHu0Tx9ehRjU72JK_f/view?usp=drivesdk"
+  },
+  {
+    "id": "1784924757149098sr",
+    "vendedor": "JOÃO VICTHOR SADER",
+    "dataFalta": "2026-07-24",
+    "motivo": "SOLICITAÇÃO DE SAIDA EMERGENCIA",
+    "status": "Aguardando",
+    "observacao": "teste valendo",
+    "link": "https://drive.google.com/file/d/1yvLIOlGxTOLpAlLcPoV2av6Wv7GAZjzp/view?usp=drivesdk"
+  },
+  {
+    "id": "17849797649020bb0c",
+    "vendedor": "JOÃO VICTHOR SADER",
     "dataFalta": "2026-07-25",
-    "motivo": "Teste Sheets Append",
-    "status": "Aprovado",
-    "observacao": "",
-    "link": "https://drive.google.com/file/d/1L-EMWjYVYVO-qMMKQvVRRmPkNnhqeJdT/view?usp=drivesdk"
+    "motivo": "CONSULTA MÉDICA",
+    "status": "Aguardando",
+    "observacao": "teste validação de e-mail",
+    "link": "https://drive.google.com/file/d/17RyEYZMPFAhwzQTAuKwfvcxAq8zCdKnY/view?usp=drivesdk"
   }
 ]

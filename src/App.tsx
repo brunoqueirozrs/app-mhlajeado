@@ -757,6 +757,17 @@ export default function App() {
     }
   };
 
+  const handleDeleteAbsence = async (id: string) => {
+    try {
+      await fetch(`/api/absences/${id}`, {
+        method: "DELETE"
+      });
+      fetchAllData();
+    } catch (e) {
+      console.error("Erro ao excluir ausência", e);
+    }
+  };
+
   // 5. Portfolio base action registration calls
   const handleRegisterBaseAction = async (payload: Omit<BaseActionLog, "id" | "dataContato">) => {
     const resp = await fetch("/api/base/actions", {
@@ -1432,7 +1443,8 @@ export default function App() {
             isAdmin={userRole === "admin"}
             loggedUser={loggedUser!}
             onRegisterAbsence={handleRegisterAbsence}
-            onUpdateAbsence={handleUpdateAbsence} />
+            onUpdateAbsence={handleUpdateAbsence}
+            onDeleteAbsence={handleDeleteAbsence} />
         );
       case "pos_venda":
         return <PosVendaPage loggedUser={loggedUser!} isAdmin={userRole === "admin"} />;

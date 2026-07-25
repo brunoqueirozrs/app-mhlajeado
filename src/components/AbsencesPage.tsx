@@ -4,13 +4,14 @@
  */
 
 import React, { useState } from "react";
-import { CalendarDays, CalendarCheck, Paperclip, Send, Clock, History, CloudLightning } from "lucide-react";
+import { CalendarDays, CalendarCheck, Paperclip, Send, Clock, History, CloudLightning, Trash2 } from "lucide-react";
 import { Absence } from "../types";
 
 interface AbsencesPageProps {
   absences: Absence[];
   onRegisterAbsence: (date: string, motivo: string, obs: string, fileData?: string, fileName?: string, mimeType?: string) => Promise<string>;
   onUpdateAbsence?: (id: string, status: string) => Promise<void>;
+  onDeleteAbsence?: (id: string) => Promise<void>;
   isAdmin: boolean;
   loggedUser: string;
 }
@@ -19,6 +20,7 @@ export default function AbsencesPage({
   absences,
   onRegisterAbsence,
   onUpdateAbsence,
+  onDeleteAbsence,
   isAdmin,
   loggedUser
 }: AbsencesPageProps) {
@@ -84,7 +86,13 @@ export default function AbsencesPage({
     }
   };
 
-  const visibleAbsences = isAdmin ? absences : absences.filter(a => a.vendedor === loggedUser);
+  const visibleAbsences = (isAdmin ? absences : absences.filter(a => a.vendedor === loggedUser))
+    .sort((a, b) => {
+      const dateA = new Date(a.dataFalta).getTime();
+      const dateB = new Date(b.dataFalta).getTime();
+      if (!isNaN(dateA) && !isNaN(dateB) && dateA !== dateB) return dateB - dateA;
+      return (b.id || "").localeCompare(a.id || "");
+    });
 
   return (
     <div id="absences-viewport" className="space-y-6">
@@ -153,11 +161,11 @@ export default function AbsencesPage({
         </div>
 
         {/* Attachment box */}
-        <div className="space-y-1 bg-slate-50 rounded-xl p-3 border border-slate-100 flex flex-col gap-1.5 text-xs text-slate-700">
-          <label className="text-[10px] font-extrabold uppercase text-slate-400">Anexar Cópia / Comprovante (Opcional)</label>
+        <div className="space-y-1 bg-sky-50/50 rounded-xl p-3 border border-sky-100 flex flex-col gap-1.5 text-xs text-sky-700">
+          <label className="text-[10px] font-extrabold uppercase text-sky-600/70">Anexar Cópia / Comprovante (Opcional)</label>
           <div className="flex items-center gap-2">
-            <label className="p-2 px-3 card-modern border border-slate-200 text-[10px] font-extrabold rounded-lg flex items-center gap-1 text-slate-650 cursor-pointer transition hover:bg-slate-50 relative select-none">
-              <Paperclip className="w-3.5 h-3.5 text-slate-500" /> Selecionar Arquivo
+            <label className="p-2 px-3 border border-sky-600 bg-sky-600 text-[10px] font-extrabold rounded-lg flex items-center gap-1.5 text-white cursor-pointer transition hover:bg-sky-700 hover:border-sky-700 relative select-none shadow-sm">
+              <Paperclip className="w-3.5 h-3.5 text-sky-100" /> Selecionar Arquivo
               <input
                 id="absence-file-picker"
                 type="file"
@@ -167,12 +175,12 @@ export default function AbsencesPage({
               />
             </label>
             {fileDetails && (
-              <span className="text-[10px] text-slate-500 truncate font-mono max-w-[150px]">
+              <span className="text-[10px] text-sky-600 truncate font-mono max-w-[150px]">
                 {fileDetails.name}
               </span>
             )}
           </div>
-          <span className="text-[9px] text-slate-400 leading-none">Imagens (PNG, JPG) ou arquivos PDF de comprovantes.</span>
+          <span className="text-[9px] text-sky-500/70 leading-none">Imagens (PNG, JPG) ou arquivos PDF de comprovantes.</span>
         </div>
 
         <button
@@ -200,11 +208,27 @@ export default function AbsencesPage({
               <div key={idx} className="card-modern border border-slate-100 rounded-xl p-3.5 space-y-1.5 shadow-sm">
                 <div className="flex justify-between items-start gap-4">
                   <div className="font-extrabold text-xs text-slate-800">{abs.motivo}</div>
-                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 border rounded-md ${
-                    getStatusColorClass(abs.status || "ENVIADO")
-                  }`}>
-                    {abs.status || "ENVIADO"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 border rounded-md ${
+                      getStatusColorClass(abs.status || "ENVIADO")
+                    }`}>
+                      {abs.status || "ENVIADO"}
+                    </span>
+                    {isAdmin && onDeleteAbsence && abs.id && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (window.confirm("Tem certeza que deseja excluir esta justificativa?")) {
+                            onDeleteAbsence(abs.id!);
+                          }
+                        }}
+                        className="text-slate-300 hover:text-red-600 transition p-1 hover:bg-red-50 rounded"
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-slate-400 font-bold uppercase">
