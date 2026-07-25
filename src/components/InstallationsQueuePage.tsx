@@ -78,6 +78,7 @@ export default function InstallationsQueuePage({ loggedUser }: InstallationsQueu
   const [finalizeId, setFinalizeId] = useState<string | null>(null);
   const [observacaoFinal, setObservacaoFinal] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<any | null>(null);
   const [isAddingProtocol, setIsAddingProtocol] = useState(false);
   const [newProtocol, setNewProtocol] = useState({ cliente: '', protocolo: '', vendedor: '', observacoes: '' });
   const [isSubmittingProtocol, setIsSubmittingProtocol] = useState(false);
@@ -178,12 +179,7 @@ export default function InstallationsQueuePage({ loggedUser }: InstallationsQueu
   };
 
   const handleDelete = async (id: string) => {
-    if (
-      !confirm(
-        "Tem certeza que deseja excluir permanentemente este item da fila?",
-      )
-    )
-      return;
+    setItemToDelete(null);
     setIsDeleting(id);
     try {
       const res = await fetch(`/api/installations-queue/${id}`, {
@@ -462,7 +458,7 @@ export default function InstallationsQueuePage({ loggedUser }: InstallationsQueu
               {item.status !== "Concluido" && (
                 <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
+                    onClick={(e) => { e.stopPropagation(); setItemToDelete(item); }}
 
                     disabled={isDeleting === item.id}
                     className="text-xs font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-2.5 rounded-xl flex items-center justify-center transition-colors"
@@ -657,6 +653,48 @@ export default function InstallationsQueuePage({ loggedUser }: InstallationsQueu
             <div className="mt-8 flex justify-end">
               <button onClick={() => setSelectedItem(null)} className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl shadow-sm transition-all">
                 Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {itemToDelete && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setItemToDelete(null)}>
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
+            <div className="p-6">
+              <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 mb-4 mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 text-center mb-2">
+                Excluir Item
+              </h3>
+              <p className="text-sm font-medium text-slate-500 text-center mb-6">
+                Tem certeza que deseja excluir o protocolo <span className="font-bold text-slate-700">{itemToDelete.protocolo}</span> permanentemente da fila? Esta ação não poderá ser desfeita.
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/80 flex gap-3">
+              <button
+                onClick={() => setItemToDelete(null)}
+                className="flex-1 py-3 px-4 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-200/50 transition-colors"
+                disabled={isDeleting === itemToDelete.id}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDelete(itemToDelete.id)}
+                className="flex-1 py-3 px-4 rounded-xl text-sm font-bold text-white bg-rose-500 hover:bg-rose-600 shadow-sm shadow-rose-200 transition-all active:scale-95 flex justify-center items-center gap-2"
+                disabled={isDeleting === itemToDelete.id}
+              >
+                {isDeleting === itemToDelete.id ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Excluir
+                  </>
+                )}
               </button>
             </div>
           </div>

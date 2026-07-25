@@ -5830,7 +5830,8 @@ async function syncInstallationQueueFromGoogleSheet() {
             vendedor: row[4] || localItem.vendedor || "-",
             observacoes: row[5] || localItem.observacoes || "-",
             historico: localItem.historico || [],
-            id: id
+            id: id,
+            _linha: i + 1
           });
         }
       }
@@ -5913,25 +5914,60 @@ async function writeInstallationQueueToGoogleSheet(item: any, action: "save" | "
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-    const mappedItem = {
-      "Data Adição": item.dataAdicao,
-      "Status": item.status,
-      "Cliente": item.cliente || "-",
-      "Protocolo": item.protocolo,
-      "Consultor": item.vendedor,
-      "Observações": item.observacoes || "-",
-      "ID": item.id
-    };
-
     let route = "appendRow";
-    if (action === "update") route = "updateRow";
-    if (action === "delete") route = "deleteRow"; // Assumes GAS supports deleteRow
+    let payload = {};
+
+    if (action === "delete") {
+      route = "deleteInstallation"; // Reusing the generic delete route
+      let linhaToDelete = item._linha;
+      
+      // If we don't have the row number locally, fetch the CSV to find it by ID
+      if (!linhaToDelete) {
+        try {
+          const exportUrl = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Fila de Monitoramento");
+          const res = await fetch(exportUrl);
+          if (res.ok) {
+            const csvText = await res.text();
+            const rows = parseCSV(csvText);
+            for (let i = 1; i < rows.length; i++) {
+              const rowId = rows[i][6] || ('fallback-' + (rows[i][3] || '').replace(/[^a-zA-Z0-9]/g, '') + '-' + (rows[i][2] || '').replace(/[^a-zA-Z0-9]/g, ''));
+              if (rowId === item.id) {
+                linhaToDelete = i + 1; // Google Sheets uses 1-based indexing
+                break;
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error finding row number for deletion:", err);
+        }
+      }
+
+      if (!linhaToDelete) {
+         clearTimeout(timeoutId);
+         console.warn("[SYNC] Could not find row number in Google Sheets to delete:", item.id);
+         return; // Can't delete from GAS if we still don't know the row number
+      }
+      payload = { sheetName: "Fila de Monitoramento", item: { _linha: linhaToDelete } };
+    } else {
+      const mappedItem = {
+        "Data Adição": item.dataAdicao,
+        "Status": item.status,
+        "Cliente": item.cliente || "-",
+        "Protocolo": item.protocolo,
+        "Consultor": item.vendedor,
+        "Observações": item.observacoes || "-",
+        "ID": item.id
+      };
+      
+      route = "saveInstallation"; // Using saveInstallation for both append and update to bypass missing appendRow
+      payload = { sheetName: "Fila de Monitoramento", item: mappedItem, id: item.id };
+    }
 
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
       body: JSON.stringify({
-        route, payload: { sheetName: "Fila de Monitoramento", item: mappedItem, id: item.id }
+        route, payload
       }),
       signal: controller.signal
     });
