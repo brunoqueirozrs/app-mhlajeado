@@ -440,9 +440,21 @@ export default function InstallationsQueuePage({ loggedUser }: InstallationsQueu
                   </div>
                 </div>
 
-                {item.observacoes && (
+                {item.observacoes && item.observacoes !== "-" && (
                   <div className="mb-4 text-xs font-medium text-slate-500 italic bg-amber-50/50 p-3 rounded-xl border border-amber-100/50">
                     "{item.observacoes}"
+                  </div>
+                )}
+                
+                {item.historico && item.historico.length > 0 && (
+                  <div className="mt-2 pt-3 border-t border-slate-100">
+                    <span className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                      <ClipboardList className="w-3 h-3 text-sky-500" /> Último Relato
+                    </span>
+                    <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">
+                      <span className="font-bold text-slate-700 mr-1">{item.historico[0].data.split(' ')[0]}</span>
+                      {item.historico[0].texto}
+                    </p>
                   </div>
                 )}
               </div>

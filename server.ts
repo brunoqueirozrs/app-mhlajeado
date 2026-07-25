@@ -5835,10 +5835,14 @@ async function syncInstallationQueueFromGoogleSheet() {
         }
       }
       // Merge with local queue to not lose items that failed to save to GAS
-      const existingIds = new Set(queue.map((q: any) => q.id));
-      const notInGas = localInstallationQueue.filter(q => !existingIds.has(q.id));
+      let deletedIds = new Set(readJSONDb('deletedInstallationsQueue.json', []));
       
-      localInstallationQueue = [...notInGas, ...queue.reverse()];
+      const validQueue = queue.filter((q: any) => !deletedIds.has(q.id));
+
+      const existingIds = new Set(validQueue.map((q: any) => q.id));
+      const notInGas = localInstallationQueue.filter(q => !existingIds.has(q.id) && !deletedIds.has(q.id));
+      
+      localInstallationQueue = [...notInGas, ...validQueue.reverse()];
       
       // Deduplicate by Protocolo + Cliente (stronger deduplication against GS duplicates)
       const seen = new Set();
@@ -5904,7 +5908,7 @@ app.get("/api/installations-queue", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch queue" });
   }
 });
-async function writeInstallationQueueToGoogleSheet(item: any, action: "save" | "update") {
+async function writeInstallationQueueToGoogleSheet(item: any, action: "save" | "update" | "delete") {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
@@ -5919,11 +5923,15 @@ async function writeInstallationQueueToGoogleSheet(item: any, action: "save" | "
       "ID": item.id
     };
 
+    let route = "appendRow";
+    if (action === "update") route = "updateRow";
+    if (action === "delete") route = "deleteRow"; // Assumes GAS supports deleteRow
+
     await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
       body: JSON.stringify({
-        route: action === "update" ? "updateRow" : "appendRow", payload: { sheetName: "Fila de Monitoramento", item: mappedItem, id: item.id }
+        route, payload: { sheetName: "Fila de Monitoramento", item: mappedItem, id: item.id }
       }),
       signal: controller.signal
     });
@@ -6011,8 +6019,18 @@ app.delete("/api/installations-queue/:id", async (req, res) => {
     const id = req.params.id;
     const index = localInstallationQueue.findIndex(q => q.id === id);
     if (index !== -1) {
+      const itemToDel = localInstallationQueue[index];
       localInstallationQueue.splice(index, 1);
       writeJSONDb("installationsQueue.json", localInstallationQueue);
+      writeInstallationQueueToGoogleSheet(itemToDel, "delete").catch(e => console.error(e));
+      
+      // Keep track of deleted IDs to avoid re-syncing them
+      let deletedIds: string[] = readJSONDb('deletedInstallationsQueue.json', []);
+      if (!deletedIds.includes(id)) {
+        deletedIds.push(id);
+        writeJSONDb('deletedInstallationsQueue.json', deletedIds);
+      }
+
       res.json({ success: true });
     } else {
       res.status(404).json({ error: "Not found" });

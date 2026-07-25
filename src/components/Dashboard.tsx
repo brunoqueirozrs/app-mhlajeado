@@ -329,7 +329,7 @@ export default function Dashboard({
       {/* DELAYED INSTALLATIONS ALERT */}
       {delayedInstallations > 0 && (
         <div 
-          onClick={() => onNavigate("installations-queue")}
+          onClick={() => navigateTo("installations_queue")}
           className="bg-orange-50 border border-orange-200 text-orange-800 rounded-[20px] p-4 flex items-start gap-3 shadow-sm cursor-pointer hover:bg-orange-100 transition active:scale-[0.99] animate-pulse-slow"
         >
           <AlertTriangle className="w-6 h-6 text-orange-600 shrink-0 mt-0.5" />
