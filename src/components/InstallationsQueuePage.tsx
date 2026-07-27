@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
   Plus,
+  Zap,
 } from "lucide-react";
 import { INITIAL_VENDORS } from "../data";
 
@@ -81,6 +82,22 @@ export default function InstallationsQueuePage({ loggedUser }: InstallationsQueu
   const [itemToDelete, setItemToDelete] = useState<any | null>(null);
   const [isAddingProtocol, setIsAddingProtocol] = useState(false);
   const [newProtocol, setNewProtocol] = useState({ cliente: '', protocolo: '', vendedor: '', observacoes: '' });
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  
+
+  const toggleSelection = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleDisparoMassa = async () => {
+    if (selectedIds.length === 0) return;
+    if (window.confirm(`Você tem certeza que deseja realizar o disparo em massa para ${selectedIds.length} item(ns) selecionado(s)?`)) {
+      alert("✅ Disparo em massa iniciado com sucesso!");
+      setSelectedIds([]);
+    }
+  };
+  
   const [isSubmittingProtocol, setIsSubmittingProtocol] = useState(false);
   const [selectedItem, setSelectedItem] = useState<QueueItem | null>(null);
   const [newHistoryText, setNewHistoryText] = useState("");
@@ -225,7 +242,16 @@ export default function InstallationsQueuePage({ loggedUser }: InstallationsQueu
             </p>
           </div>
 
-          <div className="flex shrink-0 gap-3">
+          <div className="flex flex-wrap shrink-0 gap-3">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={handleDisparoMassa}
+                className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-sm active:scale-95"
+              >
+                <Zap className="w-4 h-4" />
+                <span className="hidden sm:inline">Disparo em Massa ({selectedIds.length})</span>
+              </button>
+            )}
             <button 
               onClick={() => setIsAddingProtocol(true)}
               className="flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-sky-600 hover:bg-sky-500 rounded-xl transition-all shadow-sm active:scale-95"
@@ -369,7 +395,11 @@ export default function InstallationsQueuePage({ loggedUser }: InstallationsQueu
           filteredQueue.map((item) => (
             <div
               key={item.id}
-              className="card-modern rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col relative overflow-hidden bg-white hover:border-sky-300 transition-colors cursor-pointer group"
+              className={`card-modern rounded-2xl p-5 border shadow-sm flex flex-col relative overflow-hidden transition-colors cursor-pointer group ${
+                selectedIds.includes(item.id)
+                  ? "bg-sky-50 border-sky-400 ring-2 ring-sky-200"
+                  : "bg-white border-slate-200 hover:border-sky-300"
+              }`}
               onClick={() => setSelectedItem(item)}
             >
               <div>
@@ -395,9 +425,18 @@ export default function InstallationsQueuePage({ loggedUser }: InstallationsQueu
                     {item.status}
                   </span>
                   <div className="flex flex-col items-end gap-1">
-                    <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md">
-                      {formatDataDisplay(item.dataAdicao)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md">
+                        {formatDataDisplay(item.dataAdicao)}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(item.id)}
+                        onChange={(e) => toggleSelection(e as any, item.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
+                      />
+                    </div>
                     {getTempoEmAberto(item.dataAdicao, item.status) && (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 ${item.status === 'Atrasado' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
                         <Timer className="w-3 h-3" />

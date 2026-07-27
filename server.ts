@@ -1426,7 +1426,8 @@ function parseInstallationRows(rows: string[][]): any[] {
       observacao,
       equipeLoja,
       dataCriacao,
-      slotIndex: slotValue
+      slotIndex: slotValue,
+      _linha: i + 1
     });
   }
 
@@ -1771,17 +1772,47 @@ async function writeInstallationToGoogleSheet(inst: any, action: "save" | "delet
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
+    let route = action === "save" ? "saveInstallation" : "deleteInstallation";
+    let payload = {
+      sheetName: "Agenda Instalação",
+      item: inst
+    };
+
+    if (action === "delete") {
+      let linhaToDelete = inst._linha;
+      if (!linhaToDelete) {
+        try {
+          const exportUrl = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Agenda Instalação");
+          const res = await fetch(exportUrl);
+          if (res.ok) {
+            const csvText = await res.text();
+            const rows = parseCSV(csvText);
+            const parsedList = parseInstallationRows(rows);
+            const found = parsedList.find(i => i.id === inst.id);
+            if (found && found._linha) {
+              linhaToDelete = found._linha;
+            }
+          }
+        } catch (err) {
+          console.error("Error finding row number for deletion in Agenda Instalação:", err);
+        }
+      }
+      if (!linhaToDelete) {
+         clearTimeout(timeoutId);
+         console.warn("[SYNC] Could not find row number in Google Sheets to delete installation:", inst.id);
+         return;
+      }
+      payload.item = { _linha: linhaToDelete };
+    }
+
     const response = await fetch(APPS_SCRIPT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json", "ngrok-skip-browser-warning": "true"
       },
       body: JSON.stringify({
-        route: action === "save" ? "saveInstallation" : "deleteInstallation",
-        payload: {
-          sheetName: "Agenda Instalação",
-          item: inst
-        }
+        route,
+        payload
       }),
       signal: controller.signal
     });
@@ -2958,8 +2989,44 @@ app.put("/api/tasks", (req, res) => {
   res.json({ status: "success" });
 });
 
-app.delete("/api/tasks", (req, res) => {
+app.delete("/api/tasks", async (req, res) => {
   const { id, action } = req.query;
+  
+  // Enviar webhook para n8n avisando sobre exclusão
+  try {
+    const n8nTasksUrl = resolveN8nWebhookUrl(
+      process.env.N8N_NEW_TASK_WEBHOOK_URL,
+      process.env.N8N_WEBHOOK_URL,
+      "agenda-tarefas",
+      process.env.N8N_TEST_NEW_TASK_WEBHOOK_URL,
+      process.env.USE_N8N_TEST_NEW_TASK
+    );
+    if (n8nTasksUrl && !n8nTasksUrl.includes("sua-url-ngrok") && !n8nTasksUrl.includes("localhost:5678")) {
+      if (id) {
+        console.log(`[n8n] Tarefa Excluída: ${id}. Enviando webhook para ${n8nTasksUrl}...`);
+        await fetch(n8nTasksUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({
+            event: "exclusao_tarefa",
+            task_id: id
+          })
+        }).catch(err => console.error("Falha ao notificar n8n de exclusão da tarefa:", err));
+      } else if (action === "clear_completed") {
+        console.log(`[n8n] Tarefas Concluídas Limpas. Enviando webhook para ${n8nTasksUrl}...`);
+        await fetch(n8nTasksUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({
+            event: "exclusao_tarefas_concluidas"
+          })
+        }).catch(err => console.error("Falha ao notificar n8n de limpeza de tarefas:", err));
+      }
+    }
+  } catch(e) {
+    console.error("Erro ao enviar webhook de exclusão de tarefa", e);
+  }
+
   if (action === "clear_completed") {
     tasks = tasks.filter(t => t.status !== "CONCLUIDA");
   } else if (id) {
