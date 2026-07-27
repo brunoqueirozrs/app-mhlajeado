@@ -8,7 +8,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import nodemailer from "nodemailer";
 
-dotenv.config();
+dotenv.config({ override: true });
 
 // System Logger for Admin Debug Panel
 const adminLogs: Array<{timestamp: string, level: string, message: string}> = [];
@@ -2165,7 +2165,7 @@ app.post("/api/env/n8n/toggle", async (req, res) => {
     return res.status(400).json({ error: "Invalid key." });
   }
 
-  const strValue = value ? "true" : "false";
+  const strValue = (value === "true" || value === true) ? "true" : "false";
   process.env[key] = strValue;
 
   const keysToUpdate = [key];
@@ -2667,7 +2667,7 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
 
     const bairroIdx = headers.findIndex((h: string) => h.includes("bairro"));
     const statusSvaIdx = headers.findIndex((h: string) => h.includes("status do envio") || h.includes("envio sva") || h.includes("retorno n8n") || h.includes("status do n8n"));
-    const statusIndicacaoEnvioIdx = headers.findIndex((h: string) => h === "indicação" || h === "indicacao" || h.includes("indicação") || h.includes("indicacao"));
+    const statusIndicacaoEnvioIdx = 18; // Coluna S
     
     const clients = [];
     
@@ -2708,6 +2708,14 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
       
       if (posVendasData[id]) {
         Object.assign(clientObj, posVendasData[id]);
+      }
+      
+      // A planilha é a fonte da verdade para o status de envio. Se tiver algo na planilha, usamos.
+      if (statusIndicacaoEnvioIdx >= 0 && row[statusIndicacaoEnvioIdx]) {
+        clientObj.statusIndicacaoEnvio = row[statusIndicacaoEnvioIdx];
+      }
+      if (statusSvaIdx >= 0 && row[statusSvaIdx]) {
+        clientObj.statusSva = row[statusSvaIdx];
       }
       
       // Merge initial sheet data for these fields if not present in local state
