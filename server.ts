@@ -2073,6 +2073,14 @@ app.get("/api/env/n8n", (req, res) => {
     PAUSE_COMPETITORS_JOB: process.env.PAUSE_COMPETITORS_JOB || "false",
 
 
+        N8N_WEBHOOK_URL_ABSENCES: process.env.N8N_WEBHOOK_URL_ABSENCES || "",
+    N8N_TEST_WEBHOOK_URL_ABSENCES: process.env.N8N_TEST_WEBHOOK_URL_ABSENCES || "",
+    USE_N8N_TEST_ABSENCES: process.env.USE_N8N_TEST_ABSENCES || "false",
+    PAUSE_ABSENCES_JOB: process.env.PAUSE_ABSENCES_JOB || "false",
+    N8N_WEBHOOK_URL_ABSENCE_APPROVAL: process.env.N8N_WEBHOOK_URL_ABSENCE_APPROVAL || "",
+    N8N_TEST_WEBHOOK_URL_ABSENCE_APPROVAL: process.env.N8N_TEST_WEBHOOK_URL_ABSENCE_APPROVAL || "",
+    USE_N8N_TEST_ABSENCE_APPROVAL: process.env.USE_N8N_TEST_ABSENCE_APPROVAL || "false",
+    PAUSE_ABSENCE_APPROVAL_JOB: process.env.PAUSE_ABSENCE_APPROVAL_JOB || "false",
     PAUSE_ALL_N8N_WEBHOOKS: process.env.PAUSE_ALL_N8N_WEBHOOKS || "false"
   });
 });
@@ -2659,7 +2667,7 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
 
     const bairroIdx = headers.findIndex((h: string) => h.includes("bairro"));
     const statusSvaIdx = headers.findIndex((h: string) => h.includes("status do envio") || h.includes("envio sva") || h.includes("retorno n8n") || h.includes("status do n8n"));
-    const statusIndicacaoEnvioIdx = headers.findIndex((h: string) => h.includes("status do envio de indicação") || h.includes("envio indicacao") || h.includes("envio indicação"));
+    const statusIndicacaoEnvioIdx = headers.findIndex((h: string) => h === "indicação" || h === "indicacao" || h.includes("indicação") || h.includes("indicacao"));
     
     const clients = [];
     
@@ -5932,6 +5940,40 @@ async function syncInstallationQueueFromGoogleSheet() {
 
 // Perform initial sync
 syncInstallationQueueFromGoogleSheet();
+
+app.post("/api/installations-queue/disparar-n8n", async (req, res) => {
+  console.log("[DEBUG N8N] 🔴 RECEBIDO REQUISIÇÃO EM /api/installations-queue/disparar-n8n");
+  console.log("[DEBUG N8N] Payload:", JSON.stringify(req.body, null, 2));
+
+  const { items } = req.body;
+  if (!Array.isArray(items)) {
+    return res.status(400).json({ status: "error", message: "Items deve ser um array" });
+  }
+
+  if (process.env.PAUSE_ALL_N8N_WEBHOOKS === "true") {
+    return res.status(400).json({ status: "error", message: "Disparo pausado pelas configurações do administrador." });
+  }
+
+  const n8nUrl = process.env.N8N_WEBHOOK_URL_INSTALLATIONS || process.env.N8N_WEBHOOK_URL || "https://lake-elective-scoured.ngrok-free.dev/webhook-test/installations";
+
+  try {
+    const response = await fetch(n8nUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items })
+    });
+    
+    const textResponse = await response.text().catch(() => "");
+    if (!response.ok) {
+      throw new Error(`N8N respondeu com erro: ${response.status} - ${textResponse}`);
+    }
+
+    res.json({ status: "success", count: items.length, n8n_response: textResponse });
+  } catch (error) {
+    console.error("[DEBUG n8n Installations] Erro:", error);
+    res.status(500).json({ status: "error", message: "Falha ao comunicar com n8n.", details: error.message });
+  }
+});
 
 app.get("/api/installations-queue", async (req, res) => {
   try {

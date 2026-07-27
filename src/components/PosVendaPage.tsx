@@ -141,6 +141,50 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
     }
   };
 
+  const handleSendIndicacaoIndividual = async (client: ClientPosVenda) => {
+    if (sendingIndicacoesState[client.id]?.status === 'loading') return;
+    setSendingIndicacoesState(prev => ({ ...prev, [client.id]: { status: 'loading' } }));
+    
+    try {
+      const res = await fetch("/api/pos-vendas/disparar-indicacoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientes: [client] })
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || "Erro na comunicação com o servidor.");
+      }
+      
+      setSendingIndicacoesState(prev => ({ ...prev, [client.id]: { status: 'success' } }));
+      
+      // Update the checklist visually if possible, or assume N8N will do it
+      // Let's reset the success state after 5 seconds
+      setTimeout(() => {
+        setSendingIndicacoesState(prev => {
+          const newState = { ...prev };
+          delete newState[client.id];
+          return newState;
+        });
+      }, 5000);
+      
+    } catch (err: any) {
+      setSendingIndicacoesState(prev => ({ 
+        ...prev, 
+        [client.id]: { status: 'error', message: err.message || "Erro desconhecido" } 
+      }));
+      
+      setTimeout(() => {
+        setSendingIndicacoesState(prev => {
+          const newState = { ...prev };
+          delete newState[client.id];
+          return newState;
+        });
+      }, 5000);
+    }
+  };
+
   const handleBulkSendIndicacao = async () => {
     if (selectedIndicacoesIds.size === 0) return;
     const selectedClients = clientes.filter(c => selectedIndicacoesIds.has(c.id));
@@ -528,6 +572,16 @@ const handleBulkSendSva = async () => {
 
   return (
     <div className="space-y-6 font-sans pb-20">
+      <ConfirmModal 
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={() => {
+          confirmState.onConfirm();
+          setConfirmState(prev => ({ ...prev, isOpen: false }));
+        }}
+        onCancel={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+      />
       {!selectedClient && (
         <>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1026,67 +1080,104 @@ const handleBulkSendSva = async () => {
               <h2 className="text-xl font-black text-slate-800">Solicitação de Indicações</h2>
               <button 
                 onClick={() => {
-                  if (confirm("Deseja disparar solicitações de indicação em massa?")) {
-                    alert("Disparo em massa iniciado!");
+                  if (selectedIndicacoesIds.size === 0) {
+                    alert("Selecione pelo menos um cliente para disparar.");
+                    return;
                   }
+                  requestConfirm("Disparo em Massa (Indicações)", `Deseja enviar solicitações de indicação para ${selectedIndicacoesIds.size} clientes selecionados?`, handleBulkSendIndicacao);
                 }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition"
+                disabled={isDispatchingIndicacoes || selectedIndicacoesIds.size === 0}
+                className={`${isDispatchingIndicacoes || selectedIndicacoesIds.size === 0 ? 'bg-emerald-600/50 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'} text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition`}
               >
-                <Zap className="w-4 h-4" /> Disparo em Massa
+                {isDispatchingIndicacoes ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                {isDispatchingIndicacoes ? 'Disparando...' : `Disparo em Massa (${selectedIndicacoesIds.size})`}
               </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="p-3 w-10 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        checked={filteredClientes.length > 0 && selectedIndicacoesIds.size === filteredClientes.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIndicacoesIds(new Set(filteredClientes.map(c => c.id)));
+                          } else {
+                            setSelectedIndicacoesIds(new Set());
+                          }
+                        }}
+                      />
+                    </th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Telefone</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Plano</th>
-                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Status Indicação</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status de Envio</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Ação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredClientes.map(c => (
                     <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 text-center">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                          checked={selectedIndicacoesIds.has(c.id)}
+                          onChange={(e) => {
+                            const newSet = new Set(selectedIndicacoesIds);
+                            if (e.target.checked) newSet.add(c.id);
+                            else newSet.delete(c.id);
+                            setSelectedIndicacoesIds(newSet);
+                          }}
+                        />
+                      </td>
                       <td className="p-3 font-bold text-slate-800 text-sm">{c.nome}</td>
                       <td className="p-3 text-sm text-slate-600">{c.telefone || "-"}</td>
                       <td className="p-3 text-sm text-slate-600">{c.plano}</td>
-                      <td className="p-3">
-                          <select
-                            className={`text-xs font-bold rounded-lg px-2 py-1.5 border outline-none cursor-pointer ${
-                              c.checklist?.statusIndicacao === 'Indicou' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                              c.checklist?.statusIndicacao === 'Não Indicou' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                              c.checklist?.statusIndicacao === 'Solicitado' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                              'bg-slate-50 text-slate-500 border-slate-200'
-                            }`}
-                            value={c.checklist?.statusIndicacao || ''}
-                            onChange={(e) => {
-                              const newCheck = { ...c.checklist, statusIndicacao: e.target.value };
-                              // You would typically set state and call API here similar to financeiro
-                              // but since we don't have access to setClientes here, I'll write the logic.
-                              // Wait, I am inside PosVendaPage, I have access to setClientes!
-                              setClientes(prev => prev.map(cl => cl.id === c.id ? { ...cl, checklist: newCheck } : cl));
-                              fetch('/api/pos-vendas/' + encodeURIComponent(c.id), {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ checklist: newCheck })
-                              }).catch(() => console.error("Falha ao salvar indicação"));
-                            }}
-                          >
-                            <option value="">-</option>
-                            <option value="Solicitado">Solicitado</option>
-                            <option value="Indicou">Indicou</option>
-                            <option value="Não Indicou">Não Indicou</option>
-                          </select>
+                      <td className="p-3 text-center">
+                        {c.statusIndicacaoEnvio ? (
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                            c.statusIndicacaoEnvio.toLowerCase().includes('fila') ? 'bg-amber-100 text-amber-700' :
+                            c.statusIndicacaoEnvio.toLowerCase().includes('enviado') || c.statusIndicacaoEnvio.toLowerCase().includes('sucesso') || c.statusIndicacaoEnvio.toLowerCase() === 'ok' ? 'bg-emerald-100 text-emerald-700' :
+                            c.statusIndicacaoEnvio.toLowerCase().includes('erro') || c.statusIndicacaoEnvio.toLowerCase().includes('falha') ? 'bg-rose-100 text-rose-700' :
+                            'bg-slate-100 text-slate-600'
+                          }`}>
+                            {c.statusIndicacaoEnvio}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 text-xs">-</span>
+                        )}
                       </td>
                       <td className="p-3 text-right">
-                        <button 
-                          onClick={() => alert(`Enviando solicitação de indicação para ${c.nome}`)}
-                          className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ml-auto"
-                        >
-                          <UserCheck className="w-3.5 h-3.5" /> Solicitar
-                        </button>
+                        <div className="flex flex-col items-end gap-1 ml-auto">
+                          <button 
+                            onClick={() => handleSendIndicacaoIndividual(c)}
+                            disabled={sendingIndicacoesState[c.id]?.status === 'loading' || sendingIndicacoesState[c.id]?.status === 'success'}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                              sendingIndicacoesState[c.id]?.status === 'loading' ? 'bg-emerald-100/50 text-emerald-700/50 cursor-not-allowed' : 
+                              sendingIndicacoesState[c.id]?.status === 'success' ? 'bg-emerald-100 text-emerald-700' :
+                              sendingIndicacoesState[c.id]?.status === 'error' ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' :
+                              'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                            }`}
+                          >
+                            {sendingIndicacoesState[c.id]?.status === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
+                             sendingIndicacoesState[c.id]?.status === 'success' ? <CheckCircle className="w-3.5 h-3.5 animate-in zoom-in" /> :
+                             sendingIndicacoesState[c.id]?.status === 'error' ? <AlertTriangle className="w-3.5 h-3.5" /> :
+                             <UserCheck className="w-3.5 h-3.5" />}
+                            {sendingIndicacoesState[c.id]?.status === 'loading' ? 'Enviando...' :
+                             sendingIndicacoesState[c.id]?.status === 'success' ? 'Solicitado' :
+                             sendingIndicacoesState[c.id]?.status === 'error' ? 'Erro' :
+                             'Solicitar'}
+                          </button>
+                          {sendingIndicacoesState[c.id]?.status === 'error' && (
+                            <span className="text-[10px] text-rose-500 font-medium">
+                              {sendingIndicacoesState[c.id]?.message}
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
