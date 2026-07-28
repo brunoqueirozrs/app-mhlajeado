@@ -964,19 +964,41 @@ async function syncLeadsFromGoogleSheet() {
   isSyncingLeads = true;
   console.log("[SYNC] Buscando e analisando Planilha de Acompanhamento de Lead | Abordagens...");
   try {
-    const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Acompanhamento de Lead | Abordagens");
-    
-    // Use AbortSignal.timeout which covers the entire request including reading the body
-    const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
-    const sheetsResponse = await fetch(url, { signal });
-
-    if (!sheetsResponse.ok) {
-      throw new Error(`Google Sheets responded with code ${sheetsResponse.status}`);
+    let rows: any[] = [];
+    const sheets = getGoogleSheetsClient();
+    if (sheets) {
+      try {
+        const getRes = await sheets.spreadsheets.values.get({
+          spreadsheetId: "19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w",
+          range: "'Acompanhamento de Lead | Abordagens'!A1:U"
+        });
+        rows = getRes.data.values || [];
+      } catch (sheetsErr: any) {
+        console.warn("[SYNC] Direct Sheets get failed for Acompanhamento de Lead:", sheetsErr.message);
+      }
     }
 
-    const csvText = await sheetsResponse.text();
-    if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
-    const rows = parseCSV(csvText);
+    if (!rows || rows.length === 0) {
+      const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Acompanhamento de Lead | Abordagens");
+      const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
+      const sheetsResponse = await fetch(url, { signal });
+
+      if (!sheetsResponse.ok) {
+        throw new Error(`Google Sheets responded with code ${sheetsResponse.status}`);
+      }
+
+      const csvText = await sheetsResponse.text();
+      if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+      rows = parseCSV(csvText);
+    }
+
+    // Build sets of cold leads to ensure moved leads don't reappear during CSV export lag
+    const coldLeadNames = new Set(
+      leadsFrios.map(lf => (lf.nome || "").trim().toLowerCase()).filter(Boolean)
+    );
+    const coldLeadKeys = new Set(
+      leadsFrios.map(lf => `${(lf.nome || "").trim().toLowerCase()}-${(lf.telefone1 || "").trim().replace(/\D/g, '')}`)
+    );
 
     // Find the header row index
     let headerRowIndex = -1;
@@ -1054,7 +1076,14 @@ async function syncLeadsFromGoogleSheet() {
         observacao += (observacao ? " | " : "") + `Retornar em: ${dataRetorno}`;
       }
 
-      const status = mapLeadStatus(tabulacao);
+      let status = mapLeadStatus(tabulacao);
+      const cleanTel = telefone.trim().replace(/\D/g, '');
+      const nameLower = nomeLead.trim().toLowerCase();
+      const shortKey = `${nameLower}-${cleanTel}`;
+
+      if (coldLeadNames.has(nameLower) || (cleanTel && coldLeadKeys.has(shortKey))) {
+        status = 'Frio';
+      }
       
       const valorPlanoStr = valorPlanoRaw || valorPlanoRaw2 || "";
 
@@ -1065,7 +1094,7 @@ async function syncLeadsFromGoogleSheet() {
         interesse = "Baixo";
       }
       
-      const leadKey = `${nomeLead.trim().toLowerCase()}-${telefone.trim().replace(/\D/g, '')}-${vendedor.trim().toLowerCase()}`;
+      const leadKey = `${nameLower}-${cleanTel}-${vendedor.trim().toLowerCase()}`;
 
       leadMap.set(leadKey, {
         _linha: String(i + 1), // Direct mapping matching original Excel rows
@@ -1459,60 +1488,111 @@ async function syncLeadsFriosFromGoogleSheet() {
   console.log("[SYNC] Buscando e analisando aba BaseLeadsFrios_Unificada...");
   try {
     let allLeads: any[] = [];
-    const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
-    
-    const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "BaseLeadsFrios_Unificada");
-    
-    try {
-      const res = await fetch(url, { signal });
-      if (res.ok) {
-        const csvText = await res.text();
-        if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
-    const rows = parseCSV(csvText);
-        
-        if (rows.length >= 2) {
-          for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row || row.length < 3) continue;
-            
-            // Generate a deterministic ID based on row index and data to ensure stability between syncs
-            const rawIdString = `LFU_${i}_${row[5] || ""}_${row[6] || ""}`.replace(/[^a-zA-Z0-9_]/g, '');
-            const id = rawIdString.substring(0, 50) + `_${i}`;
-            
-            let lf: any = {
-              id: id,
-              data: row[0] || "",
-              cidade: row[1] || "",
-              bairro: row[2] || "",
-              endereco: row[3] || "",
-              numero: row[4] || "",
-              nome: row[5] || "",
-              telefone1: row[6] || "",
-              telefone2: row[7] || "",
-              email: row[8] || "",
-              consultor: row[9] || "",
-              origem: row[10] || "",
-              status: row[11] || "",
-              convertido: row[12] || "",
-              motivoNaoConversao: row[13] || "",
-              codigoProposta: row[14] || "",
-              provedorAtual: row[15] || "",
-              observacao: row[16] || "",
-              abaOrigem: row[17] || "BaseLeadsFrios_Unificada"
-            };
-            
-            if (lf.nome || lf.telefone1) {
-              allLeads.push(lf);
+    const sheets = getGoogleSheetsClient();
+    if (sheets) {
+      try {
+        const getRes = await sheets.spreadsheets.values.get({
+          spreadsheetId: "19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w",
+          range: "'BaseLeadsFrios_Unificada'!A2:R"
+        });
+        const rows = getRes.data.values || [];
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || row.length < 2) continue;
+          
+          const rowIndex = i + 2;
+          const rawIdString = `LFU_${rowIndex}_${row[5] || ""}_${row[6] || ""}`.replace(/[^a-zA-Z0-9_]/g, '');
+          const id = rawIdString.substring(0, 50) + `_${rowIndex}`;
+          
+          let lf: any = {
+            id: id,
+            data: row[0] || "",
+            cidade: row[1] || "",
+            bairro: row[2] || "",
+            endereco: row[3] || "",
+            numero: row[4] || "",
+            nome: row[5] || "",
+            telefone1: row[6] || "",
+            telefone2: row[7] || "",
+            email: row[8] || "",
+            consultor: row[9] || "",
+            origem: row[10] || "",
+            status: row[11] || "",
+            convertido: row[12] || "",
+            motivoNaoConversao: row[13] || "",
+            codigoProposta: row[14] || "",
+            provedorAtual: row[15] || "",
+            observacao: row[16] || "",
+            abaOrigem: row[17] || "BaseLeadsFrios_Unificada"
+          };
+          
+          if (lf.nome || lf.telefone1) {
+            allLeads.push(lf);
+          }
+        }
+      } catch (sheetsErr: any) {
+        console.warn("[SYNC] Direct Sheets get failed for BaseLeadsFrios_Unificada:", sheetsErr.message);
+      }
+    }
+
+    if (allLeads.length === 0) {
+      const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
+      const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "BaseLeadsFrios_Unificada");
+      
+      try {
+        const res = await fetch(url, { signal });
+        if (res.ok) {
+          const csvText = await res.text();
+          if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
+          const rows = parseCSV(csvText);
+          
+          if (rows.length >= 2) {
+            for (let i = 1; i < rows.length; i++) {
+              const row = rows[i];
+              if (!row || row.length < 3) continue;
+              
+              const rawIdString = `LFU_${i}_${row[5] || ""}_${row[6] || ""}`.replace(/[^a-zA-Z0-9_]/g, '');
+              const id = rawIdString.substring(0, 50) + `_${i}`;
+              
+              let lf: any = {
+                id: id,
+                data: row[0] || "",
+                cidade: row[1] || "",
+                bairro: row[2] || "",
+                endereco: row[3] || "",
+                numero: row[4] || "",
+                nome: row[5] || "",
+                telefone1: row[6] || "",
+                telefone2: row[7] || "",
+                email: row[8] || "",
+                consultor: row[9] || "",
+                origem: row[10] || "",
+                status: row[11] || "",
+                convertido: row[12] || "",
+                motivoNaoConversao: row[13] || "",
+                codigoProposta: row[14] || "",
+                provedorAtual: row[15] || "",
+                observacao: row[16] || "",
+                abaOrigem: row[17] || "BaseLeadsFrios_Unificada"
+              };
+              
+              if (lf.nome || lf.telefone1) {
+                allLeads.push(lf);
+              }
             }
           }
         }
+      } catch (e: any) {
+        console.warn(`Falha ao buscar aba BaseLeadsFrios_Unificada: ${e.message}`);
       }
-    } catch (e: any) {
-      console.warn(`Falha ao buscar aba BaseLeadsFrios_Unificada: ${e.message}`);
     }
     
     if (allLeads.length > 0) {
-      leadsFrios = allLeads;
+      // Merge local newly moved cold leads that might not yet be in allLeads
+      const fetchedNames = new Set(allLeads.map(l => (l.nome || "").trim().toLowerCase()).filter(Boolean));
+      const localUnsynced = leadsFrios.filter(localL => localL.nome && !fetchedNames.has(localL.nome.trim().toLowerCase()));
+      
+      leadsFrios = [...localUnsynced, ...allLeads];
       writeJSONDb("leadsFrios.json", leadsFrios);
       lastLeadsFriosSyncTime = Date.now();
       console.log(`[SYNC] Sucesso na sincronização de Leads Frios! Carregados ${leadsFrios.length} leads.`);
@@ -2170,7 +2250,20 @@ app.post("/api/env/n8n/toggle", async (req, res) => {
 
   const keysToUpdate = [key];
   if (key === 'PAUSE_ALL_N8N_WEBHOOKS') {
-    const pauseKeys = ['PAUSE_AGENDAMENTO_JOB', 'PAUSE_NEW_TASK_JOB', 'PAUSE_OVERDUE_TASKS_JOB', 'PAUSE_LEAD_INACTIVITY_JOB', 'PAUSE_UPGRADE_BASE_JOB', 'PAUSE_POS_VENDA_JOB', 'PAUSE_COBRANCAS_JOB', 'PAUSE_VENDAS_SVA_JOB', 'PAUSE_INDICACOES_JOB', 'PAUSE_COMPETITORS_JOB'];
+    const pauseKeys = [
+      'PAUSE_AGENDAMENTO_JOB',
+      'PAUSE_NEW_TASK_JOB',
+      'PAUSE_OVERDUE_TASKS_JOB',
+      'PAUSE_LEAD_INACTIVITY_JOB',
+      'PAUSE_UPGRADE_BASE_JOB',
+      'PAUSE_POS_VENDA_JOB',
+      'PAUSE_COBRANCAS_JOB',
+      'PAUSE_VENDAS_SVA_JOB',
+      'PAUSE_INDICACOES_JOB',
+      'PAUSE_COMPETITORS_JOB',
+      'PAUSE_ABSENCES_JOB',
+      'PAUSE_ABSENCE_APPROVAL_JOB'
+    ];
     pauseKeys.forEach(pk => {
       process.env[pk] = strValue;
       keysToUpdate.push(pk);
@@ -2665,6 +2758,8 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
     const cobranca2Idx = headers.findIndex((h: string) => h.includes("cobrança 2") || h.includes("cobranca 2") || h.includes("cobraça 2") || h.includes("2° m"));
     const cobranca3Idx = headers.findIndex((h: string) => h.includes("cobrança 3") || h.includes("cobranca 3") || h.includes("cobraça 3") || h.includes("3° m"));
 
+    const rxOnuIdx = headers.findIndex((h: string) => h.includes("rx onu") || h.includes("atenuação rx onu") || h.includes("atenuacao rx onu"));
+    const rxOltIdx = headers.findIndex((h: string) => h.includes("rx olt") || h.includes("atenuação rx olt") || h.includes("atenuacao rx olt"));
     const bairroIdx = headers.findIndex((h: string) => h.includes("bairro"));
     const statusSvaIdx = headers.findIndex((h: string) => h.includes("status do envio") || h.includes("envio sva") || h.includes("retorno n8n") || h.includes("status do n8n"));
     const statusIndicacaoEnvioIdx = 18; // Coluna S
@@ -2686,16 +2781,16 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
         telefone: telefoneIdx >= 0 ? row[telefoneIdx] : "",
         cpf: cpfIdx >= 0 ? row[cpfIdx] : (row[6] || ""),
         endereco: enderecoIdx >= 0 ? row[enderecoIdx] : "",
-        cidade: cidadeIdx >= 0 ? row[cidadeIdx] : (row[8] || ""),
-        bairro: bairroIdx >= 0 ? row[bairroIdx] : (row[9] || ""),
+        cidade: (cidadeIdx >= 0 && row[cidadeIdx]) ? row[cidadeIdx] : (row[8] || ""),
+        bairro: (bairroIdx >= 0 && row[bairroIdx]) ? row[bairroIdx] : (row[9] || ""),
         statusSva: statusSvaIdx >= 0 ? row[statusSvaIdx] : "",
         statusIndicacaoEnvio: statusIndicacaoEnvioIdx >= 0 ? row[statusIndicacaoEnvioIdx] : "",
         plano: planoIdx >= 0 ? row[planoIdx] : "",
         vendedora: vendedoraIdx >= 0 ? row[vendedoraIdx] : "",
         dataInstalacao: row[3] || (instalacaoIdx >= 0 ? row[instalacaoIdx] : ""),
         dataAlvo: "", 
-        rx_onu: row[11] || "",
-        rx_olt: row[12] || "",
+        rx_onu: (rxOnuIdx >= 0 && row[rxOnuIdx]) ? row[rxOnuIdx] : (row[11] || ""),
+        rx_olt: (rxOltIdx >= 0 && row[rxOltIdx]) ? row[rxOltIdx] : (row[12] || ""),
         status: "Pendente",
         cobrancaMes1: cobranca1Idx >= 0 ? row[cobranca1Idx] : null,
         cobrancaMes2: cobranca2Idx >= 0 ? row[cobranca2Idx] : null,
@@ -2720,9 +2815,15 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
       
       // Merge initial sheet data for these fields if not present in local state
       if (!clientObj.checklist) clientObj.checklist = {};
+      if (!clientObj.checklist.cidade && clientObj.cidade) clientObj.checklist.cidade = clientObj.cidade;
+      if (!clientObj.checklist.bairro && clientObj.bairro) clientObj.checklist.bairro = clientObj.bairro;
+      if (!clientObj.cidade && clientObj.checklist.cidade) clientObj.cidade = clientObj.checklist.cidade;
+      if (!clientObj.bairro && clientObj.checklist.bairro) clientObj.bairro = clientObj.checklist.bairro;
       if (!clientObj.checklist.cobrancaMes1 && clientObj.cobrancaMes1) clientObj.checklist.cobrancaMes1 = clientObj.cobrancaMes1;
       if (!clientObj.checklist.cobrancaMes2 && clientObj.cobrancaMes2) clientObj.checklist.cobrancaMes2 = clientObj.cobrancaMes2;
       if (!clientObj.checklist.cobrancaMes3 && clientObj.cobrancaMes3) clientObj.checklist.cobrancaMes3 = clientObj.cobrancaMes3;
+      if (!clientObj.checklist.atenuacaoRxOnu && clientObj.rx_onu) clientObj.checklist.atenuacaoRxOnu = clientObj.rx_onu;
+      if (!clientObj.checklist.atenuacaoRxOlt && clientObj.rx_olt) clientObj.checklist.atenuacaoRxOlt = clientObj.rx_olt;
 
       
       clients.push(clientObj);
@@ -2831,7 +2932,10 @@ app.post("/api/pos-vendas/:id", (req, res) => {
       "AÇÃO COBRAÇA 1° MES": updates.checklist?.cobrancaMes1,
       "AÇÃO COBRAÇA 2° MES": updates.checklist?.cobrancaMes2,
       "AÇÃO COBRAÇA 3° MES": updates.checklist?.cobrancaMes3,
-      "FOI INDICAÇÃO DE ALGUÉM?": updates.checklist?.statusIndicacao
+      "FOI INDICAÇÃO DE ALGUÉM?": updates.checklist?.statusIndicacao,
+      "Cidade": updates.cidade || updates.checklist?.cidade || posVendasData[id]?.cidade,
+      "Bairros Lajeado | Estrela (Apartir do n° 28)": updates.bairro || updates.checklist?.bairro || posVendasData[id]?.bairro,
+      "Bairro": updates.bairro || updates.checklist?.bairro || posVendasData[id]?.bairro
     };
 
     // Tentativa 1: Webhook N8N para atualizar a planilha se existir
@@ -2875,59 +2979,68 @@ app.post("/api/pos-vendas/:id", (req, res) => {
   }
 
 
-  // If newly concluded, add to baseClients
-  if (updates.status === "Concluído" && wasNotConcluido) {
-    if (updates.nome) {
-      // Extract speed from plan to match other base inserts (e.g. "400MEGA", "MHNET 400")
+  // If newly concluded or explicitly concluded, integrate copy into baseClients
+  if (updates.isConcluido || updates.status === "Concluído" || updates.status === "Alerta") {
+    const clientName = updates.nome || posVendasData[id]?.nome;
+    if (clientName) {
       let velocidadeMb = 400;
       const extractMb = (p: string) => {
+        if (!p) return null;
         const m = p.match(/(\d{3,4})\s*(mb|mega)/i);
         if (m) return parseInt(m[1], 10);
         const m2 = p.match(/(\d{3,4})/);
         if (m2) return parseInt(m2[1], 10);
         return null;
       };
-      const extracted = extractMb(updates.plano || "");
+      const extracted = extractMb(updates.plano || posVendasData[id]?.plano || "");
       if (extracted) velocidadeMb = extracted;
 
+      const phone = updates.telefone || posVendasData[id]?.telefone || "";
       const existingIndex = baseClients.findIndex(c => 
-        c.nome.toLowerCase() === updates.nome.toLowerCase()
+        (c.nome && clientName && c.nome.trim().toLowerCase() === clientName.trim().toLowerCase()) ||
+        (c.telefoneExterno && phone && c.telefoneExterno.replace(/\D/g, '') === phone.replace(/\D/g, '') && phone.replace(/\D/g, '').length >= 8)
       );
 
       let modifiedClient = null;
+      const dataAtivacaoVal = updates.dataInstalacao || posVendasData[id]?.dataInstalacao || new Date().toLocaleDateString("pt-BR");
+      const obsVal = updates.observacoes || posVendasData[id]?.observacoes || updates.checklist?.observacao || "";
+      const cidadeVal = updates.cidade || posVendasData[id]?.cidade || updates.checklist?.cidade || "Indefinido";
+
       if (existingIndex !== -1) {
         baseClients[existingIndex] = {
            ...baseClients[existingIndex],
            status: "Ativo", 
-           plano: updates.plano, 
-           velocidadeMb, 
-           telefoneExterno: updates.telefone, 
-           dataAtivacao: updates.dataInstalacao,
-           endereco: updates.endereco
+           plano: updates.plano || posVendasData[id]?.plano || baseClients[existingIndex].plano, 
+           velocidadeMb: velocidadeMb || baseClients[existingIndex].velocidadeMb, 
+           telefoneExterno: phone || baseClients[existingIndex].telefoneExterno, 
+           dataAtivacao: dataAtivacaoVal || baseClients[existingIndex].dataAtivacao,
+           endereco: updates.endereco || posVendasData[id]?.endereco || baseClients[existingIndex].endereco,
+           cidade: cidadeVal !== "Indefinido" ? cidadeVal : baseClients[existingIndex].cidade,
+           observacao: obsVal || baseClients[existingIndex].observacao || ""
         };
         modifiedClient = baseClients[existingIndex];
       } else {
         const idContrato = `MHN_POS_${Math.floor(Math.random()*100000)}`;
         const newClient = {
           idContrato,
-          nome: updates.nome,
-          plano: updates.plano,
+          nome: clientName,
+          plano: updates.plano || posVendasData[id]?.plano || "MHNET Fibra 400Mbps",
           status: "Ativo",
-          valor: 0,
+          valor: 99.90,
           velocidadeMb,
-          telefoneExterno: updates.telefone,
-          endereco: updates.endereco,
-          dataAtivacao: updates.dataInstalacao,
-          consultorOrigem: updates.vendedora || "Pós Vendas",
-          cidade: "Indefinido"
+          telefoneExterno: phone,
+          endereco: updates.endereco || posVendasData[id]?.endereco || "",
+          cidade: cidadeVal,
+          dataAtivacao: dataAtivacaoVal,
+          consultorOrigem: updates.vendedora || posVendasData[id]?.vendedora || "Pós Vendas",
+          observacao: obsVal
         };
         baseClients.push(newClient);
         modifiedClient = newClient;
       }
       writeJSONDb("baseClients.json", baseClients);
-      // Only append new rows to sheet
-      if (modifiedClient && existingIndex === -1) {
-        writeBaseClientToGoogleSheet(modifiedClient).catch(e => console.error(e));
+      if (modifiedClient) {
+        writeBaseClientToGoogleSheet(modifiedClient).catch(e => console.error("Erro ao sincronizar cliente base com planilha:", e));
       }
     }
   }
@@ -4790,29 +4903,89 @@ app.post("/api/installations/sync", async (req, res) => {
   }
 });
 
+// Helper to directly update Google Sheets on moving lead to cold
+async function moveLeadToLeadsFriosInGoogleSheet(lead: any, novoFrio: any) {
+  const spreadsheetId = "19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w";
+  try {
+    const sheets = getGoogleSheetsClient();
+    if (sheets) {
+      // 1. Update row in "Acompanhamento de Lead | Abordagens" Column B (TABULAÇÃO | INSCRIÇÃO) to "Frio"
+      let rowToUpdate = lead._linha;
+      if (!rowToUpdate && lead.nomeLead) {
+        try {
+          const getRes = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: "'Acompanhamento de Lead | Abordagens'!D1:D5000"
+          });
+          const names = getRes.data.values || [];
+          for (let idx = 0; idx < names.length; idx++) {
+            if (names[idx] && names[idx][0] && names[idx][0].toString().trim().toLowerCase() === lead.nomeLead.trim().toLowerCase()) {
+              rowToUpdate = String(idx + 1);
+              break;
+            }
+          }
+        } catch (findErr: any) {
+          console.warn("[SHEETS] Could not find row by name:", findErr.message);
+        }
+      }
+
+      if (rowToUpdate) {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `'Acompanhamento de Lead | Abordagens'!B${rowToUpdate}`,
+          valueInputOption: "USER_ENTERED",
+          requestBody: { values: [["Frio"]] }
+        });
+        console.log(`[SHEETS] Row ${rowToUpdate} in Acompanhamento de Lead updated to 'Frio'`);
+      }
+
+      // 2. Append row to BaseLeadsFrios_Unificada
+      const mappedFrioRow = [
+        novoFrio.data || "",
+        novoFrio.cidade || "",
+        novoFrio.bairro || "",
+        novoFrio.endereco || "",
+        novoFrio.numero || "",
+        novoFrio.nome || "",
+        novoFrio.telefone1 || "",
+        novoFrio.telefone2 || "",
+        novoFrio.email || "",
+        novoFrio.consultor || "",
+        novoFrio.origem || "Acompanhamento",
+        novoFrio.status || "Frio",
+        novoFrio.convertido || "Não",
+        novoFrio.motivoNaoConversao || "",
+        novoFrio.codigoProposta || "",
+        novoFrio.provedorAtual || "",
+        novoFrio.observacao || "",
+        novoFrio.abaOrigem || "BaseLeadsFrios_Unificada"
+      ];
+
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: "'BaseLeadsFrios_Unificada'!A:R",
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [mappedFrioRow] }
+      });
+      console.log(`[SHEETS] Appended lead '${novoFrio.nome}' to BaseLeadsFrios_Unificada`);
+      return true;
+    }
+  } catch (e: any) {
+    console.error("[SHEETS] Error in moveLeadToLeadsFriosInGoogleSheet:", e.message);
+  }
+  return false;
+}
+
 // --- Leads Frios Endpoints ---
 app.post("/api/leads-frios/move", async (req, res) => {
   const { lead, user } = req.body;
   if (!lead || !user) return res.status(400).json({ status: "error", message: "Missing data" });
 
   try {
-    // 1. Remove from Acompanhamento de Lead | Abordagens (Local + GAS)
-    leads = leads.filter(l => String(l._linha) !== String(lead._linha));
-    
-    // NOTA: Como o Apps Script "saveLead" apenas apenda uma nova linha (e "deleteLead" não funciona),
-    // NÃO podemos decrementar o _linha dos outros leads, pois as linhas originais não são apagadas/deslocadas no Sheets!
-    
-    writeJSONDb("leads.json", leads);
-    lastLeadsSyncTime = Date.now();
-    
-    // We await this so the subsequent UI refresh will fetch the appended Frio row and correctly deduplicate it out
-    await writeLeadToGoogleSheet({ ...lead, status: "Frio" }, "save").catch(err => console.error("Error updating lead on move to cold:", err)); 
-
-    // 2. Add to BaseLeadsFrios_Unificada
     const dataTransferencia = new Date().toLocaleDateString("pt-BR");
-    const userName = user.nome || user;
+    const userName = typeof user === 'string' ? user : (user.nome || "Usuário");
     const observacaoHistorico = lead.observacao || "";
-    
+
     const novoFrio = {
       id: `LF_${Date.now()}`,
       data: lead.dataCadastro || dataTransferencia,
@@ -4836,55 +5009,35 @@ app.post("/api/leads-frios/move", async (req, res) => {
       abaOrigem: "BaseLeadsFrios_Unificada"
     };
 
-    leadsFrios.push(novoFrio);
+    // 1. Remove from local active leads array
+    const leadNameLower = (lead.nomeLead || "").trim().toLowerCase();
+    const leadTelClean = (lead.telefone || "").replace(/\D/g, "");
+
+    leads = leads.filter(l => {
+      const isSameLinha = String(l._linha) === String(lead._linha);
+      const isSameName = leadNameLower && l.nomeLead && l.nomeLead.trim().toLowerCase() === leadNameLower;
+      const isSamePhone = leadTelClean && l.telefone && l.telefone.replace(/\D/g, "") === leadTelClean;
+      return !(isSameLinha || (isSameName && isSamePhone));
+    });
+
+    writeJSONDb("leads.json", leads);
+
+    // 2. Add to leadsFrios array
+    leadsFrios.unshift(novoFrio);
     writeJSONDb("leadsFrios.json", leadsFrios);
-    lastLeadsFriosSyncTime = Date.now(); // Prevent immediate sync that would pull stale CSV data
 
-    // Try to append to GAS BaseLeadsFrios_Unificada
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
-      
-      const mappedFrio = {
-        "Data": novoFrio.data,
-        "Cidade": novoFrio.cidade,
-        "Bairro": novoFrio.bairro,
-        "Endereço": novoFrio.endereco,
-        "N°": novoFrio.numero,
-        "Nome": novoFrio.nome,
-        "Telefone 1": novoFrio.telefone1,
-        "Telefone 2": novoFrio.telefone2,
-        "E-mail": novoFrio.email,
-        "Consultor": novoFrio.consultor,
-        "Forma de Captação/Origem": novoFrio.origem,
-        "Status/Situação": novoFrio.status,
-        "Convertido?": novoFrio.convertido,
-        "Motivo Não Conversão": novoFrio.motivoNaoConversao,
-        "Código Proposta/Plano": novoFrio.codigoProposta,
-        "Provedor Atual/Cliente?": novoFrio.provedorAtual,
-        "Observações": novoFrio.observacao,
-        "Aba de Origem": novoFrio.abaOrigem
-      };
+    lastLeadsSyncTime = Date.now();
+    lastLeadsFriosSyncTime = Date.now();
 
-      await fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-        body: JSON.stringify({
-          route: "saveLead",
-          payload: {
-            sheetName: "BaseLeadsFrios_Unificada",
-            item: mappedFrio
-          }
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-    } catch (e) {
-      console.warn("Could not save to leads frios GAS:", e);
-    }
+    // 3. Update Google Sheets directly via API
+    await moveLeadToLeadsFriosInGoogleSheet(lead, novoFrio);
 
-    res.json({ status: "success" });
-  } catch (error) {
+    // Also call AppsScript fallback asynchronously
+    writeLeadToGoogleSheet({ ...lead, status: "Frio" }, "save").catch(err => console.error("Error updating lead on move to cold:", err));
+
+    res.json({ status: "success", lead: novoFrio });
+  } catch (error: any) {
+    console.error("Error moving lead to cold:", error);
     res.status(500).json({ status: "error", message: error.message });
   }
 });
@@ -5700,99 +5853,185 @@ async function writeBaseClientToGoogleSheet(client: any) {
   }
 }
 
-async function syncInternalProtocolsFromGoogleSheet() {
-  if (Date.now() - lastInternalProtocolsSyncTime < 300000) return; // 5 mins cache
+
+function getGoogleSheetsClient() {
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN) {
+    const { google } = require("googleapis");
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET
+    );
+    oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+    return google.sheets({ version: "v4", auth: oauth2Client });
+  }
+  return null;
+}
+
+async function writeInternalProtocolToGoogleSheet(item: any, action: "append" | "update" | "delete" = "append") {
+  const spreadsheetId = "19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w";
+  const sheetName = "Protocolos Internos";
   
   try {
-    const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
-    const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Protocolos Internos");
-    
-    const res = await fetch(url, { signal });
-    if (res.ok) {
-      const csvText = await res.text();
-      if (csvText.trim().toLowerCase().startsWith("<!doctype html>")) { throw new Error("Aba solicitada não existe ou não está pública"); }
-      const rows = parseCSV(csvText);
-      let queue: any[] = [];
-      if (rows.length >= 2) {
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i];
-          if (!row[0] && !row[1] && !row[2]) continue;
-          
-          const id = row[4] || ('fallback-' + (row[0] || '').replace(/[^a-zA-Z0-9]/g, '') + '-' + (row[2] || '').replace(/[^a-zA-Z0-9]/g, ''));
-          const localItem = internalProtocols.find(p => p.id === id) || ({} as any);
+    const sheets = getGoogleSheetsClient();
+    if (!sheets) {
+      console.warn("[SYNC] Direct Google Sheets credentials not available.");
+      return;
+    }
 
-          queue.push({
-            protocolo: row[0] || localItem.protocolo || "-",
-            dataAbertura: row[1] || localItem.dataAbertura || "",
-            setor: row[2] || localItem.setor || "-",
-            motivo: row[3] || localItem.motivo || "-",
-            id: id,
-            vendedor: row[5] || localItem.vendedor || "Não Informado",
-            timestamp: row[6] || localItem.timestamp || "",
-            observacoes: row[7] || localItem.observacoes || "",
-            status: row[8] || localItem.status || "Pendentes"
-          });
+    const getRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: "'Protocolos Internos'!A:I",
+    });
+    const rows = getRes.data.values || [];
+
+    if (rows.length === 0 || !rows[0] || rows[0].length < 5) {
+      const header = ['Protocolo', 'Data de Abertura', 'Setor', 'Motivo', 'ID', 'Vendedor', 'Timestamp', 'Observações', 'Status'];
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: "'Protocolos Internos'!A1:I1",
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [header] }
+      });
+    }
+
+    const formattedRow = [
+      item.protocolo || "-",
+      item.dataAbertura || "-",
+      item.setor || "-",
+      item.motivo || "-",
+      item.id || "",
+      item.vendedor || "-",
+      item.timestamp || "-",
+      item.observacoes || "",
+      item.status || "Pendente"
+    ];
+
+    if (action === "append") {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: "'Protocolos Internos'!A:I",
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [formattedRow] }
+      });
+      console.log(`[SYNC] Protocolo ${item.protocolo} adicionado na planilha Google!`);
+    } else if (action === "update") {
+      let rowIndex = -1;
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row && (row[4] === item.id || (item.protocolo && row[0] === item.protocolo))) {
+          rowIndex = i + 1;
+          break;
         }
       }
-      
-      const existingIds = new Set(queue.map((q: any) => q.id));
+
+      if (rowIndex > 0) {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `'Protocolos Internos'!A${rowIndex}:I${rowIndex}`,
+          valueInputOption: "USER_ENTERED",
+          requestBody: { values: [formattedRow] }
+        });
+        console.log(`[SYNC] Protocolo ${item.protocolo} (Linha ${rowIndex}) atualizado na planilha Google!`);
+      } else {
+        await sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range: "'Protocolos Internos'!A:I",
+          valueInputOption: "USER_ENTERED",
+          requestBody: { values: [formattedRow] }
+        });
+        console.log(`[SYNC] Protocolo ${item.protocolo} não encontrado; adicionado na planilha Google!`);
+      }
+    } else if (action === "delete") {
+      let rowIndex = -1;
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row && (row[4] === item.id || (item.protocolo && row[0] === item.protocolo))) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+      if (rowIndex > 0) {
+        await sheets.spreadsheets.values.clear({
+          spreadsheetId,
+          range: `'Protocolos Internos'!A${rowIndex}:I${rowIndex}`,
+        });
+        console.log(`[SYNC] Protocolo ${item.id} (Linha ${rowIndex}) removido da planilha Google!`);
+      }
+    }
+  } catch (e) {
+    console.error("[SYNC] Erro ao gravar Protocolo Interno na Planilha Google:", e.message);
+  }
+}
+
+async function syncInternalProtocolsFromGoogleSheet() {
+  if (Date.now() - lastInternalProtocolsSyncTime < 15000) return; // 15s cache
+
+  try {
+    const sheets = getGoogleSheetsClient();
+    let rows = [];
+
+    if (sheets) {
+      const getRes = await sheets.spreadsheets.values.get({
+        spreadsheetId: "19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w",
+        range: "'Protocolos Internos'!A:I",
+      });
+      rows = getRes.data.values || [];
+    } else {
+      const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
+      const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Protocolos Internos");
+      const res = await fetch(url, { signal });
+      if (res.ok) {
+        const csvText = await res.text();
+        if (!csvText.trim().toLowerCase().startsWith("<!doctype html>")) {
+          rows = parseCSV(csvText);
+        }
+      }
+    }
+
+    if (rows.length >= 2) {
+      let queue = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || (!row[0] && !row[1] && !row[2])) continue;
+
+        const id = row[4] || ('fallback-' + (row[0] || '').replace(/[^a-zA-Z0-9]/g, '') + '-' + (row[2] || '').replace(/[^a-zA-Z0-9]/g, ''));
+        const localItem = internalProtocols.find(p => p.id === id || p.protocolo === row[0]) || {};
+
+        queue.push({
+          id: id,
+          protocolo: row[0] || localItem.protocolo || "-",
+          dataAbertura: row[1] || localItem.dataAbertura || "",
+          setor: row[2] || localItem.setor || "-",
+          motivo: row[3] || localItem.motivo || "-",
+          vendedor: row[5] || localItem.vendedor || "Não Informado",
+          timestamp: row[6] || localItem.timestamp || "",
+          observacoes: row[7] || localItem.observacoes || "",
+          status: row[8] || localItem.status || "Pendente"
+        });
+      }
+
+      const existingIds = new Set(queue.map(q => q.id));
       const notInGas = internalProtocols.filter(q => !existingIds.has(q.id));
-      
-      internalProtocols = [...notInGas, ...queue.reverse()];
-      
-      // Deduplicate by ID
+
+      internalProtocols = [...queue.reverse(), ...notInGas];
+
       const seen = new Set();
       internalProtocols = internalProtocols.filter(p => {
-        if (seen.has(p.id)) return false;
+        if (!p.id || seen.has(p.id)) return false;
         seen.add(p.id);
         return true;
       });
 
       writeJSONDb("internalProtocols.json", internalProtocols);
-      
       lastInternalProtocolsSyncTime = Date.now();
-      console.log("[SYNC] Protocolos Internos sincronizados. Itens:", internalProtocols.length);
+      console.log("[SYNC] Protocolos Internos sincronizados. Total:", internalProtocols.length);
     }
-  } catch(e: any) {
+  } catch(e) {
     console.warn("Falha ao buscar Protocolos Internos:", e.message);
   }
 }
+
 syncInternalProtocolsFromGoogleSheet();
-
-async function writeInternalProtocolToGoogleSheet(item: any, action: "append" | "update" = "append") {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
-    const mappedItem = {
-      "Protocolo": item.protocolo || "-",
-      "Data Abertura": item.dataAbertura || "-",
-      "Setor": item.setor || "-",
-      "Motivo": item.motivo || "-",
-      "ID": item.id,
-      "Vendedor": item.vendedor || "-",
-      "Timestamp": item.timestamp || "-",
-      "Observações": item.observacoes || "",
-      "Status": item.status || "Pendentes"
-    };
-
-    await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-      body: JSON.stringify({
-        route: action === "update" ? "updateRow" : "appendRow",
-        payload: {
-          sheetName: "Protocolos Internos",
-          item: mappedItem,
-          id: item.id
-        }
-      }),
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-  } catch (e) {
-    console.warn("Could not save to Protocolos Internos GAS:", e);
-  }
-}
 
 app.get("/api/sheets/internal-protocols", async (req, res) => {
   try {
@@ -5805,7 +6044,6 @@ app.get("/api/sheets/internal-protocols", async (req, res) => {
 
 app.post("/api/sheets/internal-protocols", async (req, res) => {
   try {
-    // Implemente uma função de verificação no módulo de Protocolos Internos para garantir que cada registro salve um timestamp em formato DD/MM/AAAA e que o nome do vendedor esteja sendo enviado ao n8n
     const timestampDDMMYYYY = req.body.timestamp || new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
     const vendedor = req.body.vendedor || "Não Informado";
 
@@ -5813,13 +6051,16 @@ app.post("/api/sheets/internal-protocols", async (req, res) => {
       ...req.body,
       timestamp: timestampDDMMYYYY,
       vendedor: vendedor,
+      status: req.body.status || 'Pendente',
       id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
     };
+
     internalProtocols.unshift(newItem);
     writeJSONDb("internalProtocols.json", internalProtocols);
-    
-    writeInternalProtocolToGoogleSheet(newItem).catch(e => console.error(e));
-    
+    lastInternalProtocolsSyncTime = 0;
+
+    writeInternalProtocolToGoogleSheet(newItem, "append").catch(e => console.error(e));
+
     // Disparar Webhook para o n8n
     let webhookUrl = process.env.N8N_WEBHOOK_URL || "https://sua-url-ngrok.ngrok-free.dev/webhook-test/protocolo-interno";
     if (webhookUrl && !webhookUrl.includes("localhost:5678")) {
@@ -5827,7 +6068,7 @@ app.post("/api/sheets/internal-protocols", async (req, res) => {
       if (!webhookUrl.includes("protocolo-interno")) {
         webhookUrl += webhookUrl.includes("webhook/") || webhookUrl.includes("webhook-test/") ? "protocolo-interno" : "/webhook/protocolo-interno";
       }
-      
+
       try {
         fetch(webhookUrl, {
           method: "POST",
@@ -5855,6 +6096,8 @@ app.put("/api/sheets/internal-protocols/:id", async (req, res) => {
     if (index !== -1) {
       internalProtocols[index] = { ...internalProtocols[index], ...req.body };
       writeJSONDb("internalProtocols.json", internalProtocols);
+      lastInternalProtocolsSyncTime = 0;
+
       writeInternalProtocolToGoogleSheet(internalProtocols[index], "update").catch(e => console.error(e));
       res.json({ success: true, item: internalProtocols[index] });
     } else {
@@ -5870,8 +6113,12 @@ app.delete("/api/sheets/internal-protocols/:id", async (req, res) => {
     const id = req.params.id;
     const index = internalProtocols.findIndex(p => p.id === id);
     if (index !== -1) {
+      const itemToDel = internalProtocols[index];
       internalProtocols.splice(index, 1);
       writeJSONDb("internalProtocols.json", internalProtocols);
+      lastInternalProtocolsSyncTime = 0;
+
+      writeInternalProtocolToGoogleSheet(itemToDel, "delete").catch(e => console.error(e));
       res.json({ success: true });
     } else {
       res.status(404).json({ error: "Not found" });
@@ -5880,7 +6127,6 @@ app.delete("/api/sheets/internal-protocols/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to delete internal protocol" });
   }
 });
-
 
 let localInstallationQueue: any[] = readJSONDb("installationsQueue.json", []);
 let lastInstallationQueueSyncTime = 0;

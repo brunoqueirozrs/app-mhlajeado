@@ -199,8 +199,14 @@ export default function LeadsPage({
         body: JSON.stringify({ lead: leadWithUpdatedLog, user: loggedUser })
       });
       if (res.ok) {
-        if (typeof window !== "undefined") {
-           window.location.reload();
+        setIsMoving(false);
+        setIsConfirmMoveOpen(false);
+        setIsModalOpen(false);
+        setSelectedLead(null);
+        if (onSyncLeads) {
+          await onSyncLeads();
+        } else if (typeof window !== "undefined") {
+          window.location.reload();
         }
       } else {
         const errorData = await res.json();

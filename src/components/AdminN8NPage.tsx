@@ -151,7 +151,12 @@ export function AdminN8NPage() {
         body: JSON.stringify({ key, value: newValue })
       });
       if (res.ok) {
-        setEnvConfig({ ...envConfig, [key]: newValue });
+        if (key === 'PAUSE_ALL_N8N_WEBHOOKS') {
+          // Recarrega todas as configurações do servidor para refletir o estado de pausa em todas as integrações
+          await fetchEnvConfig();
+        } else {
+          setEnvConfig({ ...envConfig, [key]: newValue });
+        }
       }
     } catch (e) {
       console.error(e);
@@ -211,19 +216,36 @@ export function AdminN8NPage() {
           <div className="text-center text-slate-500 text-sm py-8">Carregando configurações...</div>
         ) : envConfig ? (
           <div className="space-y-6">
-            <div className="flex flex-wrap gap-3 mb-6">
-              <button onClick={() => toggleAllEnvVars(false)} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm flex items-center gap-2 transition-colors">
-                <CheckCircle className="w-4 h-4" /> ATIVAR MODO PRODUÇÃO EM TUDO
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+              <button onClick={() => toggleAllEnvVars(false)} className="w-full justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-2 transition-all active:scale-95 shadow-sm text-center">
+                <CheckCircle className="w-4 h-4 flex-shrink-0" /> ATIVAR MODO PRODUÇÃO EM TUDO
               </button>
-              <button onClick={() => toggleAllEnvVars(true)} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-sm flex items-center gap-2 transition-colors">
-                <Zap className="w-4 h-4" /> ATIVAR MODO TESTE EM TUDO
+              <button onClick={() => toggleAllEnvVars(true)} className="w-full justify-center px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-2 transition-all active:scale-95 shadow-sm text-center">
+                <Zap className="w-4 h-4 flex-shrink-0" /> ATIVAR MODO TESTE EM TUDO
               </button>
               {envConfig.PAUSE_ALL_N8N_WEBHOOKS !== undefined && (
-                <button onClick={() => toggleEnvVar('PAUSE_ALL_N8N_WEBHOOKS', envConfig.PAUSE_ALL_N8N_WEBHOOKS)} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg text-sm flex items-center gap-2 transition-colors ml-auto">
-                  <AlertTriangle className="w-4 h-4" /> {envConfig.PAUSE_ALL_N8N_WEBHOOKS === 'true' ? "RETOMAR TODAS AS OPERAÇÕES N8N" : "PAUSAR TODAS AS OPERAÇÕES N8N"}
+                <button 
+                  onClick={() => toggleEnvVar('PAUSE_ALL_N8N_WEBHOOKS', envConfig.PAUSE_ALL_N8N_WEBHOOKS)} 
+                  className={`w-full justify-center px-4 py-2.5 font-black rounded-xl text-xs sm:text-sm flex items-center gap-2 transition-all active:scale-95 shadow-md text-center ${
+                    envConfig.PAUSE_ALL_N8N_WEBHOOKS === 'true'
+                      ? "bg-rose-600 hover:bg-rose-700 text-white border-2 border-rose-400 ring-2 ring-rose-300"
+                      : "bg-rose-500 hover:bg-rose-600 text-white"
+                  }`}
+                >
+                  <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${envConfig.PAUSE_ALL_N8N_WEBHOOKS === 'true' ? "animate-bounce" : ""}`} /> 
+                  {envConfig.PAUSE_ALL_N8N_WEBHOOKS === 'true' ? "RETOMAR OPERAÇÕES (PAUSADO)" : "PAUSAR TODAS AS OPERAÇÕES"}
                 </button>
               )}
             </div>
+
+            {envConfig.PAUSE_ALL_N8N_WEBHOOKS === 'true' && (
+              <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center gap-3 font-semibold text-sm mb-6 shadow-sm">
+                <AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 animate-bounce" />
+                <div>
+                  <span className="font-extrabold text-rose-900">Atenção:</span> Todas as operações e webhooks do N8N estão <span className="underline font-black text-rose-700">PAUSADOS</span> no momento. Clique no botão vermelho acima para retomar.
+                </div>
+              </div>
+            )}
             <div className="grid gap-6">
               {[
                 {

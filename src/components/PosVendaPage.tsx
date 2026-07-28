@@ -3,7 +3,8 @@ import {
   CheckCircle, CheckSquare, Check, X, AlertTriangle, 
   MessageSquare, UserCheck, Calendar, Search, 
   Filter, ChevronRight, Phone, MapPin, 
-  Wifi, Smartphone, ThumbsUp, HelpCircle, RefreshCw, Zap, Loader2, AlertCircle
+  Wifi, Smartphone, ThumbsUp, HelpCircle, RefreshCw, Zap, Loader2, AlertCircle,
+  ExternalLink, ShieldAlert, ShieldCheck, Activity
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import ConfirmModal from "./ConfirmModal";
@@ -53,16 +54,216 @@ const checklistsDefault = {
   cobrancaMes3: null
 };
 
-const atenuacaoMessage = (val: string) => {
-  if (!val) return null;
-  if (val.toUpperCase().includes("UP")) return { text: "Fora do Padrão (Abrir chamado)", color: "text-rose-700 bg-rose-50 border-rose-200", inputBorder: "border-rose-500 focus:border-rose-600" };
-  const num = parseFloat(val.replace(',', '.'));
-  if (isNaN(num)) return null;
-  if (num <= -8 && num >= -27) return { text: "Padrão Ideal", color: "text-emerald-700 bg-[#E6FAF1] border-emerald-200", inputBorder: "border-slate-200 focus:border-sky-500" };
-  if (num < -27 && num >= -29) return { text: "Atenção (Verificar luz)", color: "text-amber-700 bg-amber-50 border-amber-200", inputBorder: "border-amber-400 focus:border-amber-500" };
-  if (num < -29 || num > -8) return { text: "Fora do Padrão (Abrir chamado técnico)", color: "text-rose-700 bg-rose-50 border-rose-200", inputBorder: "border-rose-500 focus:border-rose-600" };
-  return null;
-};
+export interface AtenuacaoAnalysis {
+  status: "Excelente" | "Boa" | "Atenção" | "Crítica" | "Offline" | "Sem Comunicação com a OLT" | "Aguardando Leitura";
+  indicator: string;
+  badgeBg: string;
+  badgeBorder: string;
+  cardBg: string;
+  cardBorder: string;
+  inputBorderOnu: string;
+  inputBorderOlt: string;
+  saudePerc: number | null;
+  saudeStr: string;
+  diferenca: number | null;
+  diferencaStr: string;
+  motivos: string[];
+  qualidade: "EXCELENTE" | "BOA" | "ATENCAO" | "CRITICA" | "OFFLINE" | "SEM_COMUNICACAO" | "INCOMPLETO";
+}
+
+export function analisarAtenuacaoFibra(rxOnuRaw: string, rxOltRaw: string): AtenuacaoAnalysis {
+  const onuVal = (rxOnuRaw || "").trim();
+  const oltVal = (rxOltRaw || "").trim();
+
+  // 1. ONU sem energia / vazia
+  const onuNormalized = onuVal.toLowerCase();
+  if (!onuVal || onuNormalized.includes("sem energia") || onuNormalized === "offline") {
+    return {
+      status: "Offline",
+      indicator: "⚫",
+      badgeBg: "bg-slate-200 text-slate-800",
+      badgeBorder: "border-slate-300",
+      cardBg: "bg-slate-50",
+      cardBorder: "border-slate-200",
+      inputBorderOnu: "border-slate-300 focus:border-slate-400",
+      inputBorderOlt: "border-slate-200 focus:border-sky-500",
+      saudePerc: 0,
+      saudeStr: "0%",
+      diferenca: null,
+      diferencaStr: "N/A",
+      motivos: ["ONU sem energia."],
+      qualidade: "OFFLINE"
+    };
+  }
+
+  // 2. OLT sem leitura / N/A
+  const oltNormalized = oltVal.toUpperCase();
+  if (!oltVal || oltNormalized.includes("N/A") || oltVal.toLowerCase().includes("sem comunicação") || oltVal.toLowerCase().includes("sem comunicacao")) {
+    return {
+      status: "Sem Comunicação com a OLT",
+      indicator: "🔵",
+      badgeBg: "bg-blue-100 text-blue-800",
+      badgeBorder: "border-blue-300",
+      cardBg: "bg-blue-50/50",
+      cardBorder: "border-blue-200",
+      inputBorderOnu: "border-slate-200 focus:border-sky-500",
+      inputBorderOlt: "border-blue-300 focus:border-blue-400",
+      saudePerc: null,
+      saudeStr: "N/A",
+      diferenca: null,
+      diferencaStr: "N/A",
+      motivos: ["ONU sem comunicação com a OLT."],
+      qualidade: "SEM_COMUNICACAO"
+    };
+  }
+
+  // Parse numeric values
+  const rxOnu = parseFloat(onuVal.replace(',', '.'));
+  const rxOlt = parseFloat(oltVal.replace(',', '.'));
+
+  if (isNaN(rxOnu) || isNaN(rxOlt)) {
+    return {
+      status: "Aguardando Leitura",
+      indicator: "⚪",
+      badgeBg: "bg-slate-100 text-slate-600",
+      badgeBorder: "border-slate-200",
+      cardBg: "bg-slate-50",
+      cardBorder: "border-slate-200",
+      inputBorderOnu: "border-slate-200 focus:border-sky-500",
+      inputBorderOlt: "border-slate-200 focus:border-sky-500",
+      saudePerc: null,
+      saudeStr: "-",
+      diferenca: null,
+      diferencaStr: "-",
+      motivos: [],
+      qualidade: "INCOMPLETO"
+    };
+  }
+
+  // 3. Diferença |RX ONU - RX OLT|
+  const diferenca = Math.abs(rxOnu - rxOlt);
+  const diferencaStr = `${diferenca.toFixed(2).replace('.', ',')} dBm`;
+
+  const motivos: string[] = [];
+
+  // Regra: RX ONU < -27 dBm
+  if (rxOnu < -27) {
+    motivos.push("RX ONU fora do padrão (-27 dBm ou mais atenuado).");
+  }
+
+  // Regra: RX OLT < -27 dBm
+  if (rxOlt < -27) {
+    motivos.push("RX OLT fora do padrão (-27 dBm ou mais atenuado).");
+  }
+
+  // Regra: Diferença > 4 dBm
+  if (diferenca > 4) {
+    motivos.push("Diferença entre RX ONU e RX OLT superior a 4 dBm.");
+  }
+
+  const isOnuCritica = rxOnu < -27;
+  const isOltCritica = rxOlt < -27;
+  const isDiffCritica = diferenca > 4;
+
+  const isOnuAtencao = rxOnu >= -27 && rxOnu <= -26;
+  const isOltAtencao = rxOlt >= -27 && rxOlt <= -26;
+  const isDiffAtencao = diferenca >= 3 && diferenca <= 4;
+
+  // Classificação
+  // 🔴 Crítica: RX ONU < -27 OU RX OLT < -27 OU Diferença > 4
+  if (isOnuCritica || isOltCritica || isDiffCritica) {
+    let saude = 65;
+    if (isOnuCritica) saude -= Math.round(Math.abs(-27 - rxOnu) * 10);
+    if (isOltCritica) saude -= Math.round(Math.abs(-27 - rxOlt) * 10);
+    if (isDiffCritica) saude -= Math.round((diferenca - 4) * 10);
+    saude = Math.max(10, Math.min(69, saude));
+
+    return {
+      status: "Crítica",
+      indicator: "🔴",
+      badgeBg: "bg-rose-100 text-rose-800",
+      badgeBorder: "border-rose-300",
+      cardBg: "bg-rose-50/70",
+      cardBorder: "border-rose-300",
+      inputBorderOnu: isOnuCritica ? "border-2 border-rose-500 focus:border-rose-600 bg-rose-50/60 text-rose-900 font-bold shadow-sm" : (isOnuAtencao ? "border-2 border-amber-400 focus:border-amber-500 bg-amber-50/40 text-amber-900" : "border-slate-200 focus:border-sky-500"),
+      inputBorderOlt: isOltCritica ? "border-2 border-rose-500 focus:border-rose-600 bg-rose-50/60 text-rose-900 font-bold shadow-sm" : (isOltAtencao ? "border-2 border-amber-400 focus:border-amber-500 bg-amber-50/40 text-amber-900" : "border-slate-200 focus:border-sky-500"),
+      saudePerc: saude,
+      saudeStr: `${saude}%`,
+      diferenca,
+      diferencaStr,
+      motivos,
+      qualidade: "CRITICA"
+    };
+  }
+
+  // 🟡 Atenção: RX ONU entre -26 e -27 OU RX OLT entre -26 e -27 OU Diferença entre 3 e 4
+  if (isOnuAtencao || isOltAtencao || isDiffAtencao) {
+    if (isOnuAtencao) {
+      motivos.push("RX ONU em nível de atenção (entre -26 dBm e -27 dBm).");
+    }
+    if (isOltAtencao) {
+      motivos.push("RX OLT em nível de atenção (entre -26 dBm e -27 dBm).");
+    }
+    if (isDiffAtencao) {
+      motivos.push("Diferença entre RX ONU e RX OLT em limite de atenção (entre 3 dBm e 4 dBm).");
+    }
+
+    return {
+      status: "Atenção",
+      indicator: "🟡",
+      badgeBg: "bg-amber-100 text-amber-800",
+      badgeBorder: "border-amber-300",
+      cardBg: "bg-amber-50/70",
+      cardBorder: "border-amber-300",
+      inputBorderOnu: isOnuAtencao ? "border-2 border-amber-400 focus:border-amber-500 bg-amber-50/30 text-amber-900 font-semibold" : "border-slate-200 focus:border-sky-500",
+      inputBorderOlt: isOltAtencao ? "border-2 border-amber-400 focus:border-amber-500 bg-amber-50/30 text-amber-900 font-semibold" : "border-slate-200 focus:border-sky-500",
+      saudePerc: 78,
+      saudeStr: "78%",
+      diferenca,
+      diferencaStr,
+      motivos,
+      qualidade: "ATENCAO"
+    };
+  }
+
+  // 🟢 Boa: RX ONU entre -24 e -26 e Diferença <= 3
+  if (rxOnu >= -26 && rxOnu <= -24) {
+    return {
+      status: "Boa",
+      indicator: "🟢",
+      badgeBg: "bg-emerald-100 text-emerald-800",
+      badgeBorder: "border-emerald-300",
+      cardBg: "bg-emerald-50/40",
+      cardBorder: "border-emerald-200",
+      inputBorderOnu: "border-slate-200 focus:border-sky-500",
+      inputBorderOlt: "border-slate-200 focus:border-sky-500",
+      saudePerc: 90,
+      saudeStr: "90%",
+      diferenca,
+      diferencaStr,
+      motivos: [],
+      qualidade: "BOA"
+    };
+  }
+
+  // 🟢 Excelente
+  return {
+    status: "Excelente",
+    indicator: "🟢",
+    badgeBg: "bg-emerald-200 text-emerald-900",
+    badgeBorder: "border-emerald-400",
+    cardBg: "bg-emerald-50/70",
+    cardBorder: "border-emerald-300",
+    inputBorderOnu: "border-slate-200 focus:border-sky-500",
+    inputBorderOlt: "border-slate-200 focus:border-sky-500",
+    saudePerc: 98,
+    saudeStr: "98%",
+    diferenca,
+    diferencaStr,
+    motivos: [],
+    qualidade: "EXCELENTE"
+  };
+}
 
 const formatBRDate = (val: string) => {
   if (!val) return "";
@@ -72,6 +273,32 @@ const formatBRDate = (val: string) => {
   }
   return val;
 };
+
+function formatDateString(val: string): string {
+  if (!val) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val.trim())) {
+    const [y, m, d] = val.trim().split("-");
+    return `${d}/${m}/${y}`;
+  }
+
+  const digits = val.replace(/\D/g, "");
+  if (!digits) return val;
+
+  if (digits.length === 6) {
+    const day = digits.slice(0, 2);
+    const month = digits.slice(2, 4);
+    const year = "20" + digits.slice(4, 6);
+    return `${day}/${month}/${year}`;
+  }
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+  if (digits.length <= 4) {
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  }
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+}
 
 export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: string, isAdmin?: boolean }) {
   const [activeTab, setActiveTab] = useState<"pendentes" | "base_ativa" | "financeiro" | "vendas_sva" | "indicacoes">("pendentes");
@@ -88,6 +315,7 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
   const [selectedClient, setSelectedClient] = useState<ClientPosVenda | null>(null);
   const [checklist, setChecklist] = useState<any>(checklistsDefault);
   const [vendedoraFilter, setVendedoraFilter] = useState(isAdmin ? "Todas" : (loggedUser || "Todas"));
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [confirmState, setConfirmState] = useState<{isOpen: boolean; title: string; message: string; onConfirm: () => void;}>({
     isOpen: false, title: "", message: "", onConfirm: () => {}
@@ -418,16 +646,25 @@ const handleBulkSendSva = async () => {
 
   const openClient = (c: ClientPosVenda) => {
     setSelectedClient(c);
+    const initialCidade = c.checklist?.cidade || c.cidade || "";
+    const initialBairro = c.checklist?.bairro || c.bairro || "";
     if (c.checklist) {
-      setChecklist(c.checklist);
+      setChecklist({
+        ...checklistsDefault,
+        ...c.checklist,
+        cidade: initialCidade,
+        bairro: initialBairro,
+        observacao: c.observacoes || c.checklist.observacao || ""
+      });
     } else {
       setChecklist({
         ...checklistsDefault, 
         cpf: c.cpf || "",
-        cidade: c.cidade || "",
-        bairro: c.bairro || "",
+        cidade: initialCidade,
+        bairro: initialBairro,
         atenuacaoRxOnu: c.rx_onu || "",
-        atenuacaoRxOlt: c.rx_olt || ""
+        atenuacaoRxOlt: c.rx_olt || "",
+        observacao: c.observacoes || ""
       });
     }
   };
@@ -497,8 +734,25 @@ const handleBulkSendSva = async () => {
     
     if (idx !== -1) {
       const c = updatedClientes[idx];
-      c.checklist = checklist;
+      c.cidade = checklist.cidade || selectedClient.cidade || c.cidade || "";
+      c.bairro = checklist.bairro || selectedClient.bairro || c.bairro || "";
+      c.cpf = checklist.cpf || selectedClient.cpf || c.cpf || "";
+      c.checklist = {
+        ...checklist,
+        cidade: c.cidade,
+        bairro: c.bairro,
+        cpf: c.cpf
+      };
+      c.dataInstalacao = selectedClient.dataInstalacao || c.dataInstalacao;
+      c.observacoes = selectedClient.observacoes || checklist.observacao || c.observacoes;
+      c.nome = selectedClient.nome || c.nome;
+      c.telefone = selectedClient.telefone || c.telefone;
+      c.endereco = selectedClient.endereco || c.endereco;
+      c.rx_onu = checklist.atenuacaoRxOnu || c.rx_onu;
+      c.rx_olt = checklist.atenuacaoRxOlt || c.rx_olt;
       
+      const analiseFibra = analisarAtenuacaoFibra(checklist.atenuacaoRxOnu, checklist.atenuacaoRxOlt);
+
       if (isComplete) {
         let points = 0;
         let total = 0;
@@ -512,7 +766,7 @@ const handleBulkSendSva = async () => {
         c.score = score;
         c.dataConclusao = new Date().toLocaleDateString("pt-BR").replace(/\//g, "-");
         
-        if (checklist.abriuChamado === "Sim" || checklist.percepcaoCliente?.toLowerCase().includes("ruim")) {
+        if (checklist.abriuChamado === "Sim" || checklist.percepcaoCliente?.toLowerCase().includes("ruim") || analiseFibra.qualidade === "CRITICA") {
            c.status = "Alerta";
         } else {
            c.status = "Concluído";
@@ -533,13 +787,17 @@ const handleBulkSendSva = async () => {
             dataConclusao: c.dataConclusao,
             checklist: c.checklist,
             observacoes: c.observacoes,
+            isConcluido: isComplete,
             // Client details for Base de Clientes
             nome: c.nome,
             plano: c.plano,
             dataInstalacao: c.dataInstalacao,
             endereco: c.endereco,
             telefone: c.telefone,
-            vendedora: c.vendedora
+            vendedora: c.vendedora,
+            cidade: c.cidade || checklist.cidade,
+            bairro: c.bairro || checklist.bairro,
+            cpf: checklist.cpf
           })
         });
       } catch (e) {
@@ -555,8 +813,19 @@ const handleBulkSendSva = async () => {
     if (vendedoraFilter !== "Todas") {
       const vFilter = vendedoraFilter.toLowerCase();
       const cVend = c.vendedora?.toLowerCase() || "";
-      // Match if one string includes the other (e.g. "Ana Silva" matches "Ana")
-      return cVend.includes(vFilter) || vFilter.includes(cVend);
+      if (!cVend.includes(vFilter) && !vFilter.includes(cVend)) return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchNome = c.nome?.toLowerCase().includes(q);
+      const matchTelefone = c.telefone?.toLowerCase().includes(q);
+      const matchEndereco = c.endereco?.toLowerCase().includes(q);
+      const matchCidade = c.cidade?.toLowerCase().includes(q) || c.checklist?.cidade?.toLowerCase().includes(q);
+      const matchBairro = c.bairro?.toLowerCase().includes(q) || c.checklist?.bairro?.toLowerCase().includes(q);
+      const matchCpf = c.cpf?.toLowerCase().includes(q) || c.checklist?.cpf?.toLowerCase().includes(q);
+      if (!matchNome && !matchTelefone && !matchEndereco && !matchCidade && !matchBairro && !matchCpf) {
+        return false;
+      }
     }
     return true;
   });
@@ -593,6 +862,17 @@ const handleBulkSendSva = async () => {
             </div>
             
             <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="relative min-w-[220px]">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input 
+                  type="text"
+                  placeholder="Buscar cliente, cidade, bairro..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold outline-none focus:border-sky-500 shadow-sm"
+                />
+              </div>
+
               <div 
                 className="group relative flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-amber-600 cursor-help flex-shrink-0"
                 title="Filtros no Google Sheets: Se alguém usar um 'Filtro' comum na planilha, os dados ocultados não aparecerão aqui. Use sempre 'Visualizações de Filtro' (Filter Views)!"
@@ -682,7 +962,7 @@ const handleBulkSendSva = async () => {
                     </span>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5 border border-slate-100">
-                    <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-slate-400" /> {c.endereco}</div>
+                    <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" /> {c.endereco}{c.bairro ? ` - ${c.bairro}` : ''}{c.cidade ? ` (${c.cidade})` : ''}</div>
                     <div className="flex items-center gap-1.5"><Wifi className="w-3.5 h-3.5 text-slate-400" /> {c.plano}</div>
                     <div className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-slate-400" /> Ativo: {formatBRDate(c.dataInstalacao)}</div>
                   </div>
@@ -737,40 +1017,164 @@ const handleBulkSendSva = async () => {
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase">Cidade</label>
-                  <input type="text" className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500" value={checklist.cidade} onChange={(e) => setChecklist({...checklist, cidade: e.target.value})} placeholder="Ex: Lajeado" />
+                  <input 
+                    type="text" 
+                    className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500" 
+                    value={checklist.cidade || ""} 
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setChecklist({...checklist, cidade: val});
+                      if (selectedClient) setSelectedClient({...selectedClient, cidade: val});
+                    }} 
+                    placeholder="Ex: Lajeado" 
+                  />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase">Bairro</label>
-                  <input type="text" className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500" value={checklist.bairro} onChange={(e) => setChecklist({...checklist, bairro: e.target.value})} placeholder="Ex: Centro" />
+                  <input 
+                    type="text" 
+                    className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500" 
+                    value={checklist.bairro || ""} 
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setChecklist({...checklist, bairro: val});
+                      if (selectedClient) setSelectedClient({...selectedClient, bairro: val});
+                    }} 
+                    placeholder="Ex: Centro" 
+                  />
                 </div>
               </div>
             </section>
 
             <section className="space-y-4">
-              <h4 className="font-bold text-slate-800 text-sm uppercase tracking-widest text-sky-600 flex items-center gap-2 border-b border-slate-100 pb-2">
-                <span className="bg-sky-100 w-6 h-6 flex items-center justify-center rounded-lg text-sky-700">2</span>
-                Dados Técnicos (Atenuação)
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Rx ONU</label>
-                  <input type="text" className={`bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none transition-colors ${atenuacaoMessage(checklist.atenuacaoRxOnu)?.inputBorder || 'border-slate-200 focus:border-sky-500'}`} value={checklist.atenuacaoRxOnu} onChange={(e) => setChecklist({...checklist, atenuacaoRxOnu: e.target.value})} placeholder="-23.10" />
-                  {atenuacaoMessage(checklist.atenuacaoRxOnu) && (
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded border w-fit ${atenuacaoMessage(checklist.atenuacaoRxOnu)!.color}`}>
-                      {atenuacaoMessage(checklist.atenuacaoRxOnu)!.text}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Rx OLT</label>
-                  <input type="text" className={`bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none transition-colors ${atenuacaoMessage(checklist.atenuacaoRxOlt)?.inputBorder || 'border-slate-200 focus:border-sky-500'}`} value={checklist.atenuacaoRxOlt} onChange={(e) => setChecklist({...checklist, atenuacaoRxOlt: e.target.value})} placeholder="-21.80" />
-                  {atenuacaoMessage(checklist.atenuacaoRxOlt) && (
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded border w-fit ${atenuacaoMessage(checklist.atenuacaoRxOlt)!.color}`}>
-                      {atenuacaoMessage(checklist.atenuacaoRxOlt)!.text}
-                    </span>
-                  )}
-                </div>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2 flex-wrap gap-2">
+                <h4 className="font-bold text-slate-800 text-sm uppercase tracking-widest text-sky-600 flex items-center gap-2">
+                  <span className="bg-sky-100 w-6 h-6 flex items-center justify-center rounded-lg text-sky-700">2</span>
+                  Dados Técnicos (Atenuação)
+                </h4>
+                <a 
+                  href="https://sig.mhnet.com.br/" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors shadow-sm"
+                  title="Acessar o sistema SIG MHNET em uma nova aba"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-sky-600" />
+                  Acessar SIG MHNET
+                </a>
               </div>
+
+              {(() => {
+                const analise = analisarAtenuacaoFibra(checklist.atenuacaoRxOnu, checklist.atenuacaoRxOlt);
+                return (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Rx ONU (dBm)</label>
+                          <button 
+                            type="button"
+                            onClick={() => setChecklist({...checklist, atenuacaoRxOnu: "Sem Energia"})}
+                            className="text-[10px] font-semibold text-slate-500 hover:text-slate-800 underline"
+                          >
+                            Sem Energia
+                          </button>
+                        </div>
+                        <input 
+                          type="text" 
+                          className={`bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none transition-colors ${analise.inputBorderOnu}`} 
+                          value={checklist.atenuacaoRxOnu || ""} 
+                          onChange={(e) => setChecklist({...checklist, atenuacaoRxOnu: e.target.value})} 
+                          placeholder="Ex: -25,63 ou Sem Energia" 
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-slate-500 uppercase">Rx OLT (dBm)</label>
+                          <button 
+                            type="button"
+                            onClick={() => setChecklist({...checklist, atenuacaoRxOlt: "N/A"})}
+                            className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 underline"
+                          >
+                            N/A (Sem Leitura)
+                          </button>
+                        </div>
+                        <input 
+                          type="text" 
+                          className={`bg-slate-50 border rounded-lg px-3 py-2 text-sm outline-none transition-colors ${analise.inputBorderOlt}`} 
+                          value={checklist.atenuacaoRxOlt || ""} 
+                          onChange={(e) => setChecklist({...checklist, atenuacaoRxOlt: e.target.value})} 
+                          placeholder="Ex: -23,84 ou N/A" 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card da Análise e Diagnóstico da Fibra */}
+                    <div className={`p-4 rounded-xl border ${analise.cardBorder} ${analise.cardBg} transition-all space-y-3`}>
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-2xl leading-none">{analise.indicator}</span>
+                          <div>
+                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Status da Conexão</div>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${analise.badgeBg} ${analise.badgeBorder}`}>
+                              {analise.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-6">
+                          <div>
+                            <div className="text-[10px] text-slate-500 font-bold uppercase">Diferença (ONU x OLT)</div>
+                            <div className="text-sm font-black text-slate-800">{analise.diferencaStr}</div>
+                          </div>
+
+                          <div>
+                            <div className="text-[10px] text-slate-500 font-bold uppercase">Saúde da Fibra</div>
+                            <div className="text-sm font-black text-slate-800">{analise.saudeStr}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Barra de Progresso da Saúde da Fibra */}
+                      {analise.saudePerc !== null && (
+                        <div className="space-y-1">
+                          <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+                            <div 
+                              className={`h-full transition-all duration-500 rounded-full ${
+                                analise.qualidade === "EXCELENTE" || analise.qualidade === "BOA" ? "bg-emerald-500" :
+                                analise.qualidade === "ATENCAO" ? "bg-amber-500" :
+                                analise.qualidade === "CRITICA" ? "bg-rose-500" : "bg-slate-400"
+                              }`}
+                              style={{ width: `${analise.saudePerc}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Motivos Específicos e Diagnóstico Técnico */}
+                      {analise.motivos.length > 0 && (
+                        <div className={`p-3 rounded-lg text-xs font-medium border flex items-start gap-2.5 ${
+                          analise.qualidade === "CRITICA" ? "bg-rose-100/90 text-rose-900 border-rose-300" :
+                          analise.qualidade === "ATENCAO" ? "bg-amber-100/90 text-amber-900 border-amber-300" :
+                          analise.qualidade === "OFFLINE" ? "bg-slate-200/90 text-slate-800 border-slate-300" :
+                          "bg-blue-100/90 text-blue-900 border-blue-300"
+                        }`}>
+                          <ShieldAlert className="w-4 h-4 text-current shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <div className="font-extrabold uppercase tracking-wider text-[10px]">Diagnóstico Técnico / Motivo(s):</div>
+                            <ul className="list-disc list-inside space-y-0.5 font-semibold">
+                              {analise.motivos.map((motivo, idx) => (
+                                <li key={idx}>{motivo}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </section>
 
             <section className="space-y-4">
@@ -857,6 +1261,46 @@ const handleBulkSendSva = async () => {
                     <input type="text" className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500" value={checklist.foiIndicacaoNome} onChange={(e) => setChecklist({...checklist, foiIndicacaoNome: e.target.value})} placeholder="Nome / Telefone..." />
                   </div>
                 )}
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h4 className="font-bold text-slate-800 text-sm uppercase tracking-widest text-sky-600 flex items-center gap-2 border-b border-slate-100 pb-2">
+                <span className="bg-sky-100 w-6 h-6 flex items-center justify-center rounded-lg text-sky-700">5</span>
+                Instalação & Observação
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Data de Instalação</label>
+                  <input 
+                    type="text" 
+                    className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500" 
+                    value={selectedClient.dataInstalacao || ""} 
+                    onChange={(e) => {
+                      const formatted = formatDateString(e.target.value);
+                      setSelectedClient({...selectedClient, dataInstalacao: formatted});
+                    }}
+                    onBlur={(e) => {
+                      const formatted = formatDateString(e.target.value);
+                      setSelectedClient({...selectedClient, dataInstalacao: formatted});
+                    }} 
+                    placeholder="Ex: 10/06/2026" 
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 md:col-span-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Observações do Pós-Venda</label>
+                  <textarea 
+                    rows={3}
+                    className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-sky-500 resize-none" 
+                    value={selectedClient.observacoes || checklist.observacao || ""} 
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedClient({...selectedClient, observacoes: val});
+                      setChecklist({...checklist, observacao: val});
+                    }} 
+                    placeholder="Digite uma pequena observação referente a esta instalação ou cliente..." 
+                  />
+                </div>
               </div>
             </section>
             
