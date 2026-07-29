@@ -4,7 +4,7 @@ import {
   MessageSquare, UserCheck, Calendar, Search, 
   Filter, ChevronRight, Phone, MapPin, 
   Wifi, Smartphone, ThumbsUp, HelpCircle, RefreshCw, Zap, Loader2, AlertCircle,
-  ExternalLink, ShieldAlert, ShieldCheck, Activity
+  ExternalLink, ShieldAlert, ShieldCheck, Activity, Copy
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import ConfirmModal from "./ConfirmModal";
@@ -30,6 +30,8 @@ interface ClientPosVenda {
   observacoes?: string;
   statusSva?: string;
   statusIndicacaoEnvio?: string;
+  dataHoraSva?: string;
+  dataHoraIndicacao?: string;
 }
 
 const checklistsDefault = {
@@ -316,6 +318,15 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
   const [checklist, setChecklist] = useState<any>(checklistsDefault);
   const [vendedoraFilter, setVendedoraFilter] = useState(isAdmin ? "Todas" : (loggedUser || "Todas"));
   const [searchQuery, setSearchQuery] = useState("");
+  const [copiedNameId, setCopiedNameId] = useState<string | null>(null);
+
+  const handleCopyName = (e: React.MouseEvent, name: string, id?: string) => {
+    e.stopPropagation();
+    if (!name) return;
+    navigator.clipboard.writeText(name);
+    setCopiedNameId(id || name);
+    setTimeout(() => setCopiedNameId(null), 2000);
+  };
 
   const [confirmState, setConfirmState] = useState<{isOpen: boolean; title: string; message: string; onConfirm: () => void;}>({
     isOpen: false, title: "", message: "", onConfirm: () => {}
@@ -372,7 +383,8 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
   const handleSendIndicacaoIndividual = async (client: ClientPosVenda) => {
     if (sendingIndicacoesState[client.id]?.status === 'loading') return;
     setSendingIndicacoesState(prev => ({ ...prev, [client.id]: { status: 'loading' } }));
-    
+    const nowFormatted = new Date().toLocaleDateString("pt-BR") + " " + new Date().toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+
     try {
       const res = await fetch("/api/pos-vendas/disparar-indicacoes", {
         method: "POST",
@@ -386,9 +398,8 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
       }
       
       setSendingIndicacoesState(prev => ({ ...prev, [client.id]: { status: 'success' } }));
+      setClientes(prev => prev.map(c => c.id === client.id ? { ...c, statusIndicacaoEnvio: "Em Fila", dataHoraIndicacao: nowFormatted } : c));
       
-      // Update the checklist visually if possible, or assume N8N will do it
-      // Let's reset the success state after 5 seconds
       setTimeout(() => {
         setSendingIndicacoesState(prev => {
           const newState = { ...prev };
@@ -417,6 +428,7 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
     if (selectedIndicacoesIds.size === 0) return;
     const selectedClients = clientes.filter(c => selectedIndicacoesIds.has(c.id));
     setIsDispatchingIndicacoes(true);
+    const nowFormatted = new Date().toLocaleDateString("pt-BR") + " " + new Date().toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
     
     setSendingIndicacoesState(prev => {
       const newState = { ...prev };
@@ -446,6 +458,7 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
         return newState;
       });
       
+      setClientes(prev => prev.map(c => selectedIndicacoesIds.has(c.id) ? { ...c, statusIndicacaoEnvio: "Em Fila", dataHoraIndicacao: nowFormatted } : c));
       setSelectedIndicacoesIds(new Set());
       
       setTimeout(() => {
@@ -479,10 +492,11 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
     }
   };
 
-const handleBulkSendSva = async () => {
+  const handleBulkSendSva = async () => {
     if (selectedSvaIds.size === 0) return;
     const selectedClients = clientes.filter(c => selectedSvaIds.has(c.id));
     setIsDispatchingSva(true);
+    const nowFormatted = new Date().toLocaleDateString("pt-BR") + " " + new Date().toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
     
     // Set individual loading states for better UX
     setSendingSvaState(prev => {
@@ -514,6 +528,7 @@ const handleBulkSendSva = async () => {
         return newState;
       });
       
+      setClientes(prev => prev.map(c => selectedSvaIds.has(c.id) ? { ...c, statusSva: "Em Fila", dataHoraSva: nowFormatted } : c));
       setSelectedSvaIds(new Set());
       
       // Auto-clear success state
@@ -551,6 +566,7 @@ const handleBulkSendSva = async () => {
   const handleSendSva = async (client: ClientPosVenda) => {
     if (sendingSvaState[client.id]?.status === 'loading') return;
     setSendingSvaState(prev => ({ ...prev, [client.id]: { status: 'loading' } }));
+    const nowFormatted = new Date().toLocaleDateString("pt-BR") + " " + new Date().toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
     
     try {
       const res = await fetch("/api/n8n/webhook-vendas-sva", {
@@ -558,6 +574,7 @@ const handleBulkSendSva = async () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           cliente: { 
+            id: client.id,
             nome: client.nome, 
             telefone: client.telefone, 
             plano: client.plano 
@@ -570,6 +587,7 @@ const handleBulkSendSva = async () => {
       }
       
       setSendingSvaState(prev => ({ ...prev, [client.id]: { status: 'success' } }));
+      setClientes(prev => prev.map(c => c.id === client.id ? { ...c, statusSva: "Em Fila", dataHoraSva: nowFormatted } : c));
       
       // Auto-clear success state after 3 seconds
       setTimeout(() => {
@@ -952,7 +970,16 @@ const handleBulkSendSva = async () => {
                 <div key={c.id} className="card-modern rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col gap-4 hover:border-sky-300 transition-colors cursor-pointer group" onClick={() => openClient(c)}>
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-bold text-slate-800 text-lg">{c.nome}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-slate-800 text-lg">{c.nome}</h3>
+                        <button 
+                          onClick={(e) => handleCopyName(e, c.nome, c.id)}
+                          className="text-slate-400 hover:text-sky-600 transition-colors p-1 rounded-md hover:bg-slate-100"
+                          title="Copiar Nome"
+                        >
+                          {copiedNameId === c.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
                       <div className="flex items-center gap-1 text-slate-500 text-xs mt-1">
                         <Phone className="w-3 h-3" /> {c.telefone}
                       </div>
@@ -990,7 +1017,26 @@ const handleBulkSendSva = async () => {
                 <ChevronRight className="w-4 h-4 rotate-180" />
                 Voltar para Lista
               </button>
-              <h2 className="text-2xl md:text-3xl font-black">{selectedClient.nome}</h2>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h2 className="text-2xl md:text-3xl font-black">{selectedClient.nome}</h2>
+                <button 
+                  onClick={(e) => handleCopyName(e, selectedClient.nome, selectedClient.id)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all border border-white/20 active:scale-95 shadow-sm"
+                  title="Copiar Nome do Cliente"
+                >
+                  {copiedNameId === (selectedClient.id || selectedClient.nome) ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-300">Nome Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copiar Nome</span>
+                    </>
+                  )}
+                </button>
+              </div>
               <p className="text-sky-200 mt-1">{selectedClient.plano} • Instalação: {formatBRDate(selectedClient.dataInstalacao)}</p>
             </div>
           </div>
@@ -1374,7 +1420,18 @@ const handleBulkSendSva = async () => {
                <tbody className="divide-y divide-slate-100">
                  {filteredClientes.filter(c => c.status === "Concluído" || c.status === "Alerta").map(c => (
                    <tr key={c.id} className="hover:bg-slate-50">
-                     <td className="p-4 font-medium text-slate-800">{c.nome}</td>
+                     <td className="p-4 font-medium text-slate-800">
+                        <div className="flex items-center gap-2">
+                          <span>{c.nome}</span>
+                          <button 
+                            onClick={(e) => handleCopyName(e, c.nome, c.id)}
+                            className="text-slate-400 hover:text-sky-600 transition-colors p-1 rounded-md hover:bg-slate-100"
+                            title="Copiar Nome"
+                          >
+                            {copiedNameId === c.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </td>
                      <td className="p-4 text-slate-600">{c.vendedora}</td>
                      <td className="p-4 text-slate-600">{c.dataConclusao}</td>
                      <td className="p-4 font-bold text-sky-600">{c.score}%</td>
@@ -1443,6 +1500,7 @@ const handleBulkSendSva = async () => {
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Telefone</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Plano Contratado</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Confirmação de Envio</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Último Envio</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Ação</th>
                   </tr>
                 </thead>
@@ -1462,18 +1520,39 @@ const handleBulkSendSva = async () => {
                           }}
                         />
                       </td>
-                      <td className="p-3 font-bold text-slate-800 text-sm">{c.nome}</td>
+                      <td className="p-3 font-bold text-slate-800 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span>{c.nome}</span>
+                          <button 
+                            onClick={(e) => handleCopyName(e, c.nome, c.id)}
+                            className="text-slate-400 hover:text-sky-600 transition-colors p-1 rounded-md hover:bg-slate-100"
+                            title="Copiar Nome"
+                          >
+                            {copiedNameId === c.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </td>
                       <td className="p-3 text-sm text-slate-600">{c.telefone || "-"}</td>
                       <td className="p-3 text-sm text-slate-600">{c.plano}</td>
                       <td className="p-3 text-center">
                         {c.statusSva ? (
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
                             c.statusSva.toLowerCase().includes('fila') ? 'bg-amber-100 text-amber-700' :
-                            c.statusSva.toLowerCase().includes('enviado') || c.statusSva.toLowerCase().includes('sucesso') ? 'bg-emerald-100 text-emerald-700' :
+                            c.statusSva.toLowerCase().includes('enviado') || c.statusSva.toLowerCase().includes('sucesso') || c.statusSva.toLowerCase().trim() === 'ok' ? 'bg-emerald-100 text-emerald-700' :
                             c.statusSva.toLowerCase().includes('erro') || c.statusSva.toLowerCase().includes('falha') ? 'bg-rose-100 text-rose-700' :
                             'bg-slate-100 text-slate-600'
                           }`}>
                             {c.statusSva}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-center text-xs text-slate-600 font-medium whitespace-nowrap">
+                        {c.dataHoraSva ? (
+                          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-[11px] font-semibold">
+                            <Calendar className="w-3 h-3 text-slate-400" />
+                            {c.dataHoraSva}
                           </span>
                         ) : (
                           <span className="text-slate-300 text-xs">-</span>
@@ -1559,6 +1638,7 @@ const handleBulkSendSva = async () => {
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Telefone</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Plano</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status de Envio</th>
+                    <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Último Envio</th>
                     <th className="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Ação</th>
                   </tr>
                 </thead>
@@ -1578,7 +1658,18 @@ const handleBulkSendSva = async () => {
                           }}
                         />
                       </td>
-                      <td className="p-3 font-bold text-slate-800 text-sm">{c.nome}</td>
+                      <td className="p-3 font-bold text-slate-800 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span>{c.nome}</span>
+                          <button 
+                            onClick={(e) => handleCopyName(e, c.nome, c.id)}
+                            className="text-slate-400 hover:text-sky-600 transition-colors p-1 rounded-md hover:bg-slate-100"
+                            title="Copiar Nome"
+                          >
+                            {copiedNameId === c.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </td>
                       <td className="p-3 text-sm text-slate-600">{c.telefone || "-"}</td>
                       <td className="p-3 text-sm text-slate-600">{c.plano}</td>
                       <td className="p-3 text-center">
@@ -1590,6 +1681,16 @@ const handleBulkSendSva = async () => {
                             'bg-slate-100 text-slate-600'
                           }`}>
                             {c.statusIndicacaoEnvio}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-center text-xs text-slate-600 font-medium whitespace-nowrap">
+                        {c.dataHoraIndicacao ? (
+                          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-[11px] font-semibold">
+                            <Calendar className="w-3 h-3 text-slate-400" />
+                            {c.dataHoraIndicacao}
                           </span>
                         ) : (
                           <span className="text-slate-300 text-xs">-</span>
@@ -1651,7 +1752,16 @@ const handleBulkSendSva = async () => {
                   {filteredClientes.map(c => (
                     <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                       <td className="p-3">
-                        <div className="font-bold text-slate-800 text-sm">{c.nome}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="font-bold text-slate-800 text-sm">{c.nome}</div>
+                          <button 
+                            onClick={(e) => handleCopyName(e, c.nome, c.id)}
+                            className="text-slate-400 hover:text-sky-600 transition-colors p-1 rounded-md hover:bg-slate-100"
+                            title="Copiar Nome"
+                          >
+                            {copiedNameId === c.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
                         <div className="text-[10px] text-slate-500 font-medium">{c.plano}</div>
                       </td>
                       <td className="p-3">

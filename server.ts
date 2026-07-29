@@ -79,6 +79,13 @@ global.fetch = async (url: any, options?: any) => {
 
 const gidsCache: Record<string, Record<string, string>> = {};
 
+function getNowFormatted() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const timeStr = now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+  return `${dateStr} ${timeStr}`;
+}
+
 async function getExportUrl(spreadsheetId: string, sheetName: string): Promise<string> {
   if (!gidsCache[spreadsheetId]) {
     gidsCache[spreadsheetId] = {};
@@ -2761,8 +2768,32 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
     const rxOnuIdx = headers.findIndex((h: string) => h.includes("rx onu") || h.includes("atenuação rx onu") || h.includes("atenuacao rx onu"));
     const rxOltIdx = headers.findIndex((h: string) => h.includes("rx olt") || h.includes("atenuação rx olt") || h.includes("atenuacao rx olt"));
     const bairroIdx = headers.findIndex((h: string) => h.includes("bairro"));
-    const statusSvaIdx = headers.findIndex((h: string) => h.includes("status do envio") || h.includes("envio sva") || h.includes("retorno n8n") || h.includes("status do n8n"));
-    const statusIndicacaoEnvioIdx = 18; // Coluna S
+
+    let statusSvaIdx = headers.findIndex((h: string) => h.includes("oferta sva") || h.includes("status do envio") || h.includes("envio sva") || h.includes("retorno n8n") || h.includes("status do n8n") || h.includes("sva"));
+    if (statusSvaIdx === -1) {
+      statusSvaIdx = 20; // Coluna U (0-indexed: S=18, T=19, U=20)
+    }
+
+    let statusIndicacaoEnvioIdx = headers.findIndex((h: string) => h.includes("indicação") || h.includes("indicacao"));
+    if (statusIndicacaoEnvioIdx === -1) {
+      statusIndicacaoEnvioIdx = 18; // Coluna S (0-indexed: S=18)
+    }
+
+    let dataHoraIndicacaoIdx = headers.findIndex((h: string) => {
+      const s = h.toLowerCase();
+      return s.includes("indicação data") || s.includes("indicacao data");
+    });
+    if (dataHoraIndicacaoIdx === -1) {
+      dataHoraIndicacaoIdx = 25; // Coluna Z (0-indexed: Z=25)
+    }
+
+    let dataHoraSvaIdx = headers.findIndex((h: string) => {
+      const s = h.toLowerCase();
+      return s.includes("ofertas sva data") || s.includes("oferta sva data") || s.includes("sva data");
+    });
+    if (dataHoraSvaIdx === -1) {
+      dataHoraSvaIdx = 26; // Coluna AA (0-indexed: AA=26)
+    }
     
     const clients = [];
     
@@ -2785,6 +2816,8 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
         bairro: (bairroIdx >= 0 && row[bairroIdx]) ? row[bairroIdx] : (row[9] || ""),
         statusSva: statusSvaIdx >= 0 ? row[statusSvaIdx] : "",
         statusIndicacaoEnvio: statusIndicacaoEnvioIdx >= 0 ? row[statusIndicacaoEnvioIdx] : "",
+        dataHoraIndicacao: (dataHoraIndicacaoIdx >= 0 && row[dataHoraIndicacaoIdx]) ? row[dataHoraIndicacaoIdx] : "",
+        dataHoraSva: (dataHoraSvaIdx >= 0 && row[dataHoraSvaIdx]) ? row[dataHoraSvaIdx] : "",
         plano: planoIdx >= 0 ? row[planoIdx] : "",
         vendedora: vendedoraIdx >= 0 ? row[vendedoraIdx] : "",
         dataInstalacao: row[3] || (instalacaoIdx >= 0 ? row[instalacaoIdx] : ""),
@@ -2811,6 +2844,12 @@ app.get("/api/pos-vendas/:sheetName", async (req, res) => {
       }
       if (statusSvaIdx >= 0 && row[statusSvaIdx]) {
         clientObj.statusSva = row[statusSvaIdx];
+      }
+      if (dataHoraIndicacaoIdx >= 0 && row[dataHoraIndicacaoIdx]) {
+        clientObj.dataHoraIndicacao = row[dataHoraIndicacaoIdx];
+      }
+      if (dataHoraSvaIdx >= 0 && row[dataHoraSvaIdx]) {
+        clientObj.dataHoraSva = row[dataHoraSvaIdx];
       }
       
       // Merge initial sheet data for these fields if not present in local state
@@ -2843,9 +2882,13 @@ app.post("/api/pos-vendas/disparar-indicacoes", async (req, res) => {
     return res.status(400).json({ status: "error", message: "Clientes deve ser um array" });
   }
 
+  const nowFormatted = getNowFormatted();
   clientes.forEach(c => {
     if (!posVendasData[c.id]) posVendasData[c.id] = {};
     posVendasData[c.id].statusIndicacaoEnvio = "Em Fila";
+    posVendasData[c.id].dataHoraIndicacao = nowFormatted;
+    c.statusIndicacaoEnvio = "Em Fila";
+    c.dataHoraIndicacao = nowFormatted;
   });
   writeJSONDb("posVendas.json", posVendasData);
 
@@ -2879,9 +2922,13 @@ app.post("/api/pos-vendas/disparar-sva", async (req, res) => {
   }
 
   // Marcar como "Em Fila" no posVendasData cache interno
+  const nowFormatted = getNowFormatted();
   clientes.forEach(c => {
     if (!posVendasData[c.id]) posVendasData[c.id] = {};
     posVendasData[c.id].statusSva = "Em Fila";
+    posVendasData[c.id].dataHoraSva = nowFormatted;
+    c.statusSva = "Em Fila";
+    c.dataHoraSva = nowFormatted;
   });
   writeJSONDb("posVendas.json", posVendasData);
 
@@ -2891,8 +2938,8 @@ app.post("/api/pos-vendas/disparar-sva", async (req, res) => {
 
   const isTest = process.env.USE_N8N_TEST_VENDAS_SVA === "true";
   let webhookUrl = isTest 
-     ? (process.env.N8N_TEST_WEBHOOK_URL_VENDAS_SVA || "http://localhost:5678/webhook-test/vendas-sva") 
-     : (process.env.N8N_WEBHOOK_URL_VENDAS_SVA || "http://localhost:5678/webhook/vendas-sva");
+     ? (process.env.N8N_TEST_WEBHOOK_URL_VENDAS_SVA || "https://lake-elective-scoured.ngrok-free.dev/webhook-test/vendas-sva") 
+     : (process.env.N8N_WEBHOOK_URL_VENDAS_SVA || "https://lake-elective-scoured.ngrok-free.dev/webhook/vendas-sva");
 
   try {
     const response = await fetch(webhookUrl, {
@@ -2933,6 +2980,10 @@ app.post("/api/pos-vendas/:id", (req, res) => {
       "AÇÃO COBRAÇA 2° MES": updates.checklist?.cobrancaMes2,
       "AÇÃO COBRAÇA 3° MES": updates.checklist?.cobrancaMes3,
       "FOI INDICAÇÃO DE ALGUÉM?": updates.checklist?.statusIndicacao,
+      "Indicação": updates.statusIndicacaoEnvio || posVendasData[id]?.statusIndicacaoEnvio,
+      "Oferta SVA": updates.statusSva || posVendasData[id]?.statusSva,
+      "Indicação Data/Hora": updates.dataHoraIndicacao || posVendasData[id]?.dataHoraIndicacao,
+      "Ofertas SVA Data/Hora": updates.dataHoraSva || posVendasData[id]?.dataHoraSva,
       "Cidade": updates.cidade || updates.checklist?.cidade || posVendasData[id]?.cidade,
       "Bairros Lajeado | Estrela (Apartir do n° 28)": updates.bairro || updates.checklist?.bairro || posVendasData[id]?.bairro,
       "Bairro": updates.bairro || updates.checklist?.bairro || posVendasData[id]?.bairro
@@ -5688,10 +5739,20 @@ app.post("/api/n8n/webhook-vendas-sva", async (req, res) => {
     return res.status(400).json({ error: "Disparo pausado pelas configurações do administrador." });
   }
   const payload = req.body;
+  if (payload?.cliente?.id) {
+    const cId = payload.cliente.id;
+    const nowStr = getNowFormatted();
+    if (!posVendasData[cId]) posVendasData[cId] = {};
+    posVendasData[cId].statusSva = "Em Fila";
+    posVendasData[cId].dataHoraSva = nowStr;
+    payload.cliente.statusSva = "Em Fila";
+    payload.cliente.dataHoraSva = nowStr;
+    writeJSONDb("posVendas.json", posVendasData);
+  }
   const isTest = process.env.USE_N8N_TEST_VENDAS_SVA === "true";
   let webhookUrl = isTest 
-    ? (process.env.N8N_TEST_WEBHOOK_URL_VENDAS_SVA || "http://localhost:5678/webhook-test/vendas-sva") 
-    : (process.env.N8N_WEBHOOK_URL_VENDAS_SVA || "http://localhost:5678/webhook/vendas-sva");
+    ? (process.env.N8N_TEST_WEBHOOK_URL_VENDAS_SVA || "https://lake-elective-scoured.ngrok-free.dev/webhook-test/vendas-sva") 
+    : (process.env.N8N_WEBHOOK_URL_VENDAS_SVA || "https://lake-elective-scoured.ngrok-free.dev/webhook/vendas-sva");
     
   console.log("[N8N] Disparando webhook vendas-sva para:", webhookUrl);
   
@@ -5727,6 +5788,16 @@ app.post("/api/n8n/webhook-indicacoes", async (req, res) => {
     return res.status(400).json({ error: "Disparo pausado pelas configurações do administrador." });
   }
   const payload = req.body;
+  if (payload?.cliente?.id) {
+    const cId = payload.cliente.id;
+    const nowStr = getNowFormatted();
+    if (!posVendasData[cId]) posVendasData[cId] = {};
+    posVendasData[cId].statusIndicacaoEnvio = "Em Fila";
+    posVendasData[cId].dataHoraIndicacao = nowStr;
+    payload.cliente.statusIndicacaoEnvio = "Em Fila";
+    payload.cliente.dataHoraIndicacao = nowStr;
+    writeJSONDb("posVendas.json", posVendasData);
+  }
   const isTest = process.env.USE_N8N_TEST_INDICACOES === "true";
   let webhookUrl = isTest 
     ? (process.env.N8N_TEST_WEBHOOK_URL_INDICACOES || "http://localhost:5678/webhook-test/indicacoes") 

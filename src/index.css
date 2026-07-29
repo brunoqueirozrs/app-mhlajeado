@@ -19,6 +19,37 @@
 }
 
 @layer base {
+  /* Eliminação global de Flickering / Cintilação de Tela em Popups e Hover */
+  html, body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* GPU Acceleration e Isolamento de Renderização para evitar Flashes/Flickering */
+  .fixed, 
+  .absolute, 
+  [role="dialog"], 
+  .card-modern,
+  .modal-overlay,
+  .backdrop-blur-sm,
+  .backdrop-blur-md,
+  .backdrop-blur-lg,
+  .backdrop-blur-xs {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+    transform: translate3d(0, 0, 0);
+    isolation: isolate;
+  }
+
+  /* Isola o contexto de empilhamento de overlays fixas contra Repaint Flash */
+  .fixed.inset-0 {
+    isolation: isolate;
+    will-change: opacity;
+  }
+
   .markdown-body h1, .markdown-body h2, .markdown-body h3 {
     font-weight: 800;
     margin-top: 1rem;
@@ -126,13 +157,14 @@
 @layer components {
   .card-modern {
     background: linear-gradient(180deg, #FFFFFF, #FAFBFD);
-    transition: all 0.3s ease-out;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
     border: 1px solid #E5EAF2;
+    will-change: transform, box-shadow;
   }
   .card-modern:hover {
     background: #F8FAFC;
-    transform: translateY(-3px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+    transform: translateY(-2px) translateZ(0);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.06);
   }
 }
 
