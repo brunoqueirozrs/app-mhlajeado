@@ -1,6 +1,6 @@
 {
   "name": "MHNET Gestor de Vendas",
-  "description": "Sistema de Gestão de Vendas Externas, Controle de Rota, FTTA e Gestão de Base de Clientes para equipes MHNET.",
+  "description": "Sistema de Gestão de Vendas, Pós-Venda, Rotinas & Cronograma de Equipe, FTTA e Controle de Base MHNET.",
   "requestFramePermissions": [
     "geolocation"
   ],

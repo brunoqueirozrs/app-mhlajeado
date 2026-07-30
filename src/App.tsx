@@ -43,6 +43,8 @@ import AdminLogsPage from "./components/AdminLogsPage";
 import AdminTestResultsPage from "./components/AdminTestResultsPage";
 import GestaoPessoasPage from "./components/GestaoPessoasPage";
 import DatabaseCentralPage from "./components/DatabaseCentralPage";
+import { RamaisContatosPage } from "./components/RamaisContatosPage";
+
 import CalculoMultaPage from "./components/CalculoMultaPage";
 import KaizenPage from "./components/KaizenPage";
 import PosVendaPage from "./components/PosVendaPage";
@@ -50,6 +52,7 @@ import MatrizObjecoesPage from "./components/MatrizObjecoesPage";
 import TradePage from "./components/TradePage";
 import { LeadsFriosTab } from "./components/LeadsFriosTab";
 import ArquivoMortoPage from "./components/ArquivoMortoPage";
+import RotinasPage from "./components/RotinasPage";
 
 import { initAuth, getAccessToken, googleSignIn } from "./lib/auth";
 import { createGoogleCalendarEvent, createGoogleTask } from "./lib/googleApi";
@@ -106,8 +109,9 @@ export default function App() {
 
   // Navigation Trackings
   const [activeTab, setActiveTab] = useState<
-    "dashboard" | "leads" | "cadastroLead" | "ftta" | "tasks" | "indicators" | "base" | "competitors" | "objections" | "absences" | "materials" | "cobrancas" | "vendedores" | "installations" | "installations_queue" | "admin_n8n" | "calculo_multa" | "planos" | "rotas" | "estrategia" | "kaizen" | "pos_venda" | "matriz_objecoes" | "trade" | "leads_frios" | "protocolos_internos" | "admin_logs" | "admin_tests" | "gestao_pessoas" | "database_central"
+    "dashboard" | "rotinas" | "ramais_contatos" | "leads" | "cadastroLead" | "ftta" | "tasks" | "indicators" | "base" | "competitors" | "objections" | "absences" | "materials" | "cobrancas" | "vendedores" | "installations" | "installations_queue" | "admin_n8n" | "calculo_multa" | "planos" | "rotas" | "estrategia" | "kaizen" | "pos_venda" | "matriz_objecoes" | "trade" | "leads_frios" | "protocolos_internos" | "admin_logs" | "admin_tests" | "gestao_pessoas" | "database_central"
   >("dashboard");
+
   const [leadsFilterSeller, setLeadsFilterSeller] = useState<string | null>(null);
   const [isExternalPartnerMode, setIsExternalPartnerMode] = useState(false);
   const [fttaTab, setFttaTab] = useState<"lajeado" | "estrela" | "prospeccao">("lajeado");
@@ -818,11 +822,11 @@ export default function App() {
   };
 
   // 6. Vendors and individual goals management handlers
-  const handleRegisterVendor = async (nome: string, meta: number, telefone?: string) => {
+  const handleRegisterVendor = async (nome: string, meta: number, telefone?: string, status?: string, kayCallmebot?: string, dataNascimento?: string) => {
     const resp = await fetch("/api/vendors", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, meta, telefone })
+      body: JSON.stringify({ nome, meta, telefone, status, kayCallmebot, dataNascimento })
     });
     if (!resp.ok) {
       throw new Error("Falha ao cadastrar vendedor no servidor.");
@@ -1324,6 +1328,11 @@ export default function App() {
             onSync={fetchAllData}
             vendors={registeredVendors} />
         );
+      case "rotinas":
+        return <RotinasPage loggedUser={loggedUser || "Bruno Garcia Queiroz"} userRole={userRole} />;
+      case "ramais_contatos":
+        return <RamaisContatosPage loggedUser={loggedUser || "Bruno Garcia Queiroz"} userRole={userRole} />;
+
       case "admin_logs":
         return <AdminLogsPage />;
       case "admin_tests":
@@ -1582,6 +1591,16 @@ export default function App() {
                 <span>Painel Principal</span>
               </button>
 
+              <button onClick={() => setActiveTab("rotinas")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  activeTab === "rotinas" 
+                    ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
+                    : "text-white hover:bg-slate-900"
+                }`}>
+                <CalendarDays className="w-4 h-4 shrink-0 text-white" />
+                <span>Rotinas & Cronograma</span>
+              </button>
+
               <button onClick={() => setActiveTab("pos_venda")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "pos_venda" 
@@ -1682,6 +1701,16 @@ export default function App() {
                 {userRole === "admin" ? <Users className="w-4 h-4 shrink-0 text-white" /> : <User className="w-4 h-4 shrink-0 text-white" />}
                 <span>{userRole === "admin" ? "Gestão de Pessoas" : "Meu RH"}</span>
               </button>
+              <button onClick={() => setActiveTab("ramais_contatos")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  activeTab === "ramais_contatos" 
+                    ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
+                    : "text-white hover:bg-slate-900"
+                }`}>
+                <Store className="w-4 h-4 shrink-0 text-white" />
+                <span>Ramais & Contatos Lojas</span>
+              </button>
+
             </div>
 
             {userRole === "admin" && (

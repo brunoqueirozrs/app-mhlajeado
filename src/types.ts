@@ -8,6 +8,9 @@ export interface Vendor {
   nome: string;
   meta: number;
   telefone?: string;
+  status?: string;
+  kayCallmebot?: string;
+  dataNascimento?: string;
 }
 
 export interface Lead {
@@ -320,3 +323,74 @@ export interface CoachConversation {
   mensagem: string;
   respostaIa: string;
 }
+
+export interface RotinaModelo {
+  id: string;
+  grupo: "Loja" | "Externo" | "Administrativo-PCD" | "Jovem Aprendiz" | "Gestão" | "Todos";
+  cargo: string;
+  recorrencia: "Diária (Turno)" | "Mensal (Dia Fixo)" | "Ação Preventiva / Condicional";
+  diaSemana?: string;
+  horarioInicio?: string;
+  horarioFim?: string;
+  titulo: string;
+  descricao?: string;
+  tipo: "organização" | "postagem" | "contato_ativo" | "pos_venda" | "vendas_upgrade" | "fechamento" | "financeiro" | "rh_comissoes" | "foto_mensal";
+  obrigatoriedade: "obrigatória" | "condicional";
+  requerFoto: boolean;
+  ativo: boolean;
+}
+
+export interface RotinaExecucao {
+  id?: string;
+  rotinaId: string;
+  colaborador: string;
+  grupo: string;
+  data: string;
+  status: "pendente" | "concluido" | "atrasado" | "pulado";
+  horaConclusao?: string;
+  observacao?: string;
+  fotoUrl?: string;
+}
+
+export interface ColaboradorRotina {
+  id: string;
+  nome: string;
+  cargo: string;
+  grupo: "Loja" | "Externo" | "Administrativo-PCD" | "Jovem Aprendiz" | "Gestão";
+  ramal?: string;
+  whatsapp?: string;
+  ativo: boolean;
+}
+
+export interface MarcoMensal {
+  id: string;
+  dia: string;
+  titulo: string;
+  descricao?: string;
+  responsavel?: string;
+  tagText?: string;
+  cor?: string;
+  icone?: string;
+}
+
+export interface RamalItem {
+  id: string;
+  nome: string;
+  ramal: string;
+  cidade?: string;
+  setor?: string;
+}
+
+export interface ContatoLojaItem {
+  id: string;
+  sigla: string;
+  loja: string;
+  gestor?: string;
+  telefoneGestor?: string;
+  emailGestor?: string;
+  whatsappLoja?: string;
+  telefoneFixo?: string;
+  ramais?: string;
+  endereco?: string;
+}
+

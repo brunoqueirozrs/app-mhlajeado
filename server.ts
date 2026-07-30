@@ -732,6 +732,296 @@ const INITIAL_VENDORS_SERVER = [
 ];
 let vendors = readJSONDb("vendors.json", INITIAL_VENDORS_SERVER);
 
+const INITIAL_ROTINAS_COLABORADORES = [
+  { id: "colab_1", nome: "BRUNO GARCIA QUEIROZ", cargo: "Gerente", grupo: "Gestão", ramal: "101", whatsapp: "5551999990001", ativo: true },
+  { id: "colab_2", nome: "ANA PAULA RODRIGUES", cargo: "Vendedora Interna / Atendimento", grupo: "Loja", ramal: "102", whatsapp: "5551999990002", ativo: true },
+  { id: "colab_3", nome: "VITORIA CAROLINE BALDEZ ROSSALES", cargo: "Vendedora Interna / Atendimento", grupo: "Loja", ramal: "103", whatsapp: "5551999990003", ativo: true },
+  { id: "colab_4", nome: "KAROLINA DOS SANTOS", cargo: "Vendedora Interna / Atendimento", grupo: "Loja", ramal: "104", whatsapp: "5551999990004", ativo: true },
+  { id: "colab_5", nome: "VITORIA LUISA WEBLER ZIECK", cargo: "Vendedora Externa / Comercial", grupo: "Externo", ramal: "105", whatsapp: "5551999990005", ativo: true },
+  { id: "colab_6", nome: "ELISIANE DA SILVA", cargo: "Vendedora Externa / Comercial", grupo: "Externo", ramal: "106", whatsapp: "5551999990006", ativo: true },
+  { id: "colab_7", nome: "MANUELLA CASSIA CARLETTI", cargo: "Vendedora Externa / Comercial", grupo: "Externo", ramal: "107", whatsapp: "5551999990007", ativo: true },
+  { id: "colab_8", nome: "LUANA DAFFINY NUNES DA SILVA RODRIGUES", cargo: "Vendedora Externa / Comercial", grupo: "Externo", ramal: "108", whatsapp: "5551999990008", ativo: true },
+  { id: "colab_9", nome: "MAURICIO GONZALEZ CASSANICO JUNIOR", cargo: "Administrativo / PCD", grupo: "Administrativo-PCD", ramal: "109", whatsapp: "5551999990009", ativo: true },
+  { id: "colab_10", nome: "MICHELE DE OLIVEIRA", cargo: "Administrativo / PCD", grupo: "Administrativo-PCD", ramal: "110", whatsapp: "5551999990010", ativo: true },
+  { id: "colab_11", nome: "YHIAGO", cargo: "Jovem Aprendiz", grupo: "Jovem Aprendiz", ramal: "111", whatsapp: "5551999990011", ativo: true }
+];
+
+const INITIAL_ROTINAS_MODELOS = [
+  {
+    id: "R001",
+    grupo: "Loja",
+    cargo: "Vendedora Interna",
+    recorrencia: "Diária (Turno)",
+    diaSemana: "Segunda a Sexta",
+    horarioInicio: "08:00",
+    horarioFim: "08:30",
+    titulo: "Organização e Abertura da Loja",
+    descricao: "Conferir iluminação, limpeza das estações, panfletos, água/café e organizar a recepção.",
+    tipo: "organização",
+    obrigatoriedade: "obrigatória",
+    requerFoto: true,
+    ativo: true
+  },
+  {
+    id: "R002",
+    grupo: "Loja",
+    cargo: "Vendedora Interna",
+    recorrencia: "Diária (Turno)",
+    diaSemana: "Segunda a Sexta",
+    horarioInicio: "08:30",
+    horarioFim: "08:45",
+    titulo: "Postagem Digital Matutina & Status WhatsApp",
+    descricao: "Postar artes da campanha do dia no Status do WhatsApp Corporativo e redes da loja.",
+    tipo: "postagem",
+    obrigatoriedade: "obrigatória",
+    requerFoto: false,
+    ativo: true
+  },
+  {
+    id: "R003",
+    grupo: "Loja",
+    cargo: "Vendedora Interna",
+    recorrencia: "Diária (Turno)",
+    diaSemana: "Segunda a Sexta",
+    horarioInicio: "08:45",
+    horarioFim: "10:30",
+    titulo: "Ação Preventiva & Contato Ativo de Base",
+    descricao: "Ligar/mensagear mínimo de 15 clientes da listagem de leads e prospecção de bairros.",
+    tipo: "contato_ativo",
+    obrigatoriedade: "obrigatória",
+    requerFoto: false,
+    ativo: true
+  },
+  {
+    id: "R004",
+    grupo: "Loja",
+    cargo: "Vendedora Interna",
+    recorrencia: "Diária (Turno)",
+    diaSemana: "Segunda a Sexta",
+    horarioInicio: "10:30",
+    horarioFim: "12:00",
+    titulo: "Pós-Venda & Cobrança Preventiva",
+    descricao: "Contatar clientes instalados há 72h para verificar sinal e efetuar pesquisa de satisfação.",
+    tipo: "pos_venda",
+    obrigatoriedade: "obrigatória",
+    requerFoto: false,
+    ativo: true
+  },
+  {
+    id: "R005",
+    grupo: "Loja",
+    cargo: "Vendedora Interna",
+    recorrencia: "Diária (Turno)",
+    diaSemana: "Segunda a Sexta",
+    horarioInicio: "13:30",
+    horarioFim: "13:45",
+    titulo: "Postagem Digital Vespertina",
+    descricao: "Atualizar catálogo do WhatsApp e enviar broadcast de ofertas para novos interessados.",
+    tipo: "postagem",
+    obrigatoriedade: "obrigatória",
+    requerFoto: false,
+    ativo: true
+  },
+  {
+    id: "R006",
+    grupo: "Loja",
+    cargo: "Vendedora Interna",
+    recorrencia: "Diária (Turno)",
+    diaSemana: "Segunda a Sexta",
+    horarioInicio: "13:45",
+    horarioFim: "16:30",
+    titulo: "Campanhas de Upgrade & Oferta SVA",
+    descricao: "Disparar ofertas de upgrade de velocidade e streaming para base de clientes antigos.",
+    tipo: "vendas_upgrade",
+    obrigatoriedade: "obrigatória",
+    requerFoto: false,
+    ativo: true
+  },
+  {
+    id: "R007",
+    grupo: "Loja",
+    cargo: "Vendedora Interna",
+    recorrencia: "Diária (Turno)",
+    diaSemana: "Segunda a Sexta",
+    horarioInicio: "16:30",
+    horarioFim: "17:30",
+    titulo: "Lançamento no Sistema (Voalle) & Fechamento do Caixa",
+    descricao: "Lançar todos os contratos no Voalle e conferir recebimentos no caixa da loja.",
+    tipo: "fechamento",
+    obrigatoriedade: "obrigatória",
+    requerFoto: true,
+    ativo: true
+  },
+  {
+    id: "R008",
+    grupo: "Todos",
+    cargo: "Todos os Cargos",
+    recorrencia: "Diária (Turno)",
+    diaSemana: "Segunda a Sexta",
+    horarioInicio: "17:30",
+    horarioFim: "18:00",
+    titulo: "Resumo do Dia & Alinhamento com Gestão",
+    descricao: "Reportar total de vendas, pendências do dia e agendamentos para o dia seguinte.",
+    tipo: "fechamento",
+    obrigatoriedade: "obrigatória",
+    requerFoto: false,
+    ativo: true
+  },
+  {
+    id: "R009",
+    grupo: "Externo",
+    cargo: "Vendedora Externa / Comercial",
+    recorrencia: "Diária (Turno)",
+    diaSemana: "Segunda a Sexta",
+    horarioInicio: "09:00",
+    horarioFim: "17:00",
+    titulo: "Abordagem Externa PAP & Visita aos Comércios do Bairro",
+    descricao: "Ação de vendas externa nos bairros prioritários de Lajeado e Estrela.",
+    tipo: "contato_ativo",
+    obrigatoriedade: "obrigatória",
+    requerFoto: true,
+    ativo: true
+  },
+  {
+    id: "R010",
+    grupo: "Administrativo-PCD",
+    cargo: "Administrativo / PCD",
+    recorrencia: "Mensal (Dia Fixo)",
+    diaSemana: "Dia 15",
+    horarioInicio: "08:30",
+    horarioFim: "12:00",
+    titulo: "Verificação dos Vencimentos de Clientes do Dia 15",
+    descricao: "Auditar faturas e baixas de pagamentos do lote do dia 15 na aba de cobranças.",
+    tipo: "financeiro",
+    obrigatoriedade: "obrigatória",
+    requerFoto: false,
+    ativo: true
+  },
+  {
+    id: "R011",
+    grupo: "Administrativo-PCD",
+    cargo: "Administrativo / PCD",
+    recorrencia: "Mensal (Dia Fixo)",
+    diaSemana: "Dia 20",
+    horarioInicio: "08:30",
+    horarioFim: "12:00",
+    titulo: "Auditoria de Inadimplência do Lote do Dia 15",
+    descricao: "Identificar clientes do dia 15 em atraso de 5 dias e repassar para régua de cobrança.",
+    tipo: "financeiro",
+    obrigatoriedade: "obrigatória",
+    requerFoto: false,
+    ativo: true
+  },
+  {
+    id: "R012",
+    grupo: "Gestão",
+    cargo: "Gerente",
+    recorrencia: "Mensal (Dia Fixo)",
+    diaSemana: "Dia 24",
+    horarioInicio: "14:00",
+    horarioFim: "18:00",
+    titulo: "Fechamento Mensal das Metas de Vendas do Mês",
+    descricao: "Consolidar total de adições de contratos da loja e externos para prévia do resultado.",
+    tipo: "fechamento",
+    obrigatoriedade: "obrigatória",
+    requerFoto: false,
+    ativo: true
+  },
+  {
+    id: "R013",
+    grupo: "Gestão",
+    cargo: "Gerente / Administrativo",
+    recorrencia: "Mensal (Dia Fixo)",
+    diaSemana: "Dia 25",
+    horarioInicio: "09:00",
+    horarioFim: "12:00",
+    titulo: "Envio de Arquivo de RH/DP & Relatório de Comissões",
+    descricao: "Conferir folha de ponto, ausências e enviar planilha de comissões calculadas para o RH.",
+    tipo: "rh_comissoes",
+    obrigatoriedade: "obrigatória",
+    requerFoto: true,
+    ativo: true
+  },
+  {
+    id: "R014",
+    grupo: "Loja",
+    cargo: "Vendedora Interna",
+    recorrencia: "Mensal (Dia Fixo)",
+    diaSemana: "Dia 01",
+    horarioInicio: "08:00",
+    horarioFim: "09:00",
+    titulo: "Foto Oficial da Loja Organizada & Vitrine Mensal",
+    descricao: "Registrar foto em alta qualidade da vitrine atualizada com o tema comercial do mês.",
+    tipo: "foto_mensal",
+    obrigatoriedade: "obrigatória",
+    requerFoto: true,
+    ativo: true
+  }
+];
+
+const INITIAL_MARCOS_MENSAIS = [
+  {
+    id: "m_1",
+    dia: "Todo Dia 01 do Mês",
+    titulo: "Foto Oficial da Vitrine & Layout da Loja",
+    descricao: "Registrar foto atualizada da comunicação visual e vitrine decorada com a campanha mensal da MHNET Lajeado.",
+    responsavel: "Equipe de Atendimento da Loja",
+    tagText: "Exige Upload Obrigatorio no App",
+    cor: "purple",
+    icone: "camera"
+  },
+  {
+    id: "m_15",
+    dia: "Todo Dia 15 do Mês",
+    titulo: "Verificação de Vencimentos do Lote do Dia 15",
+    descricao: "Auditoria de liquidação de faturas de clientes da carteira com vencimento no dia 15 na aba de cobranças.",
+    responsavel: "Maurício / Michele (Adm/PCD)",
+    tagText: "Alerta Disparado via WhatsApp N8N",
+    cor: "amber",
+    icone: "file"
+  },
+  {
+    id: "m_20",
+    dia: "Todo Dia 20 do Mês",
+    titulo: "Auditoria de Inadimplência (Atraso 5 Dias)",
+    descricao: "Verificação dos clientes do dia 15 em atraso de 5 dias e acionamento na régua de cobrança preventiva.",
+    responsavel: "Maurício / Michele (Adm/PCD)",
+    tagText: "Cobrança Prévia de Sustentabilidade",
+    cor: "rose",
+    icone: "alert"
+  },
+  {
+    id: "m_24",
+    dia: "Todo Dia 24 do Mês",
+    titulo: "Pré-Fechamento de Vendas & Metas do Mês",
+    descricao: "Consolidação do total de adições de contratos da loja e externos para projeção final da meta mensal.",
+    responsavel: "Bruno Queiroz (Gerente)",
+    tagText: "Alinhamento com Diretoria Regional",
+    cor: "sky",
+    icone: "barchart"
+  },
+  {
+    id: "m_25",
+    dia: "Todo Dia 25 do Mês",
+    titulo: "Envio do Arquivo RH / DP & Comissões",
+    descricao: "Envio formal da folha de ponto, ausências e planilha de apuração das comissões calculadas para o RH corporativo.",
+    responsavel: "Bruno Queiroz & Gestão",
+    tagText: "Requer Comprovante Anexado",
+    cor: "emerald",
+    icone: "building"
+  }
+];
+
+let rotinasData = readJSONDb("rotinasData.json", {
+  modelos: INITIAL_ROTINAS_MODELOS,
+  colaboradores: INITIAL_ROTINAS_COLABORADORES,
+  execucoes: [],
+  marcos: INITIAL_MARCOS_MENSAIS
+});
+if (!rotinasData.marcos || rotinasData.marcos.length === 0) {
+  rotinasData.marcos = INITIAL_MARCOS_MENSAIS;
+}
+
 const INITIAL_COMPETITORS_SERVER = [
   {
     id: "comp_1",
@@ -1792,7 +2082,7 @@ async function syncVendorsFromGoogleSheet() {
   isSyncingVendors = true;
   console.log("[SYNC] Buscando e analisando Google Sheets: aba Vendedores...");
   try {
-    const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Vendedores");
+    const url = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "vendedores");
     const signal = AbortSignal.timeout ? AbortSignal.timeout(120000) : undefined;
     const sheetsResponse = await fetch(url, { signal });
 
@@ -1804,7 +2094,11 @@ async function syncVendorsFromGoogleSheet() {
     
     if (rows.length > 1) {
       const headers = rows[0].map(h => h.trim().toLowerCase());
-      const nomeIdx = headers.findIndex(h => h.includes("nome") || h.includes("vendedor"));
+      const nomeIdx = headers.findIndex(h => h.includes("vendedor") || h.includes("nome") || h.includes("colaborador"));
+      const statusIdx = headers.findIndex(h => h.includes("status") || h.includes("situacao"));
+      const telefoneIdx = headers.findIndex(h => h.includes("whatsapp") || h.includes("whstsapp") || h.includes("whats") || h.includes("telefone") || h.includes("celular"));
+      const kayIdx = headers.findIndex(h => h.includes("kay") || h.includes("callmebot") || h.includes("bot"));
+      const nascIdx = headers.findIndex(h => h.includes("nascimento") || h.includes("aniversario") || h.includes("nasc"));
       const metaIdx = headers.findIndex(h => h.includes("meta"));
       
       const idxN = nomeIdx >= 0 ? nomeIdx : 0;
@@ -1816,33 +2110,82 @@ async function syncVendorsFromGoogleSheet() {
         const nome = row[idxN].trim();
         if (!nome) continue;
         
-        let meta = 0;
-        if (metaIdx >= 0 && row[metaIdx]) {
-          meta = parseInt(row[metaIdx].replace(/\D/g, ""), 10) || 0;
+        const existingVendor = vendors.find(v => v.nome.trim().toLowerCase() === nome.toLowerCase());
+
+        let status = "Ativo";
+        if (statusIdx >= 0 && row[statusIdx] && row[statusIdx].trim() !== "") {
+          status = row[statusIdx].trim();
+        } else if (existingVendor && existingVendor.status) {
+          status = existingVendor.status;
         }
 
         let telefone = "";
-        const telefoneIdx = headers.findIndex(h => h.includes("telefone") || h.includes("whatsapp") || h.includes("whstsapp") || h.includes("whats") || h.includes("celular"));
         if (telefoneIdx >= 0 && row[telefoneIdx] && row[telefoneIdx].trim() !== "") {
           telefone = row[telefoneIdx].replace(/\D/g, "");
-        } else {
-          // preserve existing local telefone if not found in spreadsheet or if spreadsheet cell is empty
-          const existingVendor = vendors.find(v => v.nome.toLowerCase() === nome.toLowerCase());
-          if (existingVendor && existingVendor.telefone) {
-            telefone = existingVendor.telefone;
+        } else if (existingVendor && existingVendor.telefone) {
+          telefone = existingVendor.telefone;
+        }
+
+        let kayCallmebot = "";
+        if (kayIdx >= 0 && row[kayIdx] && row[kayIdx].trim() !== "") {
+          kayCallmebot = row[kayIdx].trim();
+        } else if (existingVendor && (existingVendor as any).kayCallmebot) {
+          kayCallmebot = (existingVendor as any).kayCallmebot;
+        }
+
+        let dataNascimento = "";
+        if (nascIdx >= 0 && row[nascIdx] && row[nascIdx].trim() !== "") {
+          dataNascimento = row[nascIdx].trim();
+        } else if (existingVendor && (existingVendor as any).dataNascimento) {
+          dataNascimento = (existingVendor as any).dataNascimento;
+        }
+
+        let meta = existingVendor ? (existingVendor.meta || 30) : 30;
+        if (metaIdx >= 0 && row[metaIdx] && row[metaIdx].trim() !== "") {
+          const parsedMeta = parseInt(row[metaIdx].replace(/\D/g, ""), 10);
+          if (!isNaN(parsedMeta) && parsedMeta > 0) {
+            meta = parsedMeta;
           }
         }
         
         parsedVendors.push({
-          id: `vend_sync_${i}_${nome.replace(/\s+/g, '')}`,
+          id: existingVendor?.id || `vend_sync_${i}_${nome.replace(/\s+/g, '')}`,
           nome,
-          meta,
-          telefone
+          status,
+          telefone,
+          kayCallmebot,
+          dataNascimento,
+          meta
         });
       }
       if (parsedVendors.length > 0) {
         vendors = parsedVendors;
         writeJSONDb("vendors.json", vendors);
+
+        // Synchronize with rotinasData.colaboradores
+        if (!rotinasData.colaboradores) rotinasData.colaboradores = [];
+        parsedVendors.forEach(v => {
+          const colabIdx = rotinasData.colaboradores.findIndex((c: any) => c.nome.trim().toLowerCase() === v.nome.trim().toLowerCase());
+          if (colabIdx !== -1) {
+            rotinasData.colaboradores[colabIdx].whatsapp = v.telefone || rotinasData.colaboradores[colabIdx].whatsapp;
+            rotinasData.colaboradores[colabIdx].ativo = v.status ? v.status.toLowerCase() === "ativo" : true;
+            if (v.dataNascimento) {
+              rotinasData.colaboradores[colabIdx].dataNascimento = v.dataNascimento;
+            }
+          } else {
+            rotinasData.colaboradores.push({
+              id: `colab_sync_${v.nome.replace(/\s+/g, '')}`,
+              nome: v.nome,
+              cargo: "Vendedor(a)",
+              grupo: "Comercial",
+              ramal: "",
+              whatsapp: v.telefone || "",
+              dataNascimento: v.dataNascimento || "",
+              ativo: v.status ? v.status.toLowerCase() === "ativo" : true
+            });
+          }
+        });
+        writeJSONDb("rotinasData.json", rotinasData);
       }
     }
     lastVendorsSyncTime = Date.now();
@@ -2396,7 +2739,7 @@ app.post("/api/vendors/sync", async (req, res) => {
 });
 
 app.post("/api/vendors", (req, res) => {
-  const { nome, meta, telefone } = req.body;
+  const { nome, meta, telefone, status, kayCallmebot, dataNascimento } = req.body;
   if (!nome) {
     return res.status(400).json({ status: "error", message: "Nome do vendedor é obrigatório" });
   }
@@ -2404,7 +2747,10 @@ app.post("/api/vendors", (req, res) => {
     id: `vend_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
     nome: nome.trim(),
     meta: Number(meta) || 0,
-    telefone: telefone ? telefone.replace(/\D/g, "") : ""
+    telefone: telefone ? telefone.replace(/\D/g, "") : "",
+    status: status || "Ativo",
+    kayCallmebot: kayCallmebot ? kayCallmebot.trim() : "",
+    dataNascimento: dataNascimento ? dataNascimento.trim() : ""
   };
   vendors.push(newVendor);
   writeJSONDb("vendors.json", vendors);
@@ -2422,7 +2768,10 @@ app.put("/api/vendors", (req, res) => {
         ...v, 
         nome: updated.nome || v.nome, 
         meta: typeof updated.meta !== 'undefined' ? Number(updated.meta) : v.meta,
-        telefone: typeof updated.telefone !== 'undefined' ? updated.telefone.replace(/\D/g, "") : v.telefone
+        telefone: typeof updated.telefone !== 'undefined' ? updated.telefone.replace(/\D/g, "") : v.telefone,
+        status: typeof updated.status !== 'undefined' ? updated.status : (v.status || "Ativo"),
+        kayCallmebot: typeof updated.kayCallmebot !== 'undefined' ? updated.kayCallmebot : (v.kayCallmebot || ""),
+        dataNascimento: typeof updated.dataNascimento !== 'undefined' ? updated.dataNascimento : (v.dataNascimento || "")
       } 
     : v
   );
@@ -6725,7 +7074,343 @@ app.post("/api/ai/roleplay/evaluate", async (req, res) => {
   }
 });
 
+// ==================== ROTINAS & CRONOGRAMA ENDPOINTS ====================
+app.get("/api/rotinas", (req, res) => {
+  res.json({
+    modelos: rotinasData.modelos || [],
+    colaboradores: rotinasData.colaboradores || [],
+    execucoes: rotinasData.execucoes || [],
+    marcos: rotinasData.marcos || []
+  });
+});
+
+app.post("/api/rotinas/marcos", (req, res) => {
+  const marco = req.body;
+  if (!marco.id) {
+    marco.id = "marco_" + Date.now();
+  }
+  if (!rotinasData.marcos) rotinasData.marcos = [];
+  const existingIdx = rotinasData.marcos.findIndex((m: any) => m.id === marco.id);
+  if (existingIdx !== -1) {
+    rotinasData.marcos[existingIdx] = { ...rotinasData.marcos[existingIdx], ...marco };
+  } else {
+    rotinasData.marcos.push(marco);
+  }
+  writeJSONDb("rotinasData.json", rotinasData);
+  res.json({ success: true, marco });
+});
+
+app.delete("/api/rotinas/marcos/:id", (req, res) => {
+  const { id } = req.params;
+  if (rotinasData.marcos) {
+    rotinasData.marcos = rotinasData.marcos.filter((m: any) => m.id !== id);
+    writeJSONDb("rotinasData.json", rotinasData);
+  }
+  res.json({ success: true });
+});
+
+app.post("/api/rotinas/modelos", (req, res) => {
+  const modelo = req.body;
+  if (!modelo.id) {
+    modelo.id = "R" + String(Date.now()).slice(-6);
+  }
+  
+  if (!rotinasData.modelos) rotinasData.modelos = [];
+  const existingIdx = rotinasData.modelos.findIndex((m: any) => m.id === modelo.id);
+  if (existingIdx !== -1) {
+    rotinasData.modelos[existingIdx] = { ...rotinasData.modelos[existingIdx], ...modelo };
+  } else {
+    rotinasData.modelos.push(modelo);
+  }
+  
+  writeJSONDb("rotinasData.json", rotinasData);
+  res.json({ success: true, modelo });
+});
+
+app.delete("/api/rotinas/modelos/:id", (req, res) => {
+  const { id } = req.params;
+  if (rotinasData.modelos) {
+    rotinasData.modelos = rotinasData.modelos.filter((m: any) => m.id !== id);
+    writeJSONDb("rotinasData.json", rotinasData);
+  }
+  res.json({ success: true });
+});
+
+app.post("/api/rotinas/execucoes", (req, res) => {
+  const exec = req.body;
+  if (!exec.id) {
+    exec.id = "EXEC_" + Date.now();
+  }
+  if (!exec.horaConclusao && exec.status === "concluido") {
+    exec.horaConclusao = getNowFormatted();
+  }
+  
+  if (!rotinasData.execucoes) rotinasData.execucoes = [];
+  const existingIdx = rotinasData.execucoes.findIndex((e: any) => 
+    (e.id && e.id === exec.id) || 
+    (e.rotinaId === exec.rotinaId && e.colaborador === exec.colaborador && e.data === exec.data)
+  );
+  
+  if (existingIdx !== -1) {
+    rotinasData.execucoes[existingIdx] = { ...rotinasData.execucoes[existingIdx], ...exec };
+  } else {
+    rotinasData.execucoes.push(exec);
+  }
+  
+  writeJSONDb("rotinasData.json", rotinasData);
+  res.json({ success: true, execucao: exec });
+});
+
+app.post("/api/rotinas/colaboradores", (req, res) => {
+  const colab = req.body;
+  if (!colab.id) {
+    colab.id = "colab_" + Date.now();
+  }
+  if (!rotinasData.colaboradores) rotinasData.colaboradores = [];
+  const existingIdx = rotinasData.colaboradores.findIndex((c: any) => c.id === colab.id);
+  if (existingIdx !== -1) {
+    rotinasData.colaboradores[existingIdx] = { ...rotinasData.colaboradores[existingIdx], ...colab };
+  } else {
+    rotinasData.colaboradores.push(colab);
+  }
+  writeJSONDb("rotinasData.json", rotinasData);
+  res.json({ success: true, colaborador: colab });
+});
+
+app.delete("/api/rotinas/colaboradores/:id", (req, res) => {
+  const { id } = req.params;
+  if (rotinasData.colaboradores) {
+    rotinasData.colaboradores = rotinasData.colaboradores.filter((c: any) => c.id !== id);
+    writeJSONDb("rotinasData.json", rotinasData);
+  }
+  res.json({ success: true });
+});
+
+app.post("/api/rotinas/notify-n8n", async (req, res) => {
+  const { rotina, colaborador, execucao, tipoAviso } = req.body;
+  const webhookUrl = process.env.N8N_ROTINAS_WEBHOOK_URL || process.env.N8N_POS_VENDA_WEBHOOK_URL || "https://lake-elective-scoured.ngrok-free.dev/webhook-test/rotinas";
+  
+  const payload = {
+    evento: "lembrete_rotina",
+    tipoAviso: tipoAviso || "lembrete_tarefa",
+    colaborador: colaborador,
+    rotinaTitle: rotina?.titulo,
+    horario: `${rotina?.horarioInicio || ''} - ${rotina?.horarioFim || ''}`,
+    status: execucao?.status || "pendente",
+    data: execucao?.data || new Date().toISOString().split("T")[0],
+    dataHoraEnvio: getNowFormatted()
+  };
+
+  try {
+    fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).catch(e => console.error("Erro notify-n8n rotina:", e));
+    
+    res.json({ success: true, message: "Aviso de rotina enviado via webhook (n8n)." });
+  } catch (error: any) {
+    res.status(500).json({ error: "Falha ao enviar webhook de rotina", details: error.message });
+  }
+});
+
+// ==========================================
+// RAMAIS & CONTATOS MHNET ENDPOINTS
+// ==========================================
+let ramaisContatosDb: { ramais: any[]; lojas: any[] } = readJSONDb("ramais_contatos_lojas.json", { ramais: [], lojas: [] });
+let lastRamaisContatosSyncTime = 0;
+let isSyncingRamaisContatos = false;
+
+async function syncRamaisContatosFromGoogleSheet(force = false) {
+  const now = Date.now();
+  if (!force && now - lastRamaisContatosSyncTime < 300000 && ramaisContatosDb.ramais?.length > 0) {
+    return;
+  }
+  if (isSyncingRamaisContatos) return;
+  isSyncingRamaisContatos = true;
+
+  console.log("[SYNC] Sincronizando Ramais e Contatos das Lojas MHNET...");
+  try {
+    // 1. Sync Ramais
+    const urlRamais = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Ramais");
+    const resRamais = await fetch(urlRamais);
+    if (resRamais.ok) {
+      const csvRamais = await resRamais.text();
+      const rowsRamais = parseCSV(csvRamais);
+      const parsedRamais: any[] = [];
+      for (let i = 1; i < rowsRamais.length; i++) {
+        const r = rowsRamais[i];
+        const nome = (r[0] || "").trim();
+        const ramal = (r[1] || "").trim();
+        const cidade = (r[2] || "").trim();
+        const setor = (r[3] || "").trim();
+        if (nome || ramal || cidade || setor) {
+          parsedRamais.push({
+            id: "ramal_" + i + "_" + (ramal || Math.random().toString(36).substring(2, 6)),
+            nome,
+            ramal,
+            cidade,
+            setor
+          });
+        }
+      }
+      if (parsedRamais.length > 0) {
+        ramaisContatosDb.ramais = parsedRamais;
+      }
+    }
+
+    // 2. Sync Contato Lojas
+    const urlLojas = await getExportUrl("19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w", "Contato Lojas");
+    const resLojas = await fetch(urlLojas);
+    if (resLojas.ok) {
+      const csvLojas = await resLojas.text();
+      const rowsLojas = parseCSV(csvLojas);
+      const parsedLojas: any[] = [];
+      for (let i = 0; i < rowsLojas.length; i++) {
+        const r = rowsLojas[i];
+        let sigla = (r[0] || "").trim();
+        let loja = (r[1] || "").trim();
+        let gestor = (r[2] || "").trim();
+        let telefoneGestor = (r[3] || "").trim();
+        let emailGestor = (r[4] || "").trim();
+        let whatsappLoja = (r[5] || "").trim();
+        let telefoneFixo = (r[6] || "").trim();
+        let ramaisStr = (r[7] || "").trim();
+        let endereco = (r[8] || "").trim();
+
+        if (sigla.startsWith("Sigla ")) sigla = sigla.replace("Sigla ", "").trim();
+        if (loja.startsWith("Loja ")) loja = loja.replace("Loja ", "").trim();
+        if (gestor.startsWith("Gestor ")) gestor = gestor.replace("Gestor ", "").trim();
+        if (telefoneGestor.startsWith("Telefone do Gestor ")) telefoneGestor = telefoneGestor.replace("Telefone do Gestor ", "").trim();
+        if (emailGestor.startsWith("E-mail ")) emailGestor = emailGestor.replace("E-mail ", "").trim();
+        if (whatsappLoja.startsWith("n° Celular Loja (WhatsApp) ")) whatsappLoja = whatsappLoja.replace("n° Celular Loja (WhatsApp) ", "").trim();
+        if (telefoneFixo.startsWith("Fixo (Caso tenha) ou n° faxada ")) telefoneFixo = telefoneFixo.replace("Fixo (Caso tenha) ou n° faxada ", "").trim();
+        if (ramaisStr.startsWith("Ramais ")) ramaisStr = ramaisStr.replace("Ramais ", "").trim();
+        if (endereco.startsWith("Endereço ")) endereco = endereco.replace("Endereço ", "").trim();
+
+        if (sigla || loja || gestor || whatsappLoja) {
+          parsedLojas.push({
+            id: "loja_" + (sigla || i),
+            sigla,
+            loja,
+            gestor,
+            telefoneGestor,
+            emailGestor,
+            whatsappLoja,
+            telefoneFixo,
+            ramais: ramaisStr,
+            endereco
+          });
+        }
+      }
+      if (parsedLojas.length > 0) {
+        ramaisContatosDb.lojas = parsedLojas;
+      }
+    }
+
+    lastRamaisContatosSyncTime = now;
+    writeJSONDb("ramais_contatos_lojas.json", ramaisContatosDb);
+    console.log(`[SYNC] Ramais (${ramaisContatosDb.ramais.length}) e Lojas (${ramaisContatosDb.lojas.length}) sincronizados.`);
+  } catch (e: any) {
+    console.error("Erro na sincronização de Ramais e Contatos Lojas:", e?.message || e);
+  } finally {
+    isSyncingRamaisContatos = false;
+  }
+}
+
+// Initial background sync
+syncRamaisContatosFromGoogleSheet();
+
+// Endpoints
+app.get("/api/ramais-contatos", async (req, res) => {
+  if (!ramaisContatosDb.ramais || ramaisContatosDb.ramais.length === 0) {
+    await syncRamaisContatosFromGoogleSheet();
+  }
+  res.json({
+    ramais: ramaisContatosDb.ramais || [],
+    lojas: ramaisContatosDb.lojas || [],
+    lastSync: lastRamaisContatosSyncTime
+  });
+});
+
+app.post("/api/ramais-contatos/sync", async (req, res) => {
+  await syncRamaisContatosFromGoogleSheet(true);
+  res.json({
+    status: "success",
+    ramais: ramaisContatosDb.ramais || [],
+    lojas: ramaisContatosDb.lojas || [],
+    lastSync: lastRamaisContatosSyncTime
+  });
+});
+
+app.post("/api/ramais-contatos/ramais", (req, res) => {
+  const item = req.body;
+  if (!item || !item.nome || !item.ramal) {
+    return res.status(400).json({ error: "Nome e Ramal são obrigatórios" });
+  }
+
+  if (!ramaisContatosDb.ramais) ramaisContatosDb.ramais = [];
+
+  if (item.id) {
+    const idx = ramaisContatosDb.ramais.findIndex((r: any) => r.id === item.id);
+    if (idx >= 0) {
+      ramaisContatosDb.ramais[idx] = { ...ramaisContatosDb.ramais[idx], ...item };
+    } else {
+      ramaisContatosDb.ramais.push(item);
+    }
+  } else {
+    item.id = "ramal_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
+    ramaisContatosDb.ramais.unshift(item);
+  }
+
+  writeJSONDb("ramais_contatos_lojas.json", ramaisContatosDb);
+  res.json({ status: "success", item });
+});
+
+app.delete("/api/ramais-contatos/ramais/:id", (req, res) => {
+  const { id } = req.params;
+  if (ramaisContatosDb.ramais) {
+    ramaisContatosDb.ramais = ramaisContatosDb.ramais.filter((r: any) => r.id !== id);
+    writeJSONDb("ramais_contatos_lojas.json", ramaisContatosDb);
+  }
+  res.json({ status: "success" });
+});
+
+app.post("/api/ramais-contatos/lojas", (req, res) => {
+  const item = req.body;
+  if (!item || !item.loja) {
+    return res.status(400).json({ error: "Nome da loja é obrigatório" });
+  }
+
+  if (!ramaisContatosDb.lojas) ramaisContatosDb.lojas = [];
+
+  if (item.id) {
+    const idx = ramaisContatosDb.lojas.findIndex((l: any) => l.id === item.id);
+    if (idx >= 0) {
+      ramaisContatosDb.lojas[idx] = { ...ramaisContatosDb.lojas[idx], ...item };
+    } else {
+      ramaisContatosDb.lojas.push(item);
+    }
+  } else {
+    item.id = "loja_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
+    ramaisContatosDb.lojas.unshift(item);
+  }
+
+  writeJSONDb("ramais_contatos_lojas.json", ramaisContatosDb);
+  res.json({ status: "success", item });
+});
+
+app.delete("/api/ramais-contatos/lojas/:id", (req, res) => {
+  const { id } = req.params;
+  if (ramaisContatosDb.lojas) {
+    ramaisContatosDb.lojas = ramaisContatosDb.lojas.filter((l: any) => l.id !== id);
+    writeJSONDb("ramais_contatos_lojas.json", ramaisContatosDb);
+  }
+  res.json({ status: "success" });
+});
+
 // Catch-all for undefined /api/*
+
 // routes to avoid Vite SPA fallback returning index.html
 app.use("/api/*", (req, res) => {
   res.status(404).json({ status: "error", message: "API endpoint not found", endpoint: req.originalUrl });

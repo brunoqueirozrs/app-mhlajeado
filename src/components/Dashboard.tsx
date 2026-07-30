@@ -8,7 +8,7 @@ import {
   CheckSquare, Calendar, FolderOpen, ShieldAlert, 
   Bot, Trophy, Network, UserPlus, ArrowRight, Bell, ChevronRight,
   TrendingUp, Users, MapPin, Clock, CalendarDays, Zap, Sparkles, RefreshCw, Send, AlertTriangle, X, List, FileSpreadsheet,
-  ClipboardList, FileText, CheckCircle, Coins
+  ClipboardList, FileText, CheckCircle, Coins, Cake, Gift, PartyPopper, Phone, PhoneCall, Store
 } from "lucide-react";
 import { Database, Mail, Map as MapIcon, Cloud, Car, Navigation, Briefcase } from "lucide-react";
 import { Lead, Task, Vendor } from "../types";
@@ -58,6 +58,44 @@ export default function Dashboard({
   // Seller managed leads and transfer state
   const [selectedSellerForLeads, setSelectedSellerForLeads] = useState<string | null>(null);
   const [bulkTargetSeller, setBulkTargetSeller] = useState<string>("");
+  
+  // Birthdays state and calculations
+  const [showAllBirthdays, setShowAllBirthdays] = useState(false);
+
+  const monthNames = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+
+  const nowDate = new Date();
+  const currentMonth = nowDate.getMonth() + 1; // 1-12
+  const currentDay = nowDate.getDate();
+
+  const parseDateStr = (str?: string) => {
+    if (!str) return null;
+    const parts = str.trim().split(/[\/\-]/);
+    if (parts.length >= 2) {
+      let day = parseInt(parts[0], 10);
+      let month = parseInt(parts[1], 10);
+      if (parts[0].length === 4) {
+        month = parseInt(parts[1], 10);
+        day = parseInt(parts[2], 10);
+      }
+      if (!isNaN(day) && !isNaN(month)) {
+        return { day, month };
+      }
+    }
+    return null;
+  };
+
+  const allWithBirthdays = vendors.map(v => {
+    const p = parseDateStr(v.dataNascimento);
+    return { ...v, parsedBday: p };
+  }).filter(v => v.parsedBday !== null);
+
+  const birthMonthVendors = allWithBirthdays
+    .filter(v => v.parsedBday && v.parsedBday.month === currentMonth)
+    .sort((a, b) => (a.parsedBday?.day || 0) - (b.parsedBday?.day || 0));
   const [transferLoading, setTransferLoading] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -266,10 +304,10 @@ export default function Dashboard({
   }).sort((a, b) => b.sales - a.sales || b.totalLeads - a.totalLeads);
 
   // Check for overdue tasks
-  const now = new Date();
-  const currentYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const currentH = now.getHours();
-  const currentM = now.getMinutes();
+  const todayNow = new Date();
+  const currentYMD = `${todayNow.getFullYear()}-${String(todayNow.getMonth() + 1).padStart(2, "0")}-${String(todayNow.getDate()).padStart(2, "0")}`;
+  const currentH = todayNow.getHours();
+  const currentM = todayNow.getMinutes();
 
   const overdueTasks = tasks.filter(t => {
     if (t.status !== "PENDENTE") return false;
@@ -669,6 +707,92 @@ export default function Dashboard({
           </div>
         )}
 
+        {/* BIRTHDAY REMINDER CARD */}
+        <div className="col-span-12 card-modern rounded-[24px] border border-amber-200/80 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-purple-500/10 p-5 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+                <Cake className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-extrabold text-slate-900 tracking-tight">
+                    Aniversariantes do Mês — {monthNames[currentMonth - 1]}
+                  </h4>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-xs">
+                    {birthMonthVendors.length} {birthMonthVendors.length === 1 ? "Aniversariante" : "Aniversariantes"}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 font-medium mt-0.5">
+                  Lembrete especial: parabenize os colaboradores da equipe que fazem aniversário este mês!
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowAllBirthdays(!showAllBirthdays)}
+              className="text-xs font-bold text-amber-900 hover:text-amber-950 bg-white/80 hover:bg-white border border-amber-200/80 px-3 py-1.5 rounded-xl transition shadow-xs cursor-pointer shrink-0 self-start sm:self-center"
+            >
+              {showAllBirthdays ? "Ver Apenas Este Mês" : "Ver Todos Aniversários da Equipe"}
+            </button>
+          </div>
+
+          {/* Display Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {(showAllBirthdays ? allWithBirthdays : birthMonthVendors).length === 0 ? (
+              <div className="col-span-full py-4 text-center text-xs font-semibold text-slate-500 bg-white/60 rounded-xl border border-amber-100">
+                Nenhum aniversariante registrado para o mês de {monthNames[currentMonth - 1]}.
+              </div>
+            ) : (
+              (showAllBirthdays ? allWithBirthdays : birthMonthVendors).map(v => {
+                const isToday = v.parsedBday?.month === currentMonth && v.parsedBday?.day === currentDay;
+                const formattedDay = v.parsedBday ? `Dia ${String(v.parsedBday.day).padStart(2, '0')}/${String(v.parsedBday.month).padStart(2, '0')}` : v.dataNascimento;
+
+                return (
+                  <div
+                    key={v.id || v.nome}
+                    className={`p-3.5 rounded-2xl border transition flex items-center justify-between gap-3 ${
+                      isToday 
+                        ? "bg-gradient-to-r from-amber-100 via-rose-100 to-amber-50 border-amber-300 shadow-md ring-2 ring-amber-400/50" 
+                        : "bg-white/80 hover:bg-white border-amber-200/60 shadow-xs"
+                    }`}
+                  >
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-extrabold text-slate-900 truncate">{v.nome}</span>
+                        {isToday && (
+                          <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-500 text-white shrink-0">
+                            🎉 HOJE!
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] font-bold text-amber-900 flex items-center gap-1">
+                        <Cake className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span>{formattedDay}</span>
+                      </div>
+                    </div>
+
+                    {v.telefone ? (
+                      <a
+                        href={`https://wa.me/${v.telefone.replace(/\D/g, '')}?text=${encodeURIComponent(`Parabéns pelo seu aniversário, ${v.nome.split(' ')[0]}! 🎉🎂 Muita saúde, alegria e sucesso de toda a equipe MHNET!`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1.5 bg-[#00A86B] hover:bg-emerald-600 text-white rounded-xl text-xs font-extrabold shadow-sm transition flex items-center gap-1 shrink-0"
+                        title="Desejar parabéns pelo WhatsApp"
+                      >
+                        <Send className="w-3 h-3" />
+                        <span>Parabéns</span>
+                      </a>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-bold shrink-0">Sem Whats</span>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
       </div>
 
 
@@ -766,6 +890,7 @@ export default function Dashboard({
             onClick={() => navigateTo("gestao_pessoas")} 
             className="card-modern border border-slate-200/80 rounded-[22px] p-4 flex flex-col items-start gap-4 cursor-pointer shadow-sm  hover:border-slate-300  active:translate-y-0 text-left transition duration-200"
           >
+
             <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center"><Users className="w-5 h-5 stroke-[2.2]" /></div>
             <div>
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">RH Estratégico</span>
@@ -1089,6 +1214,16 @@ export default function Dashboard({
             </div>
             <span className="text-[11px] font-bold text-slate-700">Optidata</span>
           </a>
+
+          <button 
+            onClick={() => navigateTo("ramais_contatos")} 
+            className="flex flex-col items-center justify-center p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm text-center cursor-pointer"
+          >
+            <div className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center mb-2">
+              <PhoneCall className="w-4 h-4" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-700">Ramais & Contatos</span>
+          </button>
           
           {isAdmin && (
             <>
