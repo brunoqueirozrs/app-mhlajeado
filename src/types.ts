@@ -394,3 +394,42 @@ export interface ContatoLojaItem {
   endereco?: string;
 }
 
+export type HeatLevel = "quente" | "medio" | "frio";
+
+export interface BairroHeatItem {
+  id: string;
+  cidade: string;
+  nome: string;
+  heatLevel: HeatLevel;
+  observacoes?: string;
+}
+
+export interface RotaIaParametros {
+  regraDias1a10: string;
+  regraDias11a16: string;
+  regraSextaTarde: string;
+  regraSabado: string;
+  observacaoGeral?: string;
+}
+
+export interface RotaConfigDb {
+  bairros: BairroHeatItem[];
+  parametros: RotaIaParametros;
+}
+
+export interface RouteSlot {
+  dateStr: string;
+  turno: number; // 1 = Manhã, 2 = Tarde
+  foco: string;
+  justificativa: string;
+}
+
+export interface RotaSalva {
+  id: string;
+  vendedor: string;
+  weekMonday: string;
+  briefing: string;
+  slots: RouteSlot[];
+  updatedAt: number;
+}
+

@@ -5519,42 +5519,239 @@ app.delete("/api/installations/:id", (req, res) => {
   res.json({ status: "success", installations });
 });
 
+// ==========================================
+// CONFIGURAÇÕES E BANCO DE DADOS DA ROTA DE VENDAS
+// ==========================================
+const DEFAULT_ROTA_CONFIG = {
+  bairros: [
+    // Lajeado - Quentes (Top Oportunidades)
+    { id: "b1", cidade: "Lajeado", nome: "Santo Antônio", heatLevel: "quente" },
+    { id: "b2", cidade: "Lajeado", nome: "Centro", heatLevel: "quente" },
+    { id: "b3", cidade: "Lajeado", nome: "Jardim do Cedro", heatLevel: "quente" },
+    { id: "b4", cidade: "Lajeado", nome: "Conservas", heatLevel: "quente" },
+    { id: "b5", cidade: "Lajeado", nome: "Conventos", heatLevel: "quente" },
+    { id: "b6", cidade: "Lajeado", nome: "Florestal", heatLevel: "quente" },
+    { id: "b7", cidade: "Lajeado", nome: "Morro 25", heatLevel: "quente" },
+    { id: "b8", cidade: "Lajeado", nome: "São Cristóvão", heatLevel: "quente" },
+
+    // Lajeado - Médios
+    { id: "b9", cidade: "Lajeado", nome: "Americano", heatLevel: "medio" },
+    { id: "b10", cidade: "Lajeado", nome: "Moinhos", heatLevel: "medio" },
+    { id: "b11", cidade: "Lajeado", nome: "Santo André", heatLevel: "medio" },
+    { id: "b12", cidade: "Lajeado", nome: "Campestre", heatLevel: "medio" },
+    { id: "b13", cidade: "Lajeado", nome: "Universitário", heatLevel: "medio" },
+    { id: "b14", cidade: "Lajeado", nome: "Montanha", heatLevel: "medio" },
+    { id: "b15", cidade: "Lajeado", nome: "Olarias", heatLevel: "medio" },
+
+    // Lajeado - Frios
+    { id: "b16", cidade: "Lajeado", nome: "Bom Pastor", heatLevel: "frio" },
+    { id: "b17", cidade: "Lajeado", nome: "Moinhos D'Água", heatLevel: "frio" },
+    { id: "b18", cidade: "Lajeado", nome: "Planalto", heatLevel: "frio" },
+    { id: "b19", cidade: "Lajeado", nome: "Das Nações", heatLevel: "frio" },
+    { id: "b20", cidade: "Lajeado", nome: "Hidráulica", heatLevel: "frio" },
+    { id: "b21", cidade: "Lajeado", nome: "Igrejinha", heatLevel: "frio" },
+    { id: "b22", cidade: "Lajeado", nome: "Centenário", heatLevel: "frio" },
+    { id: "b23", cidade: "Lajeado", nome: "São Bento", heatLevel: "frio" },
+    { id: "b24", cidade: "Lajeado", nome: "Alto Do Parque", heatLevel: "frio" },
+    { id: "b25", cidade: "Lajeado", nome: "Indústrias", heatLevel: "frio" },
+    { id: "b26", cidade: "Lajeado", nome: "Jardim Botânico", heatLevel: "frio" },
+
+    // Estrela - Quentes
+    { id: "b27", cidade: "Estrela", nome: "Boa União", heatLevel: "quente" },
+    { id: "b28", cidade: "Estrela", nome: "Estados", heatLevel: "quente" },
+    { id: "b29", cidade: "Estrela", nome: "Indústrias", heatLevel: "quente" },
+
+    // Estrela - Médios / Frios
+    { id: "b30", cidade: "Estrela", nome: "Oriental", heatLevel: "medio" },
+    { id: "b31", cidade: "Estrela", nome: "Centro", heatLevel: "medio" },
+    { id: "b32", cidade: "Estrela", nome: "Cristo Rei", heatLevel: "medio" },
+    { id: "b33", cidade: "Estrela", nome: "Imigrantes", heatLevel: "frio" },
+    { id: "b34", cidade: "Estrela", nome: "Marmitt", heatLevel: "frio" },
+    { id: "b35", cidade: "Estrela", nome: "Pinheiros", heatLevel: "frio" },
+    { id: "b36", cidade: "Estrela", nome: "Auxiliadora", heatLevel: "frio" },
+    { id: "b37", cidade: "Estrela", nome: "São José", heatLevel: "frio" },
+
+    // Arroio do Meio
+    { id: "b38", cidade: "Arroio do Meio", nome: "Centro", heatLevel: "quente" },
+    { id: "b39", cidade: "Arroio do Meio", nome: "Navegantes", heatLevel: "quente" },
+    { id: "b40", cidade: "Arroio do Meio", nome: "São Caetano", heatLevel: "medio" },
+    { id: "b41", cidade: "Arroio do Meio", nome: "Bela Vista", heatLevel: "frio" },
+    { id: "b42", cidade: "Arroio do Meio", nome: "Aimoré", heatLevel: "frio" }
+  ],
+  parametros: {
+    regraDias1a10: "Primeiros 10 dias do mês: focar prioritariamente nos bairros com Maior Calor (Top Oportunidades).",
+    regraDias11a16: "Dias 11 a 16 do mês: focar nos bairros com menor densidade / cobertura para prospeção de novas áreas.",
+    regraSextaTarde: "Todas as Sextas-feiras à tarde: focar exclusivamente em Condomínios e Edifícios residenciais.",
+    regraSabado: "Todos os Sábados: focar em Ação Externa e Ponto de Venda (PDV).",
+    observacaoGeral: "Dividir a agenda em 2 turnos por dia (Turno 1 = Manhã, Turno 2 = Tarde)."
+  }
+};
+
+let rotasConfigDb = readJSONDb("rotas_config.json", DEFAULT_ROTA_CONFIG);
+let rotasVendasDb = readJSONDb("rotas_vendas.json", []);
+
+// Endpoints Rota de Vendas
+app.get("/api/rotas/config", (req, res) => {
+  res.json(rotasConfigDb || DEFAULT_ROTA_CONFIG);
+});
+
+app.post("/api/rotas/config", (req, res) => {
+  const config = req.body;
+  if (!config || !config.bairros || !config.parametros) {
+    return res.status(400).json({ error: "Configuração inválida" });
+  }
+  rotasConfigDb = config;
+  writeJSONDb("rotas_config.json", rotasConfigDb);
+  res.json({ status: "success", config: rotasConfigDb });
+});
+
+app.get("/api/rotas", (req, res) => {
+  const { vendedor, weekMonday } = req.query;
+  if (!vendedor || !weekMonday) {
+    return res.json({ rota: null });
+  }
+  const id = `rota_${vendedor}_${weekMonday}`;
+  const found = rotasVendasDb.find((r: any) => r.id === id || (r.vendedor === vendedor && r.weekMonday === weekMonday));
+  res.json({ rota: found || null });
+});
+
+app.post("/api/rotas", (req, res) => {
+  const { vendedor, weekMonday, briefing, slots } = req.body;
+  if (!vendedor || !weekMonday) {
+    return res.status(400).json({ error: "Vendedor e weekMonday são obrigatórios" });
+  }
+  const id = `rota_${vendedor}_${weekMonday}`;
+  const rotaItem = {
+    id,
+    vendedor,
+    weekMonday,
+    briefing: briefing || "",
+    slots: slots || [],
+    updatedAt: Date.now()
+  };
+
+  const idx = rotasVendasDb.findIndex((r: any) => r.id === id || (r.vendedor === vendedor && r.weekMonday === weekMonday));
+  if (idx >= 0) {
+    rotasVendasDb[idx] = rotaItem;
+  } else {
+    rotasVendasDb.push(rotaItem);
+  }
+  writeJSONDb("rotas_vendas.json", rotasVendasDb);
+  res.json({ status: "success", rota: rotaItem });
+});
+
+app.post("/api/rotas/notify-n8n", async (req, res) => {
+  try {
+    const { vendedor, weekMonday, briefing, slots } = req.body;
+    if (!vendedor || !weekMonday) {
+      return res.status(400).json({ error: "Dados incompletos para notificação n8n." });
+    }
+
+    let msg = `*🚀 CRONOGRAMA DE ROTA DE VENDAS MHNET*\n`;
+    msg += `*Vendedor:* ${vendedor}\n`;
+    msg += `*Semana:* ${weekMonday}\n\n`;
+    if (briefing) {
+      msg += `*💡 Briefing Estratégico:*\n${briefing}\n\n`;
+    }
+    msg += `*📅 Agenda Semanal por Turnos:*\n`;
+
+    if (Array.isArray(slots) && slots.length > 0) {
+      const slotsByDate: Record<string, any[]> = {};
+      slots.forEach((s: any) => {
+        if (!slotsByDate[s.dateStr]) slotsByDate[s.dateStr] = [];
+        slotsByDate[s.dateStr].push(s);
+      });
+
+      Object.keys(slotsByDate).sort().forEach(dateStr => {
+        msg += `\n📆 *Data: ${dateStr}*\n`;
+        slotsByDate[dateStr].forEach((s: any) => {
+          const turnoLabel = s.turno === 1 ? "Manhã" : "Tarde";
+          msg += `   • *${turnoLabel}:* ${s.foco || "Livre"}\n`;
+          if (s.justificativa) {
+            msg += `     _Obs: ${s.justificativa}_\n`;
+          }
+        });
+      });
+    }
+
+    const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.APPS_SCRIPT_URL || "https://webhook.n8n.com/mhnet/rotas";
+    const payload = {
+      tipo: "ROTA_VENDAS_SEMANAL",
+      vendedor,
+      weekMonday,
+      mensagemFormatada: msg,
+      briefing,
+      slots
+    };
+
+    fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).catch(e => console.error("Erro no webhook de rotas n8n:", e));
+
+    res.json({ success: true, message: "Rota enviada com sucesso para o n8n!" });
+  } catch (error: any) {
+    res.status(500).json({ error: "Falha ao notificar n8n", details: error.message });
+  }
+});
+
 app.post("/api/gemini/generateRouteBriefing", async (req, res) => {
   const { leads, loggedUser, weekMonday } = req.body;
+  
+  const config = rotasConfigDb || DEFAULT_ROTA_CONFIG;
+  const bairrosQuentes = (config.bairros || [])
+    .filter((b: any) => b.heatLevel === "quente")
+    .map((b: any) => `${b.nome} (${b.cidade})`);
+  const bairrosMedios = (config.bairros || [])
+    .filter((b: any) => b.heatLevel === "medio")
+    .map((b: any) => `${b.nome} (${b.cidade})`);
+  const bairrosFrios = (config.bairros || [])
+    .filter((b: any) => b.heatLevel === "frio")
+    .map((b: any) => `${b.nome} (${b.cidade})`);
+
+  const params = config.parametros || DEFAULT_ROTA_CONFIG.parametros;
+
   if (!ai) {
     return res.status(503).json({ 
       status: "error", 
       message: "AI service unavailable. Using local fallback.",
-      briefing: "A IA está offline. Concentre-se nos bairros Florestal e Centro de Lajeado hoje.",
+      briefing: `Foque nos Bairros Quentes: ${bairrosQuentes.slice(0, 5).join(", ")}.`,
       rotaSemanal: []
     });
   }
 
   try {
-    const prompt = `Você é o estrategista de campo da MHNET Telecom em Lajeado e Estrela.
-    O vendedor atual é: ${loggedUser}.
-    A segunda-feira da semana requisitada é: ${weekMonday || "uma data recente"}.
-    
-    CRONOGRAMA SEMANAL MANDATÓRIO DA FROTA:
-    - 10 primeiros dias do mês: focar nos bairros mais quentes.
-    - Dias 11 a 16: focar nos bairros com menos clientes.
-    - Sempre Sexta à tarde: Condomínios.
-    - Todos os Sábados: Ação Externa PDV.
-    - Dividir os dias em 2 turnos: 1 = Manhã, 2 = Tarde.
+    const prompt = `Você é o estrategista de campo da MHNET Telecom para Lajeado, Estrela e Arroio do Meio.
+O vendedor atual é: ${loggedUser}.
+A segunda-feira da semana requisitada é: ${weekMonday || "uma data recente"}.
 
-    Retorne um JSON válido contendo:
-    - "briefing": texto motivacional e direcionador curto.
-    - "rotaSemanal": array com exatos 14 itens (7 dias * 2 turnos). De segunda a domingo.
-      Formato do item do array: {"dateStr": "YYYY-MM-DD", "turno": 1, "foco": "Bairro/Ação", "justificativa": "Razão"} e turno 2 para tarde. Use datas baseadas na segunda-feira fornecida.
+BAIRROS E MAPA DE CALOR DA BASE:
+- 🔥 Bairros Quentes (Top Oportunidades - Foco Prioritário): ${bairrosQuentes.join(", ")}
+- ☀️ Bairros Médios: ${bairrosMedios.join(", ")}
+- ❄️ Bairros Frios / Baixa Densidade: ${bairrosFrios.join(", ")}
 
-    Exemplo JSON:
-    {
-      "briefing": "...",
-      "rotaSemanal": [
-        {"dateStr": "2026-06-22", "turno": 1, "foco": "Centro - Lajeado", "justificativa": "Bairro quente"},
-        {"dateStr": "2026-06-22", "turno": 2, "foco": "Florestal - Lajeado", "justificativa": "Bairro quente"}
-      ]
-    }`;
+DIRETRIZES E REGRAS MANDATÓRIAS DE ROTA:
+1. ${params.regraDias1a10 || "Dias 1 a 10 do mês: focar nos bairros mais quentes."}
+2. ${params.regraDias11a16 || "Dias 11 a 16 do mês: focar nos bairros com menos clientes."}
+3. ${params.regraSextaTarde || "Todas as Sextas à tarde: Condomínios."}
+4. ${params.regraSabado || "Todos os Sábados: Ação Externa / PDV."}
+5. Dividir cada dia em 2 turnos (turno 1 = Manhã, turno 2 = Tarde).
+
+Retorne um JSON válido contendo:
+- "briefing": texto motivacional e direcionador curto (2 a 4 frases).
+- "rotaSemanal": array com exatos 14 itens (7 dias * 2 turnos, de Segunda a Domingo).
+  Formato do item: {"dateStr": "YYYY-MM-DD", "turno": 1, "foco": "Nome do Bairro - Cidade", "justificativa": "Razão estratégica curta"} (turno 1 = Manhã, turno 2 = Tarde).
+  Use datas consecutivas a partir da segunda-feira (${weekMonday}).
+
+Exemplo JSON:
+{
+  "briefing": "...",
+  "rotaSemanal": [
+    {"dateStr": "${weekMonday}", "turno": 1, "foco": "Santo Antônio - Lajeado", "justificativa": "Bairro de altíssimo calor no início do mês"},
+    {"dateStr": "${weekMonday}", "turno": 2, "foco": "Centro - Lajeado", "justificativa": "Prospecção em comércios centrais"}
+  ]
+}`;
 
     const response = await safeGenerateContent({
       model: "gemini-2.0-flash",
@@ -5566,21 +5763,44 @@ app.post("/api/gemini/generateRouteBriefing", async (req, res) => {
     });
 
     const parsedData = JSON.parse(response.text || "{}");
+    const briefing = parsedData.briefing || "Foque nos principais bairros com alta densidade e mapa de calor.";
+    const rotaSemanal = parsedData.rotaSemanal || [];
+
+    // Persistir automaticamente no banco JSON de rotas
+    if (loggedUser && weekMonday && rotaSemanal.length > 0) {
+      const id = `rota_${loggedUser}_${weekMonday}`;
+      const idx = rotasVendasDb.findIndex((r: any) => r.id === id || (r.vendedor === loggedUser && r.weekMonday === weekMonday));
+      const newRota = {
+        id,
+        vendedor: loggedUser,
+        weekMonday,
+        briefing,
+        slots: rotaSemanal,
+        updatedAt: Date.now()
+      };
+      if (idx >= 0) {
+        rotasVendasDb[idx] = newRota;
+      } else {
+        rotasVendasDb.push(newRota);
+      }
+      writeJSONDb("rotas_vendas.json", rotasVendasDb);
+    }
 
     return res.json({ 
       status: "success", 
-      briefing: parsedData.briefing || "Foque nos principais bairros com alta densidade.",
-      rotaSemanal: parsedData.rotaSemanal || []
+      briefing,
+      rotaSemanal
     });
   } catch (error: any) {
     console.info("[IA Fallback] Rota Briefing usou fallback devido aos limites de cota da API.");
     return res.json({
       status: "success",
-      briefing: "Foque nos bairros Florestal (Lajeado) e Oriental (Estrela). Dê atenção a condomínios à tarde.",
+      briefing: "Foque nos bairros Santo Antônio e Florestal em Lajeado, e Boa União em Estrela.",
       rotaSemanal: []
     });
   }
 });
+
 
 const sessoes = new Map<string, { historico: any[]; ultimaAtividade: number }>();
 const SESSAO_TTL_MS = 30 * 60 * 1000;

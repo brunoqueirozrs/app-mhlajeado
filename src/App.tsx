@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Terminal, Database, CheckCircle, 
   Bot, Wifi, WifiOff, RefreshCw, LogOut, Loader2, Award, ClipboardList, 
-  MapPin, Users, HelpCircle, Activity, Info, CalendarDays, BookOpen, User, Lock, Sparkles, Coins, Download, Sliders, Link, Calculator, Lightbulb, UserCheck, Store, FileSpreadsheet, Zap
+  MapPin, Users, HelpCircle, Activity, Info, CalendarDays, BookOpen, User, Lock, Sparkles, Coins, Download, Sliders, Link, Calculator, Lightbulb, UserCheck, Store, FileSpreadsheet, Zap, Navigation
 , Archive, Search, X, FileText, Sun, Moon } from 'lucide-react';
 
 import { 
@@ -1599,6 +1599,16 @@ export default function App() {
                 }`}>
                 <CalendarDays className="w-4 h-4 shrink-0 text-white" />
                 <span>Rotinas & Cronograma</span>
+              </button>
+
+              <button onClick={() => setActiveTab("rotas")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  activeTab === "rotas" 
+                    ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
+                    : "text-white hover:bg-slate-900"
+                }`}>
+                <Navigation className="w-4 h-4 shrink-0 text-white" />
+                <span>Rota de Vendas</span>
               </button>
 
               <button onClick={() => setActiveTab("pos_venda")}
