@@ -25,6 +25,7 @@ import { Lead, BairroHeatItem, RotaIaParametros, HeatLevel, RouteSlot } from "..
 interface RotaVendasPageProps {
   leads: Lead[];
   loggedUser: string;
+  userRole?: string;
 }
 
 function getMonday(d: Date) {
@@ -43,9 +44,17 @@ function formatDateString(d: Date) {
   return `${year}-${month}-${day}`;
 }
 
-const CIDADES_SUPORTADAS = ["Lajeado", "Estrela", "Arroio do Meio"];
+const CIDADES_SUPORTADAS = ["Lajeado", "Estrela"];
 
-export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProps) {
+export default function RotaVendasPage({ leads, loggedUser, userRole }: RotaVendasPageProps) {
+  const isAdmin = userRole === "admin" || 
+    (loggedUser && (
+      loggedUser.toLowerCase().includes("bruno queiroz") ||
+      loggedUser.toLowerCase().includes("bruno garcia") ||
+      loggedUser.toLowerCase().includes("gestor") ||
+      loggedUser.toLowerCase().includes("admin")
+    ));
+
   const [activeSubTab, setActiveSubTab] = useState<"cronograma" | "parametros">("cronograma");
   
   const [briefing, setBriefing] = useState("");
@@ -53,9 +62,18 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
   const [rotaSemanal, setRotaSemanal] = useState<RouteSlot[]>([]);
   const [currentWeekMonday, setCurrentWeekMonday] = useState<Date>(() => getMonday(new Date()));
 
+  // Garante que não-admin fique no cronograma
+  useEffect(() => {
+    if (!isAdmin && activeSubTab === "parametros") {
+      setActiveSubTab("cronograma");
+    }
+  }, [isAdmin, activeSubTab]);
+
   // N8N State
   const [sendingN8n, setSendingN8n] = useState(false);
   const [n8nStatus, setN8nStatus] = useState<string | null>(null);
+  const [isN8nTestMode, setIsN8nTestMode] = useState(false);
+  const [savingRoute, setSavingRoute] = useState(false);
 
   // Config & Heatmap State
   const [bairros, setBairros] = useState<BairroHeatItem[]>([]);
@@ -107,19 +125,20 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
     }
   };
 
-  // Carregar Rota Salva do Servidor para a semana atual e vendedor
+  // Carregar Rota Salva do Servidor para a semana atual
   const loadSavedRoute = async () => {
     const weekMondayStr = formatDateString(currentWeekMonday);
     try {
-      const resp = await fetch(`/api/rotas?vendedor=${encodeURIComponent(loggedUser)}&weekMonday=${weekMondayStr}`);
+      const resp = await fetch(`/api/rotas?vendedor=${encodeURIComponent("Equipe de Vendas Externas")}&weekMonday=${weekMondayStr}`);
       if (resp.ok) {
         const data = await resp.json();
-        if (data.rota) {
+        if (data.rota && data.rota.slots && data.rota.slots.length > 0) {
           setBriefing(data.rota.briefing || "");
           setRotaSemanal(data.rota.slots || []);
         } else {
-          // Se não existir rota salva para a semana, gera automaticamente via IA
-          generateBriefingAndRoute();
+          // Se não existir rota salva para a semana, NÃO gera automaticamente. Mantém limpo para o administrador acionar e salvar.
+          setBriefing("");
+          setRotaSemanal([]);
         }
       }
     } catch (e) {
@@ -132,12 +151,31 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
   }, []);
 
   useEffect(() => {
-    if (loggedUser) {
-      loadSavedRoute();
-    }
-  }, [currentWeekMonday, loggedUser]);
+    loadSavedRoute();
+  }, [currentWeekMonday]);
 
-  // Gerar Rota com IA
+  // Salvar a Rota no Banco de Dados
+  const saveCurrentRouteToDb = async (updatedSlots: RouteSlot[], newBriefing?: string): Promise<boolean> => {
+    const weekMondayStr = formatDateString(currentWeekMonday);
+    try {
+      const resp = await fetch("/api/rotas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vendedor: "Equipe de Vendas Externas",
+          weekMonday: weekMondayStr,
+          briefing: newBriefing !== undefined ? newBriefing : briefing,
+          slots: updatedSlots
+        })
+      });
+      return resp.ok;
+    } catch (e) {
+      console.error("Erro ao salvar rota:", e);
+      return false;
+    }
+  };
+
+  // Gerar Rota com IA para a Equipe de Vendas Externas (Somente Administrador)
   const generateBriefingAndRoute = async () => {
     setLoadingBriefing(true);
     setN8nStatus(null);
@@ -146,42 +184,46 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
       const resp = await fetch("/api/gemini/generateRouteBriefing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leads, loggedUser, weekMonday: weekMondayStr })
+        body: JSON.stringify({ leads, loggedUser: "Equipe de Vendas Externas", weekMonday: weekMondayStr })
       });
       const data = await resp.json();
       if (data.status === "success") {
-        setBriefing(data.briefing);
-        if (data.rotaSemanal && Array.isArray(data.rotaSemanal)) {
-          setRotaSemanal(data.rotaSemanal);
+        const newBriefing = data.briefing || "";
+        const newSlots = data.rotaSemanal && Array.isArray(data.rotaSemanal) ? data.rotaSemanal : [];
+        setBriefing(newBriefing);
+        setRotaSemanal(newSlots);
+        
+        // Persistir no banco de dados imediatamente após gerar
+        const savedOk = await saveCurrentRouteToDb(newSlots, newBriefing);
+        if (savedOk) {
+          setN8nStatus("Nova Rota gerada pela IA e salva no banco de dados com sucesso!");
+        } else {
+          setN8nStatus("Rota gerada pela IA, mas ocorreu um aviso ao persistir no banco.");
         }
+      } else {
+        setN8nStatus(data.message || "Não foi possível gerar a rota via IA.");
       }
     } catch (e) {
       console.error(e);
+      setN8nStatus("Erro de comunicação ao gerar rota via IA.");
     } finally {
       setLoadingBriefing(false);
     }
   };
 
-  // Salvar a Rota Manualmente ou quando editada
-  const saveCurrentRouteToDb = async (updatedSlots: RouteSlot[], newBriefing?: string) => {
-    const weekMondayStr = formatDateString(currentWeekMonday);
-    try {
-      await fetch("/api/rotas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vendedor: loggedUser,
-          weekMonday: weekMondayStr,
-          briefing: newBriefing !== undefined ? newBriefing : briefing,
-          slots: updatedSlots
-        })
-      });
-    } catch (e) {
-      console.error("Erro ao salvar rota:", e);
+  // Salvar Rota Manualmente
+  const handleManualSaveRoute = async () => {
+    setSavingRoute(true);
+    const ok = await saveCurrentRouteToDb(rotaSemanal, briefing);
+    setSavingRoute(false);
+    if (ok) {
+      setN8nStatus("Rota e Briefing da semana salvos com sucesso no banco de dados!");
+    } else {
+      setN8nStatus("Erro ao salvar a rota no banco de dados.");
     }
   };
 
-  // Enviar para o N8N
+  // Enviar para o N8N (Equipe de Vendas Externas)
   const handleNotifyN8n = async () => {
     setSendingN8n(true);
     setN8nStatus(null);
@@ -191,15 +233,16 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          vendedor: loggedUser,
+          vendedor: "Equipe de Vendas Externas",
           weekMonday: weekMondayStr,
           briefing,
-          slots: rotaSemanal
+          slots: rotaSemanal,
+          isTest: isN8nTestMode
         })
       });
       const data = await resp.json();
       if (resp.ok && data.success) {
-        setN8nStatus("Rota enviada com sucesso para o N8N / WhatsApp!");
+        setN8nStatus(`${data.message || "Rota enviada com sucesso!"} (URL: ${data.webhookUrl})`);
       } else {
         setN8nStatus(data.error || "Falha ao enviar para o N8N.");
       }
@@ -352,31 +395,33 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
           </div>
         </div>
 
-        {/* Navigation Sub-Tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/80">
-          <button
-            onClick={() => setActiveSubTab("cronograma")}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
-              activeSubTab === "cronograma"
-                ? "bg-white text-sky-700 shadow-sm border border-slate-200"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <CalendarDays className="w-4 h-4" />
-            Cronograma Rota IA
-          </button>
-          <button
-            onClick={() => setActiveSubTab("parametros")}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
-              activeSubTab === "parametros"
-                ? "bg-white text-sky-700 shadow-sm border border-slate-200"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Sliders className="w-4 h-4" />
-            Parâmetros & Mapa de Calor
-          </button>
-        </div>
+        {/* Navigation Sub-Tabs (Visível apenas para Administrador) */}
+        {isAdmin && (
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/80">
+            <button
+              onClick={() => setActiveSubTab("cronograma")}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                activeSubTab === "cronograma"
+                  ? "bg-white text-sky-700 shadow-sm border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <CalendarDays className="w-4 h-4" />
+              Cronograma Rota IA
+            </button>
+            <button
+              onClick={() => setActiveSubTab("parametros")}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                activeSubTab === "parametros"
+                  ? "bg-white text-sky-700 shadow-sm border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Sliders className="w-4 h-4" />
+              Parâmetros & Mapa de Calor
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ABA 1: CRONOGRAMA DA ROTA IA */}
@@ -384,28 +429,73 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
         <div className="space-y-6">
           {/* Action Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-              <span className="text-slate-400">Vendedor:</span>
-              <span className="bg-sky-50 text-sky-800 px-2.5 py-1 rounded-lg border border-sky-100 font-extrabold">{loggedUser}</span>
+            <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-600">
+              <div className="flex items-center gap-1.5">
+                <span className="text-slate-400">Destinatário:</span>
+                <span className="bg-sky-50 text-sky-800 px-2.5 py-1 rounded-lg border border-sky-100 font-extrabold">Equipe de Vendas Externas</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider px-1.5">N8N Webhook:</span>
+                <button
+                  type="button"
+                  onClick={() => setIsN8nTestMode(false)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition cursor-pointer ${
+                    !isN8nTestMode 
+                      ? "bg-emerald-600 text-white shadow-xs" 
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Produção
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsN8nTestMode(true)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition cursor-pointer ${
+                    isN8nTestMode 
+                      ? "bg-amber-500 text-white shadow-xs" 
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Teste
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center gap-2.5">
-              <button 
-                onClick={generateBriefingAndRoute}
-                disabled={loadingBriefing}
-                className="bg-sky-600 text-white px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-sky-700 transition active:scale-95 disabled:opacity-50 shadow-sm shadow-sky-600/20 cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4" />
-                {loadingBriefing ? "Gerando Rota IA..." : "Gerar Rota com IA"}
-              </button>
+              {isAdmin && (
+                <>
+                  <button 
+                    onClick={generateBriefingAndRoute}
+                    disabled={loadingBriefing}
+                    className="bg-sky-600 text-white px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-sky-700 transition active:scale-95 disabled:opacity-50 shadow-sm shadow-sky-600/20 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {loadingBriefing ? "Gerando Rota IA..." : "Gerar Rota com IA"}
+                  </button>
+
+                  <button 
+                    onClick={handleManualSaveRoute}
+                    disabled={savingRoute || loadingBriefing}
+                    className="bg-slate-800 text-slate-100 border border-slate-700 px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-slate-700 transition active:scale-95 disabled:opacity-50 shadow-sm cursor-pointer"
+                  >
+                    <Save className="w-4 h-4 text-emerald-400" />
+                    {savingRoute ? "Salvando..." : "Salvar Rota"}
+                  </button>
+                </>
+              )}
 
               <button
                 onClick={handleNotifyN8n}
                 disabled={sendingN8n || rotaSemanal.length === 0}
-                className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-emerald-700 transition active:scale-95 disabled:opacity-50 shadow-sm shadow-emerald-600/20 cursor-pointer"
+                className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition active:scale-95 disabled:opacity-50 shadow-sm cursor-pointer ${
+                  isN8nTestMode
+                    ? "bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/20"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
+                }`}
               >
                 <Send className="w-4 h-4" />
-                {sendingN8n ? "Enviando para N8N..." : "Disparar Rota (n8n)"}
+                {sendingN8n ? "Enviando para N8N..." : `Disparar Rota (${isN8nTestMode ? "n8n Teste" : "n8n Prod"})`}
               </button>
             </div>
           </div>
@@ -413,7 +503,7 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
           {/* Feedback N8N Status */}
           {n8nStatus && (
             <div className={`p-4 rounded-2xl border text-xs font-bold flex items-center justify-between ${
-              n8nStatus.includes("sucesso") 
+              n8nStatus.includes("sucesso") || n8nStatus.includes("salvos")
                 ? "bg-emerald-50 border-emerald-200 text-emerald-800" 
                 : "bg-amber-50 border-amber-200 text-amber-800"
             }`}>
@@ -433,16 +523,30 @@ export default function RotaVendasPage({ leads, loggedUser }: RotaVendasPageProp
               <BrainCircuit className="w-32 h-32 text-sky-600" />
             </div>
             <div className="relative z-10">
-              <h3 className="text-sm font-black uppercase text-sky-900 tracking-wider mb-2 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-500" /> Briefing de Rota Inteligente
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-black uppercase text-sky-900 tracking-wider flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-500" /> Briefing Semanal - Equipe de Vendas Externas
+                </h3>
+                {isAdmin && (
+                  <span className="text-[10px] font-extrabold uppercase text-sky-700 bg-sky-100 px-2 py-0.5 rounded-md">
+                    Modo Edição (Admin)
+                  </span>
+                )}
+              </div>
               {loadingBriefing ? (
                 <div className="flex flex-col items-start justify-center py-4 space-y-4">
                   <div className="w-6 h-6 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin"></div>
                 </div>
+              ) : isAdmin ? (
+                <textarea
+                  value={briefing}
+                  onChange={e => setBriefing(e.target.value)}
+                  placeholder="Clique em 'Gerar Rota com IA' para criar automaticamente ou digite/edite o briefing da equipe aqui..."
+                  className="w-full h-28 bg-white/90 border border-sky-200/80 rounded-2xl p-3.5 text-slate-700 text-[13px] leading-relaxed font-medium shadow-2xs focus:ring-2 focus:ring-sky-500/20 outline-none resize-none transition-all"
+                />
               ) : (
                 <div className="bg-white/80 backdrop-blur-sm border border-sky-200/50 p-4 rounded-2xl text-slate-700 text-[13px] leading-relaxed whitespace-pre-wrap font-medium shadow-sm">
-                  {briefing || "Clique em 'Gerar Rota com IA' para que a inteligência artificial construa a agenda de turnos com base no mapa de calor dos bairros."}
+                  {briefing || "Nenhum briefing cadastrado para esta semana. Aguardando a definição do roteiro pelo Administrador."}
                 </div>
               )}
             </div>

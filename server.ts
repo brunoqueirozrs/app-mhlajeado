@@ -2453,65 +2453,70 @@ app.get("/api/env/n8n", (req, res) => {
   res.json({
     N8N_WEBHOOK_URL: process.env.N8N_WEBHOOK_URL || "",
     N8N_TEST_WEBHOOK_URL: process.env.N8N_TEST_WEBHOOK_URL || "",
-    USE_N8N_TEST_AGENDAMENTO: process.env.USE_N8N_TEST_AGENDAMENTO || "false",
-    PAUSE_AGENDAMENTO_JOB: process.env.PAUSE_AGENDAMENTO_JOB || "false",
+    USE_N8N_TEST_AGENDAMENTO: String(process.env.USE_N8N_TEST_AGENDAMENTO || "false").toLowerCase(),
+    PAUSE_AGENDAMENTO_JOB: String(process.env.PAUSE_AGENDAMENTO_JOB || "false").toLowerCase(),
     
     N8N_NEW_TASK_WEBHOOK_URL: process.env.N8N_NEW_TASK_WEBHOOK_URL || "",
     N8N_TEST_NEW_TASK_WEBHOOK_URL: process.env.N8N_TEST_NEW_TASK_WEBHOOK_URL || "",
-    USE_N8N_TEST_NEW_TASK: process.env.USE_N8N_TEST_NEW_TASK || "false",
-    PAUSE_NEW_TASK_JOB: process.env.PAUSE_NEW_TASK_JOB || "false",
+    USE_N8N_TEST_NEW_TASK: String(process.env.USE_N8N_TEST_NEW_TASK || "false").toLowerCase(),
+    PAUSE_NEW_TASK_JOB: String(process.env.PAUSE_NEW_TASK_JOB || "false").toLowerCase(),
     
     N8N_OVERDUE_TASKS_WEBHOOK_URL: process.env.N8N_OVERDUE_TASKS_WEBHOOK_URL || "",
     N8N_TEST_OVERDUE_TASKS_WEBHOOK_URL: process.env.N8N_TEST_OVERDUE_TASKS_WEBHOOK_URL || "",
-    USE_N8N_TEST_OVERDUE_TASKS: process.env.USE_N8N_TEST_OVERDUE_TASKS || "false",
-    PAUSE_OVERDUE_TASKS_JOB: process.env.PAUSE_OVERDUE_TASKS_JOB || "false",
+    USE_N8N_TEST_OVERDUE_TASKS: String(process.env.USE_N8N_TEST_OVERDUE_TASKS || "false").toLowerCase(),
+    PAUSE_OVERDUE_TASKS_JOB: String(process.env.PAUSE_OVERDUE_TASKS_JOB || "false").toLowerCase(),
     
     N8N_LEAD_INACTIVITY_WEBHOOK_URL: process.env.N8N_LEAD_INACTIVITY_WEBHOOK_URL || "",
     N8N_TEST_LEAD_INACTIVITY_WEBHOOK_URL: process.env.N8N_TEST_LEAD_INACTIVITY_WEBHOOK_URL || "",
-    USE_N8N_TEST_LEAD_INACTIVITY: process.env.USE_N8N_TEST_LEAD_INACTIVITY || "false",
-    PAUSE_LEAD_INACTIVITY_JOB: process.env.PAUSE_LEAD_INACTIVITY_JOB || "false",
+    USE_N8N_TEST_LEAD_INACTIVITY: String(process.env.USE_N8N_TEST_LEAD_INACTIVITY || "false").toLowerCase(),
+    PAUSE_LEAD_INACTIVITY_JOB: String(process.env.PAUSE_LEAD_INACTIVITY_JOB || "false").toLowerCase(),
 
     N8N_UPGRADE_BASE_WEBHOOK_URL: process.env.N8N_UPGRADE_BASE_WEBHOOK_URL || "",
     N8N_TEST_UPGRADE_BASE_WEBHOOK_URL: process.env.N8N_TEST_UPGRADE_BASE_WEBHOOK_URL || "",
-    USE_N8N_TEST_UPGRADE_BASE: process.env.USE_N8N_TEST_UPGRADE_BASE || "false",
-    PAUSE_UPGRADE_BASE_JOB: process.env.PAUSE_UPGRADE_BASE_JOB || "false",
+    USE_N8N_TEST_UPGRADE_BASE: String(process.env.USE_N8N_TEST_UPGRADE_BASE || "false").toLowerCase(),
+    PAUSE_UPGRADE_BASE_JOB: String(process.env.PAUSE_UPGRADE_BASE_JOB || "false").toLowerCase(),
 
     N8N_POS_VENDA_WEBHOOK_URL: process.env.N8N_POS_VENDA_WEBHOOK_URL || "",
     N8N_TEST_POS_VENDA_WEBHOOK_URL: process.env.N8N_TEST_POS_VENDA_WEBHOOK_URL || "",
-    USE_N8N_TEST_POS_VENDA: process.env.USE_N8N_TEST_POS_VENDA || "false",
-    PAUSE_POS_VENDA_JOB: process.env.PAUSE_POS_VENDA_JOB || "false",
-
+    USE_N8N_TEST_POS_VENDA: String(process.env.USE_N8N_TEST_POS_VENDA || "false").toLowerCase(),
+    PAUSE_POS_VENDA_JOB: String(process.env.PAUSE_POS_VENDA_JOB || "false").toLowerCase(),
 
     N8N_WEBHOOK_URL_COBRANCAS: process.env.N8N_WEBHOOK_URL_COBRANCAS || "",
     N8N_TEST_WEBHOOK_URL_COBRANCAS: process.env.N8N_TEST_WEBHOOK_URL_COBRANCAS || "",
-    USE_N8N_TEST_COBRANCAS: process.env.USE_N8N_TEST_COBRANCAS || "false",
-    PAUSE_COBRANCAS_JOB: process.env.PAUSE_COBRANCAS_JOB || "false",
+    USE_N8N_TEST_COBRANCAS: String(process.env.USE_N8N_TEST_COBRANCAS || "false").toLowerCase(),
+    PAUSE_COBRANCAS_JOB: String(process.env.PAUSE_COBRANCAS_JOB || "false").toLowerCase(),
 
     N8N_WEBHOOK_URL_VENDAS_SVA: process.env.N8N_WEBHOOK_URL_VENDAS_SVA || "",
     N8N_TEST_WEBHOOK_URL_VENDAS_SVA: process.env.N8N_TEST_WEBHOOK_URL_VENDAS_SVA || "",
-    USE_N8N_TEST_VENDAS_SVA: process.env.USE_N8N_TEST_VENDAS_SVA || "false",
-    PAUSE_VENDAS_SVA_JOB: process.env.PAUSE_VENDAS_SVA_JOB || "false",
+    USE_N8N_TEST_VENDAS_SVA: String(process.env.USE_N8N_TEST_VENDAS_SVA || "false").toLowerCase(),
+    PAUSE_VENDAS_SVA_JOB: String(process.env.PAUSE_VENDAS_SVA_JOB || "false").toLowerCase(),
 
     N8N_WEBHOOK_URL_INDICACOES: process.env.N8N_WEBHOOK_URL_INDICACOES || "",
     N8N_TEST_WEBHOOK_URL_INDICACOES: process.env.N8N_TEST_WEBHOOK_URL_INDICACOES || "",
-    USE_N8N_TEST_INDICACOES: process.env.USE_N8N_TEST_INDICACOES || "false",
-    PAUSE_INDICACOES_JOB: process.env.PAUSE_INDICACOES_JOB || "false",
+    USE_N8N_TEST_INDICACOES: String(process.env.USE_N8N_TEST_INDICACOES || "false").toLowerCase(),
+    PAUSE_INDICACOES_JOB: String(process.env.PAUSE_INDICACOES_JOB || "false").toLowerCase(),
 
     N8N_COMPETITORS_WEBHOOK_URL: process.env.N8N_COMPETITORS_WEBHOOK_URL || "",
     N8N_TEST_COMPETITORS_WEBHOOK_URL: process.env.N8N_TEST_COMPETITORS_WEBHOOK_URL || "",
-    USE_N8N_TEST_COMPETITORS: process.env.USE_N8N_TEST_COMPETITORS || "false",
-    PAUSE_COMPETITORS_JOB: process.env.PAUSE_COMPETITORS_JOB || "false",
+    USE_N8N_TEST_COMPETITORS: String(process.env.USE_N8N_TEST_COMPETITORS || "false").toLowerCase(),
+    PAUSE_COMPETITORS_JOB: String(process.env.PAUSE_COMPETITORS_JOB || "false").toLowerCase(),
 
-
-        N8N_WEBHOOK_URL_ABSENCES: process.env.N8N_WEBHOOK_URL_ABSENCES || "",
+    N8N_WEBHOOK_URL_ABSENCES: process.env.N8N_WEBHOOK_URL_ABSENCES || "",
     N8N_TEST_WEBHOOK_URL_ABSENCES: process.env.N8N_TEST_WEBHOOK_URL_ABSENCES || "",
-    USE_N8N_TEST_ABSENCES: process.env.USE_N8N_TEST_ABSENCES || "false",
-    PAUSE_ABSENCES_JOB: process.env.PAUSE_ABSENCES_JOB || "false",
+    USE_N8N_TEST_ABSENCES: String(process.env.USE_N8N_TEST_ABSENCES || "false").toLowerCase(),
+    PAUSE_ABSENCES_JOB: String(process.env.PAUSE_ABSENCES_JOB || "false").toLowerCase(),
+
     N8N_WEBHOOK_URL_ABSENCE_APPROVAL: process.env.N8N_WEBHOOK_URL_ABSENCE_APPROVAL || "",
     N8N_TEST_WEBHOOK_URL_ABSENCE_APPROVAL: process.env.N8N_TEST_WEBHOOK_URL_ABSENCE_APPROVAL || "",
-    USE_N8N_TEST_ABSENCE_APPROVAL: process.env.USE_N8N_TEST_ABSENCE_APPROVAL || "false",
-    PAUSE_ABSENCE_APPROVAL_JOB: process.env.PAUSE_ABSENCE_APPROVAL_JOB || "false",
-    PAUSE_ALL_N8N_WEBHOOKS: process.env.PAUSE_ALL_N8N_WEBHOOKS || "false"
+    USE_N8N_TEST_ABSENCE_APPROVAL: String(process.env.USE_N8N_TEST_ABSENCE_APPROVAL || "false").toLowerCase(),
+    PAUSE_ABSENCE_APPROVAL_JOB: String(process.env.PAUSE_ABSENCE_APPROVAL_JOB || "false").toLowerCase(),
+
+    N8N_WEBHOOK_URL_ROTA_DE_VENDAS: process.env.N8N_WEBHOOK_URL_ROTA_DE_VENDAS || "",
+    N8N_TEST_WEBHOOK_URL_ROTA_DE_VENDAS: process.env.N8N_TEST_WEBHOOK_URL_ROTA_DE_VENDAS || "",
+    USE_N8N_TEST_ROTA_DE_VENDAS: String(process.env.USE_N8N_TEST_ROTA_DE_VENDAS || "false").toLowerCase(),
+    PAUSE_ROTA_DE_VENDAS_JOB: String(process.env.PAUSE_ROTA_DE_VENDAS_JOB || "false").toLowerCase(),
+
+    PAUSE_ALL_N8N_WEBHOOKS: String(process.env.PAUSE_ALL_N8N_WEBHOOKS || "false").toLowerCase()
   });
 });
 
@@ -2543,7 +2548,7 @@ app.post("/api/env/n8n/restore", async (req, res) => {
 app.post("/api/env/n8n/toggle-all", async (req, res) => {
   const { isTest } = req.body;
   const strValue = isTest ? "true" : "false";
-  const keys = ['USE_N8N_TEST_AGENDAMENTO', 'USE_N8N_TEST_NEW_TASK', 'USE_N8N_TEST_OVERDUE_TASKS', 'USE_N8N_TEST_LEAD_INACTIVITY', 'USE_N8N_TEST_UPGRADE_BASE', 'USE_N8N_TEST_POS_VENDA', 'USE_N8N_TEST_COBRANCAS', 'USE_N8N_TEST_VENDAS_SVA', 'USE_N8N_TEST_INDICACOES', 'USE_N8N_TEST_COMPETITORS', 'USE_N8N_TEST_ABSENCES', 'USE_N8N_TEST_ABSENCE_APPROVAL'];
+  const keys = ['USE_N8N_TEST_AGENDAMENTO', 'USE_N8N_TEST_NEW_TASK', 'USE_N8N_TEST_OVERDUE_TASKS', 'USE_N8N_TEST_LEAD_INACTIVITY', 'USE_N8N_TEST_UPGRADE_BASE', 'USE_N8N_TEST_POS_VENDA', 'USE_N8N_TEST_COBRANCAS', 'USE_N8N_TEST_VENDAS_SVA', 'USE_N8N_TEST_INDICACOES', 'USE_N8N_TEST_COMPETITORS', 'USE_N8N_TEST_ABSENCES', 'USE_N8N_TEST_ABSENCE_APPROVAL', 'USE_N8N_TEST_ROTA_DE_VENDAS'];
   
   keys.forEach(key => {
     process.env[key] = strValue;
@@ -2591,7 +2596,7 @@ app.post("/api/env/n8n/update-url", async (req, res) => {
 app.post("/api/env/n8n/toggle", async (req, res) => {
   const { key, value } = req.body;
   
-  if (!key || !['USE_N8N_TEST_AGENDAMENTO', 'USE_N8N_TEST_NEW_TASK', 'USE_N8N_TEST_OVERDUE_TASKS', 'USE_N8N_TEST_LEAD_INACTIVITY', 'PAUSE_LEAD_INACTIVITY_JOB', 'USE_N8N_TEST_UPGRADE_BASE', 'PAUSE_ALL_N8N_WEBHOOKS', 'USE_N8N_TEST_POS_VENDA', 'PAUSE_AGENDAMENTO_JOB', 'PAUSE_NEW_TASK_JOB', 'PAUSE_OVERDUE_TASKS_JOB', 'PAUSE_UPGRADE_BASE_JOB', 'PAUSE_POS_VENDA_JOB', 'USE_N8N_TEST_COBRANCAS', 'PAUSE_COBRANCAS_JOB', 'USE_N8N_TEST_VENDAS_SVA', 'PAUSE_VENDAS_SVA_JOB', 'USE_N8N_TEST_INDICACOES', 'PAUSE_INDICACOES_JOB', 'USE_N8N_TEST_COMPETITORS', 'PAUSE_COMPETITORS_JOB', 'USE_N8N_TEST_ABSENCES', 'PAUSE_ABSENCES_JOB', 'USE_N8N_TEST_ABSENCE_APPROVAL', 'PAUSE_ABSENCE_APPROVAL_JOB'].includes(key)) {
+  if (!key || !['USE_N8N_TEST_AGENDAMENTO', 'USE_N8N_TEST_NEW_TASK', 'USE_N8N_TEST_OVERDUE_TASKS', 'USE_N8N_TEST_LEAD_INACTIVITY', 'PAUSE_LEAD_INACTIVITY_JOB', 'USE_N8N_TEST_UPGRADE_BASE', 'PAUSE_ALL_N8N_WEBHOOKS', 'USE_N8N_TEST_POS_VENDA', 'PAUSE_AGENDAMENTO_JOB', 'PAUSE_NEW_TASK_JOB', 'PAUSE_OVERDUE_TASKS_JOB', 'PAUSE_UPGRADE_BASE_JOB', 'PAUSE_POS_VENDA_JOB', 'USE_N8N_TEST_COBRANCAS', 'PAUSE_COBRANCAS_JOB', 'USE_N8N_TEST_VENDAS_SVA', 'PAUSE_VENDAS_SVA_JOB', 'USE_N8N_TEST_INDICACOES', 'PAUSE_INDICACOES_JOB', 'USE_N8N_TEST_COMPETITORS', 'PAUSE_COMPETITORS_JOB', 'USE_N8N_TEST_ABSENCES', 'PAUSE_ABSENCES_JOB', 'USE_N8N_TEST_ABSENCE_APPROVAL', 'PAUSE_ABSENCE_APPROVAL_JOB', 'USE_N8N_TEST_ROTA_DE_VENDAS', 'PAUSE_ROTA_DE_VENDAS_JOB'].includes(key)) {
     return res.status(400).json({ error: "Invalid key." });
   }
 
@@ -2612,7 +2617,8 @@ app.post("/api/env/n8n/toggle", async (req, res) => {
       'PAUSE_INDICACOES_JOB',
       'PAUSE_COMPETITORS_JOB',
       'PAUSE_ABSENCES_JOB',
-      'PAUSE_ABSENCE_APPROVAL_JOB'
+      'PAUSE_ABSENCE_APPROVAL_JOB',
+      'PAUSE_ROTA_DE_VENDAS_JOB'
     ];
     pauseKeys.forEach(pk => {
       process.env[pk] = strValue;
@@ -5569,14 +5575,7 @@ const DEFAULT_ROTA_CONFIG = {
     { id: "b34", cidade: "Estrela", nome: "Marmitt", heatLevel: "frio" },
     { id: "b35", cidade: "Estrela", nome: "Pinheiros", heatLevel: "frio" },
     { id: "b36", cidade: "Estrela", nome: "Auxiliadora", heatLevel: "frio" },
-    { id: "b37", cidade: "Estrela", nome: "São José", heatLevel: "frio" },
-
-    // Arroio do Meio
-    { id: "b38", cidade: "Arroio do Meio", nome: "Centro", heatLevel: "quente" },
-    { id: "b39", cidade: "Arroio do Meio", nome: "Navegantes", heatLevel: "quente" },
-    { id: "b40", cidade: "Arroio do Meio", nome: "São Caetano", heatLevel: "medio" },
-    { id: "b41", cidade: "Arroio do Meio", nome: "Bela Vista", heatLevel: "frio" },
-    { id: "b42", cidade: "Arroio do Meio", nome: "Aimoré", heatLevel: "frio" }
+    { id: "b37", cidade: "Estrela", nome: "São José", heatLevel: "frio" }
   ],
   parametros: {
     regraDias1a10: "Primeiros 10 dias do mês: focar prioritariamente nos bairros com Maior Calor (Top Oportunidades).",
@@ -5588,6 +5587,9 @@ const DEFAULT_ROTA_CONFIG = {
 };
 
 let rotasConfigDb = readJSONDb("rotas_config.json", DEFAULT_ROTA_CONFIG);
+if (rotasConfigDb && Array.isArray(rotasConfigDb.bairros)) {
+  rotasConfigDb.bairros = rotasConfigDb.bairros.filter((b: any) => b.cidade !== "Arroio do Meio");
+}
 let rotasVendasDb = readJSONDb("rotas_vendas.json", []);
 
 // Endpoints Rota de Vendas
@@ -5642,16 +5644,50 @@ app.post("/api/rotas", (req, res) => {
 
 app.post("/api/rotas/notify-n8n", async (req, res) => {
   try {
-    const { vendedor, weekMonday, briefing, slots } = req.body;
-    if (!vendedor || !weekMonday) {
+    if (process.env.PAUSE_ROTA_DE_VENDAS_JOB === "true" || process.env.PAUSE_ALL_N8N_WEBHOOKS === "true") {
+      return res.status(400).json({ error: "Integração N8N de Rota de Vendas está atualmente pausada." });
+    }
+
+    const { vendedor, weekMonday, briefing, slots, isTest } = req.body;
+    const targetVendedor = vendedor || "Equipe de Vendas Externas";
+    if (!weekMonday) {
       return res.status(400).json({ error: "Dados incompletos para notificação n8n." });
     }
 
+    // Função de formatação de datas para o padrão DD-MM-AAAA
+    const formatDateBR = (isoDateStr: string) => {
+      if (!isoDateStr) return isoDateStr;
+      const parts = isoDateStr.split("-");
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      return isoDateStr;
+    };
+
+    const formatWeekRangeBR = (mondayStr: string) => {
+      if (!mondayStr) return mondayStr;
+      const parts = mondayStr.split("-");
+      if (parts.length !== 3) return mondayStr;
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      const monDate = new Date(y, m, d);
+      const sunDate = new Date(monDate);
+      sunDate.setDate(monDate.getDate() + 6);
+
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const monFormatted = `${pad(monDate.getDate())}-${pad(monDate.getMonth() + 1)}-${monDate.getFullYear()}`;
+      const sunFormatted = `${pad(sunDate.getDate())}-${pad(sunDate.getMonth() + 1)}-${sunDate.getFullYear()}`;
+      return `${monFormatted} a ${sunFormatted}`;
+    };
+
+    const semanaFormatada = formatWeekRangeBR(weekMonday);
+
     let msg = `*🚀 CRONOGRAMA DE ROTA DE VENDAS MHNET*\n`;
-    msg += `*Vendedor:* ${vendedor}\n`;
-    msg += `*Semana:* ${weekMonday}\n\n`;
+    msg += `*Vendedor:* ${targetVendedor}\n`;
+    msg += `*Semana:* ${semanaFormatada}\n\n`;
     if (briefing) {
-      msg += `*💡 Briefing Estratégico:*\n${briefing}\n\n`;
+      msg += `*💡 Briefing Estratégico (IA):*\n${briefing}\n\n`;
     }
     msg += `*📅 Agenda Semanal por Turnos:*\n`;
 
@@ -5663,7 +5699,8 @@ app.post("/api/rotas/notify-n8n", async (req, res) => {
       });
 
       Object.keys(slotsByDate).sort().forEach(dateStr => {
-        msg += `\n📆 *Data: ${dateStr}*\n`;
+        const dateFormatted = formatDateBR(dateStr);
+        msg += `\n📆 *Data: ${dateFormatted}*\n`;
         slotsByDate[dateStr].forEach((s: any) => {
           const turnoLabel = s.turno === 1 ? "Manhã" : "Tarde";
           msg += `   • *${turnoLabel}:* ${s.foco || "Livre"}\n`;
@@ -5674,24 +5711,42 @@ app.post("/api/rotas/notify-n8n", async (req, res) => {
       });
     }
 
-    const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.APPS_SCRIPT_URL || "https://webhook.n8n.com/mhnet/rotas";
+    const useTest = isTest !== undefined 
+      ? Boolean(isTest) 
+      : (process.env.USE_N8N_TEST_ROTA_DE_VENDAS === "true");
+
+    const testWebhookUrl = process.env.N8N_TEST_WEBHOOK_URL_ROTA_DE_VENDAS || "https://lake-elective-scoured.ngrok-free.dev/webhook-test/rotas-de-vendas";
+    const prodWebhookUrl = process.env.N8N_WEBHOOK_URL_ROTA_DE_VENDAS || "https://lake-elective-scoured.ngrok-free.dev/webhook/rotas-de-vendas";
+
+    const webhookUrl = useTest ? testWebhookUrl : prodWebhookUrl;
+
     const payload = {
       tipo: "ROTA_VENDAS_SEMANAL",
+      ambiente: useTest ? "TESTE" : "PRODUCAO",
       vendedor,
       weekMonday,
+      briefingInteligente: briefing,
+      agendaSemanal: slots,
       mensagemFormatada: msg,
-      briefing,
-      slots
+      timestamp: new Date().toISOString()
     };
 
-    fetch(webhookUrl, {
+    console.log(`[N8N ROTA DE VENDAS] Disparando webhook (${useTest ? "TESTE" : "PRODUCAO"}): ${webhookUrl}`);
+
+    const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
-    }).catch(e => console.error("Erro no webhook de rotas n8n:", e));
+    });
 
-    res.json({ success: true, message: "Rota enviada com sucesso para o n8n!" });
+    res.json({ 
+      success: true, 
+      message: `Rota enviada com sucesso para o n8n (${useTest ? "Modo Teste" : "Modo Produção"})!`,
+      webhookUrl,
+      ambiente: useTest ? "TESTE" : "PRODUCAO"
+    });
   } catch (error: any) {
+    console.error("Erro no webhook de rotas de vendas n8n:", error);
     res.status(500).json({ error: "Falha ao notificar n8n", details: error.message });
   }
 });
@@ -5722,8 +5777,8 @@ app.post("/api/gemini/generateRouteBriefing", async (req, res) => {
   }
 
   try {
-    const prompt = `Você é o estrategista de campo da MHNET Telecom para Lajeado, Estrela e Arroio do Meio.
-O vendedor atual é: ${loggedUser}.
+    const prompt = `Você é o estrategista de campo da MHNET Telecom para Lajeado e Estrela.
+Este briefing e cronograma destinam-se a TODA a Equipe de Vendas Externas da MHNET Telecom, e NÃO a um vendedor individual.
 A segunda-feira da semana requisitada é: ${weekMonday || "uma data recente"}.
 
 BAIRROS E MAPA DE CALOR DA BASE:
@@ -5731,7 +5786,7 @@ BAIRROS E MAPA DE CALOR DA BASE:
 - ☀️ Bairros Médios: ${bairrosMedios.join(", ")}
 - ❄️ Bairros Frios / Baixa Densidade: ${bairrosFrios.join(", ")}
 
-DIRETRIZES E REGRAS MANDATÓRIAS DE ROTA:
+DIRETRIZES E REGRAS MANDATÓRIAS DE ROTA DA EQUIPE:
 1. ${params.regraDias1a10 || "Dias 1 a 10 do mês: focar nos bairros mais quentes."}
 2. ${params.regraDias11a16 || "Dias 11 a 16 do mês: focar nos bairros com menos clientes."}
 3. ${params.regraSextaTarde || "Todas as Sextas à tarde: Condomínios."}
@@ -5739,19 +5794,10 @@ DIRETRIZES E REGRAS MANDATÓRIAS DE ROTA:
 5. Dividir cada dia em 2 turnos (turno 1 = Manhã, turno 2 = Tarde).
 
 Retorne um JSON válido contendo:
-- "briefing": texto motivacional e direcionador curto (2 a 4 frases).
+- "briefing": texto motivacional e orientador curto (2 a 4 frases) para direcionar toda a Equipe de Vendas Externas.
 - "rotaSemanal": array com exatos 14 itens (7 dias * 2 turnos, de Segunda a Domingo).
   Formato do item: {"dateStr": "YYYY-MM-DD", "turno": 1, "foco": "Nome do Bairro - Cidade", "justificativa": "Razão estratégica curta"} (turno 1 = Manhã, turno 2 = Tarde).
-  Use datas consecutivas a partir da segunda-feira (${weekMonday}).
-
-Exemplo JSON:
-{
-  "briefing": "...",
-  "rotaSemanal": [
-    {"dateStr": "${weekMonday}", "turno": 1, "foco": "Santo Antônio - Lajeado", "justificativa": "Bairro de altíssimo calor no início do mês"},
-    {"dateStr": "${weekMonday}", "turno": 2, "foco": "Centro - Lajeado", "justificativa": "Prospecção em comércios centrais"}
-  ]
-}`;
+  Use datas consecutivas a partir da segunda-feira (${weekMonday}).`;
 
     const response = await safeGenerateContent({
       model: "gemini-2.0-flash",

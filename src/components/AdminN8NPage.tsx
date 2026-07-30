@@ -133,7 +133,9 @@ export function AdminN8NPage() {
         body: JSON.stringify({ key, url })
       });
       if (res.ok) {
-        setEnvConfig({ ...envConfig, [key]: url });
+        await fetchEnvConfig();
+      } else {
+        alert("Erro ao salvar URL");
       }
     } catch (e) {
       console.error(e);
@@ -141,9 +143,10 @@ export function AdminN8NPage() {
     }
   };
 
-  const toggleEnvVar = async (key: string, currentValue: string) => {
+  const toggleEnvVar = async (key: string, currentValue: any) => {
     createBackup();
-    const newValue = currentValue === "true" ? "false" : "true";
+    const isCurrentlyTrue = String(currentValue).toLowerCase() === "true";
+    const newValue = isCurrentlyTrue ? "false" : "true";
     try {
       const res = await fetch('/api/env/n8n/toggle', {
         method: 'POST',
@@ -151,12 +154,9 @@ export function AdminN8NPage() {
         body: JSON.stringify({ key, value: newValue })
       });
       if (res.ok) {
-        if (key === 'PAUSE_ALL_N8N_WEBHOOKS') {
-          // Recarrega todas as configurações do servidor para refletir o estado de pausa em todas as integrações
-          await fetchEnvConfig();
-        } else {
-          setEnvConfig({ ...envConfig, [key]: newValue });
-        }
+        await fetchEnvConfig();
+      } else {
+        alert("Erro ao alterar variável");
       }
     } catch (e) {
       console.error(e);
@@ -307,41 +307,52 @@ export function AdminN8NPage() {
                   id: "12", title: "12. Faltas (Aprovação WhatsApp)",
                   url: "N8N_ABSENCE_APPROVAL_WEBHOOK_URL", testUrl: "N8N_TEST_ABSENCE_APPROVAL_WEBHOOK_URL",
                   useTest: "USE_N8N_TEST_ABSENCE_APPROVAL", pause: "PAUSE_ABSENCE_APPROVAL_JOB", type: "absence_approval"
+                },
+                {
+                  id: "13", title: "13. Rotas & Vendas",
+                  url: "N8N_WEBHOOK_URL_ROTA_DE_VENDAS", testUrl: "N8N_TEST_WEBHOOK_URL_ROTA_DE_VENDAS",
+                  useTest: "USE_N8N_TEST_ROTA_DE_VENDAS", pause: "PAUSE_ROTA_DE_VENDAS_JOB", type: "rotas_vendas"
                 }
-              ].map(block => (
-                <div key={block.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-slate-700">{block.title}</h4>
-                    <div className="flex gap-2 items-center">
-                      <button onClick={() => testWebhook(envConfig[block.useTest] === "true" ? envConfig[block.testUrl] : envConfig[block.url], block.type)} className="px-2 py-1 bg-white border border-slate-200 text-xs text-slate-600 rounded hover:bg-slate-100 flex items-center gap-1 font-medium">
-                        <Zap className="w-3 h-3" /> Testar
-                      </button>
-                      <button 
-                        onClick={() => toggleEnvVar(block.pause, envConfig[block.pause])}
-                        className={`text-[10px] font-black uppercase px-2 py-1 rounded cursor-pointer transition-colors ${envConfig[block.pause] === "true" ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"}`}
-                      >
-                        {envConfig[block.pause] === "true" ? "TRABALHO PAUSADO" : "TRABALHO ATIVO"}
-                      </button>
-                      <button 
-                        onClick={() => toggleEnvVar(block.useTest, envConfig[block.useTest])}
-                        className={`text-[10px] font-black uppercase px-2 py-1 rounded cursor-pointer transition-colors ${envConfig[block.useTest] === "true" ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"}`}
-                      >
-                        Modo {envConfig[block.useTest] === "true" ? "TESTE" : "PRODUÇÃO"} Ativo
-                      </button>
+              ].map(block => {
+                const isPaused = String(envConfig[block.pause]).toLowerCase() === "true";
+                const isTestMode = String(envConfig[block.useTest]).toLowerCase() === "true";
+                const activeUrl = isTestMode ? envConfig[block.testUrl] : envConfig[block.url];
+
+                return (
+                  <div key={block.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-bold text-slate-700">{block.title}</h4>
+                      <div className="flex gap-2 items-center">
+                        <button onClick={() => testWebhook(activeUrl, block.type)} className="px-2 py-1 bg-white border border-slate-200 text-xs text-slate-600 rounded hover:bg-slate-100 flex items-center gap-1 font-medium cursor-pointer">
+                          <Zap className="w-3 h-3" /> Testar
+                        </button>
+                        <button 
+                          onClick={() => toggleEnvVar(block.pause, envConfig[block.pause])}
+                          className={`text-[10px] font-black uppercase px-2 py-1 rounded cursor-pointer transition-colors ${isPaused ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"}`}
+                        >
+                          {isPaused ? "TRABALHO PAUSADO" : "TRABALHO ATIVO"}
+                        </button>
+                        <button 
+                          onClick={() => toggleEnvVar(block.useTest, envConfig[block.useTest])}
+                          className={`text-[10px] font-black uppercase px-2 py-1 rounded cursor-pointer transition-colors ${isTestMode ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"}`}
+                        >
+                          Modo {isTestMode ? "TESTE" : "PRODUÇÃO"} Ativo
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-[11px] font-mono">
+                      <div className="grid grid-cols-[1fr_2fr] gap-2">
+                        <span className="text-slate-500">{block.url}:</span>
+                        <EditableEnvUrl envKey={block.url} initialValue={envConfig[block.url]} onSave={updateEnvUrl} />
+                      </div>
+                      <div className="grid grid-cols-[1fr_2fr] gap-2">
+                        <span className="text-slate-500">{block.testUrl}:</span>
+                        <EditableEnvUrl envKey={block.testUrl} initialValue={envConfig[block.testUrl]} onSave={updateEnvUrl} />
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2 text-[11px] font-mono">
-                    <div className="grid grid-cols-[1fr_2fr] gap-2">
-                      <span className="text-slate-500">{block.url}:</span>
-                      <EditableEnvUrl envKey={block.url} initialValue={envConfig[block.url]} onSave={updateEnvUrl} />
-                    </div>
-                    <div className="grid grid-cols-[1fr_2fr] gap-2">
-                      <span className="text-slate-500">{block.testUrl}:</span>
-                      <EditableEnvUrl envKey={block.testUrl} initialValue={envConfig[block.testUrl]} onSave={updateEnvUrl} />
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
           </div>

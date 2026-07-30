@@ -1480,7 +1480,7 @@ export default function App() {
         );
       case "rotas":
         return (
-          <RotaVendasPage leads={leads} loggedUser={loggedUser} />
+          <RotaVendasPage leads={leads} loggedUser={loggedUser} userRole={userRole} />
         );
       case "vendedores":
         return (
