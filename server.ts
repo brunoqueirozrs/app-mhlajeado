@@ -5607,11 +5607,198 @@ app.post("/api/rotas/config", (req, res) => {
   res.json({ status: "success", config: rotasConfigDb });
 });
 
-app.get("/api/rotas", (req, res) => {
+let lastRotasSyncTime = 0;
+
+async function writeRotaToGoogleSheet(rotaItem: any) {
+  const spreadsheetId = "19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w";
+  const sheetName = "Cronograma de Rotas";
+  
+  try {
+    const sheets = getGoogleSheetsClient();
+    if (!sheets) {
+      console.warn("[SYNC] Client Google Sheets não configurado.");
+      return;
+    }
+
+    let rows: any[] = [];
+    try {
+      const getRes = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `'${sheetName}'!A:F`,
+      });
+      rows = getRes.data.values || [];
+    } catch (rangeErr: any) {
+      if (rangeErr.message && (rangeErr.message.includes("Unable to parse range") || rangeErr.message.includes("not found"))) {
+        console.log(`[SYNC] Aba '${sheetName}' não encontrada. Criando aba na planilha...`);
+        try {
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            requestBody: {
+              requests: [{ addSheet: { properties: { title: sheetName } } }]
+            }
+          });
+        } catch (createErr: any) {
+          console.warn(`[SYNC] Erro ao criar aba '${sheetName}':`, createErr.message);
+        }
+      }
+    }
+
+    if (rows.length === 0 || !rows[0] || rows[0].length < 3) {
+      const header = ['ID', 'Vendedor', 'Semana_Segunda', 'Briefing', 'Slots_JSON', 'Atualizado_Em'];
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `'${sheetName}'!A1:F1`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [header] }
+      });
+    }
+
+    const formattedRow = [
+      rotaItem.id || `rota_${rotaItem.vendedor}_${rotaItem.weekMonday}`,
+      rotaItem.vendedor || "Equipe de Vendas Externas",
+      rotaItem.weekMonday || "",
+      rotaItem.briefing || "",
+      JSON.stringify(rotaItem.slots || []),
+      getCurrentDateTimeFormatted()
+    ];
+
+    let rowIndex = -1;
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (r && (r[0] === rotaItem.id || (r[1] === rotaItem.vendedor && r[2] === rotaItem.weekMonday))) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+
+    if (rowIndex > 0) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `'${sheetName}'!A${rowIndex}:F${rowIndex}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [formattedRow] }
+      });
+      console.log(`[SYNC] Rota de Vendas ${rotaItem.id} atualizada na planilha Google (Linha ${rowIndex})!`);
+    } else {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: `'${sheetName}'!A:F`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [formattedRow] }
+      });
+      console.log(`[SYNC] Rota de Vendas ${rotaItem.id} adicionada na planilha Google!`);
+    }
+  } catch (e: any) {
+    console.error("[SYNC] Erro ao gravar Rota de Vendas na Planilha Google:", e.message);
+  }
+}
+
+async function syncRotasFromGoogleSheet() {
+  if (Date.now() - lastRotasSyncTime < 10000) return; // 10s cache
+  const spreadsheetId = "19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w";
+  const sheetName = "Cronograma de Rotas";
+
+  try {
+    const sheets = getGoogleSheetsClient();
+    let rows: any[] = [];
+
+    if (sheets) {
+      try {
+        const getRes = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: `'${sheetName}'!A:F`,
+        });
+        rows = getRes.data.values || [];
+      } catch (err: any) {
+        if (err.message && (err.message.includes("Unable to parse range") || err.message.includes("not found"))) {
+          console.log(`[SYNC] Criando aba '${sheetName}' durante sincronização...`);
+          try {
+            await sheets.spreadsheets.batchUpdate({
+              spreadsheetId,
+              requestBody: {
+                requests: [{ addSheet: { properties: { title: sheetName } } }]
+              }
+            });
+            const header = ['ID', 'Vendedor', 'Semana_Segunda', 'Briefing', 'Slots_JSON', 'Atualizado_Em'];
+            await sheets.spreadsheets.values.update({
+              spreadsheetId,
+              range: `'${sheetName}'!A1:F1`,
+              valueInputOption: "USER_ENTERED",
+              requestBody: { values: [header] }
+            });
+          } catch (createErr) {
+            console.warn(`[SYNC] Erro ao criar aba '${sheetName}':`, createErr);
+          }
+        }
+      }
+    } else {
+      const signal = AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
+      const url = await getExportUrl(spreadsheetId, sheetName);
+      const res = await fetch(url, { signal });
+      if (res.ok) {
+        const csvText = await res.text();
+        if (!csvText.trim().toLowerCase().startsWith("<!doctype html>")) {
+          rows = parseCSV(csvText);
+        }
+      }
+    }
+
+    if (rows.length >= 2) {
+      const fetchedRotas: any[] = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || (!row[0] && !row[1] && !row[2])) continue;
+
+        const id = row[0] || `rota_${row[1]}_${row[2]}`;
+        const vendedor = row[1] || "Equipe de Vendas Externas";
+        const weekMonday = row[2] || "";
+        const briefing = row[3] || "";
+        let slots = [];
+        try {
+          if (row[4]) slots = JSON.parse(row[4]);
+        } catch (pErr) {
+          slots = [];
+        }
+
+        fetchedRotas.push({
+          id,
+          vendedor,
+          weekMonday,
+          briefing,
+          slots,
+          updatedAt: row[5] || ""
+        });
+      }
+
+      fetchedRotas.forEach(fRota => {
+        const idx = rotasVendasDb.findIndex((r: any) => r.id === fRota.id || (r.vendedor === fRota.vendedor && r.weekMonday === fRota.weekMonday));
+        if (idx >= 0) {
+          rotasVendasDb[idx] = fRota;
+        } else {
+          rotasVendasDb.push(fRota);
+        }
+      });
+
+      writeJSONDb("rotas_vendas.json", rotasVendasDb);
+      lastRotasSyncTime = Date.now();
+      console.log("[SYNC] Cronograma de Rotas sincronizado do Google Sheets. Total:", rotasVendasDb.length);
+    }
+  } catch (e: any) {
+    console.error("[SYNC] Erro ao sincronizar Cronograma de Rotas da Planilha:", e.message);
+  }
+}
+
+// Initial background sync
+syncRotasFromGoogleSheet();
+
+app.get("/api/rotas", async (req, res) => {
   const { vendedor, weekMonday } = req.query;
   if (!vendedor || !weekMonday) {
     return res.json({ rota: null });
   }
+
+  await syncRotasFromGoogleSheet();
+
   const id = `rota_${vendedor}_${weekMonday}`;
   const found = rotasVendasDb.find((r: any) => r.id === id || (r.vendedor === vendedor && r.weekMonday === weekMonday));
   res.json({ rota: found || null });
@@ -5639,6 +5826,9 @@ app.post("/api/rotas", (req, res) => {
     rotasVendasDb.push(rotaItem);
   }
   writeJSONDb("rotas_vendas.json", rotasVendasDb);
+
+  writeRotaToGoogleSheet(rotaItem).catch(e => console.error("[SYNC] Erro salvar rota em Google Sheets:", e));
+
   res.json({ status: "success", rota: rotaItem });
 });
 
@@ -5753,51 +5943,162 @@ app.post("/api/rotas/notify-n8n", async (req, res) => {
 
 app.post("/api/gemini/generateRouteBriefing", async (req, res) => {
   const { leads, loggedUser, weekMonday } = req.body;
+  const targetUser = "Equipe de Vendas Externas";
   
   const config = rotasConfigDb || DEFAULT_ROTA_CONFIG;
-  const bairrosQuentes = (config.bairros || [])
+  const bairrosList = config.bairros || [];
+  const bairrosQuentes = bairrosList
     .filter((b: any) => b.heatLevel === "quente")
-    .map((b: any) => `${b.nome} (${b.cidade})`);
-  const bairrosMedios = (config.bairros || [])
+    .map((b: any) => `${b.nome} - ${b.cidade}`);
+  const bairrosMedios = bairrosList
     .filter((b: any) => b.heatLevel === "medio")
-    .map((b: any) => `${b.nome} (${b.cidade})`);
-  const bairrosFrios = (config.bairros || [])
+    .map((b: any) => `${b.nome} - ${b.cidade}`);
+  const bairrosFrios = bairrosList
     .filter((b: any) => b.heatLevel === "frio")
-    .map((b: any) => `${b.nome} (${b.cidade})`);
+    .map((b: any) => `${b.nome} - ${b.cidade}`);
+
+  const todosBairros = [...bairrosQuentes, ...bairrosMedios, ...bairrosFrios];
+  if (todosBairros.length === 0) {
+    todosBairros.push("Santo Antônio - Lajeado", "Centro - Lajeado", "Boa União - Estrela", "Florestal - Lajeado", "São Cristóvão - Lajeado");
+  }
 
   const params = config.parametros || DEFAULT_ROTA_CONFIG.parametros;
 
+  // Função para garantir que existam exatamente 14 turnos com bairros preenchidos
+  const completar14Turnos = (rotaOriginal: any[], baseMondayStr: string) => {
+    let baseDate = new Date();
+    if (baseMondayStr && baseMondayStr.includes("-")) {
+      const parts = baseMondayStr.split("-");
+      baseDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    } else {
+      // Ajusta para a segunda-feira
+      const day = baseDate.getDay();
+      const diff = baseDate.getDate() - day + (day === 0 ? -6 : 1);
+      baseDate = new Date(baseDate.setDate(diff));
+    }
+
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const dates: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() + i);
+      dates.push(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+    }
+
+    let bairroIndex = 0;
+    const getProximoBairro = () => {
+      const b = todosBairros[bairroIndex % todosBairros.length];
+      bairroIndex++;
+      return b;
+    };
+
+    const slotsFinais: any[] = [];
+
+    dates.forEach((dateStr, dayIdx) => {
+      [1, 2].forEach(turno => {
+        // Tenta encontrar slot existente da IA por data ou por índice
+        let slotExistente = rotaOriginal.find((s: any) => s.dateStr === dateStr && Number(s.turno) === turno);
+        if (!slotExistente) {
+          const expectedIdx = dayIdx * 2 + (turno - 1);
+          if (rotaOriginal[expectedIdx] && rotaOriginal[expectedIdx].foco) {
+            slotExistente = rotaOriginal[expectedIdx];
+          }
+        }
+
+        if (slotExistente && slotExistente.foco && slotExistente.foco !== "Livre" && slotExistente.foco.trim() !== "") {
+          slotsFinais.push({
+            dateStr,
+            turno,
+            foco: slotExistente.foco,
+            justificativa: slotExistente.justificativa || "Atendimento programado de vendas."
+          });
+        } else {
+          // Preenchimento de regra especial ou de bairro da base
+          let focoRegra = "";
+          let justRegra = "";
+
+          if (dayIdx === 4 && turno === 2) {
+            focoRegra = "Condomínios - Lajeado";
+            justRegra = params.regraSextaTarde || "Todas as Sextas à tarde: Condomínios e residenciais.";
+          } else if (dayIdx === 5 && turno === 1) {
+            focoRegra = "Ação Externa / PDV - Lajeado";
+            justRegra = params.regraSabado || "Todos os Sábados: Ação Externa e prospecção em PDV.";
+          } else if (dayIdx === 5 && turno === 2) {
+            focoRegra = "Ação Externa / PDV - Estrela";
+            justRegra = params.regraSabado || "Todos os Sábados: Ação Externa em pontos estratégicos.";
+          } else {
+            focoRegra = getProximoBairro();
+            justRegra = `Mapeamento estratégico por mapa de calor (${focoRegra.includes("Lajeado") ? "Lajeado" : "Estrela"}).`;
+          }
+
+          slotsFinais.push({
+            dateStr,
+            turno,
+            foco: focoRegra,
+            justificativa: justRegra
+          });
+        }
+      });
+    });
+
+    return slotsFinais;
+  };
+
+  const salvarRotaNoBanco = (briefingText: string, slotsArray: any[]) => {
+    if (weekMonday && slotsArray.length > 0) {
+      const id = `rota_${targetUser}_${weekMonday}`;
+      const idx = rotasVendasDb.findIndex((r: any) => r.id === id || (r.vendedor === targetUser && r.weekMonday === weekMonday));
+      const newRota = {
+        id,
+        vendedor: targetUser,
+        weekMonday,
+        briefing: briefingText,
+        slots: slotsArray,
+        updatedAt: Date.now()
+      };
+      if (idx >= 0) {
+        rotasVendasDb[idx] = newRota;
+      } else {
+        rotasVendasDb.push(newRota);
+      }
+      writeJSONDb("rotas_vendas.json", rotasVendasDb);
+      writeRotaToGoogleSheet(newRota).catch(e => console.error("[SYNC] Erro ao salvar rota gerada por IA na planilha:", e));
+    }
+  };
+
   if (!ai) {
-    return res.status(503).json({ 
-      status: "error", 
-      message: "AI service unavailable. Using local fallback.",
-      briefing: `Foque nos Bairros Quentes: ${bairrosQuentes.slice(0, 5).join(", ")}.`,
-      rotaSemanal: []
+    const briefingFallback = `Atenção Equipe! Foque nos Bairros Quentes com maior potencial de conversão: ${bairrosQuentes.slice(0, 5).join(", ")}.`;
+    const rotaFallback = completar14Turnos([], weekMonday);
+    salvarRotaNoBanco(briefingFallback, rotaFallback);
+    return res.json({ 
+      status: "success", 
+      briefing: briefingFallback,
+      rotaSemanal: rotaFallback
     });
   }
 
   try {
     const prompt = `Você é o estrategista de campo da MHNET Telecom para Lajeado e Estrela.
-Este briefing e cronograma destinam-se a TODA a Equipe de Vendas Externas da MHNET Telecom, e NÃO a um vendedor individual.
+Este briefing e cronograma destinam-se a TODA a Equipe de Vendas Externas da MHNET Telecom.
 A segunda-feira da semana requisitada é: ${weekMonday || "uma data recente"}.
 
-BAIRROS E MAPA DE CALOR DA BASE:
-- 🔥 Bairros Quentes (Top Oportunidades - Foco Prioritário): ${bairrosQuentes.join(", ")}
+LISTA DE BAIRROS CADASTRADOS NO MAPA DE CALOR DA BASE:
+- 🔥 Bairros Quentes (Foco Prioritário): ${bairrosQuentes.join(", ")}
 - ☀️ Bairros Médios: ${bairrosMedios.join(", ")}
-- ❄️ Bairros Frios / Baixa Densidade: ${bairrosFrios.join(", ")}
+- ❄️ Bairros Frios: ${bairrosFrios.join(", ")}
 
-DIRETRIZES E REGRAS MANDATÓRIAS DE ROTA DA EQUIPE:
+DIRETRIZES MANDATÓRIAS:
 1. ${params.regraDias1a10 || "Dias 1 a 10 do mês: focar nos bairros mais quentes."}
 2. ${params.regraDias11a16 || "Dias 11 a 16 do mês: focar nos bairros com menos clientes."}
 3. ${params.regraSextaTarde || "Todas as Sextas à tarde: Condomínios."}
 4. ${params.regraSabado || "Todos os Sábados: Ação Externa / PDV."}
-5. Dividir cada dia em 2 turnos (turno 1 = Manhã, turno 2 = Tarde).
+5. Você DEVE obrigatoriamente preencher os 14 turnos da semana (7 dias * 2 turnos: Manhã e Tarde) com bairros REAIS da lista fornecida acima no formato "Nome do Bairro - Cidade". Não deixe nenhum turno vazio.
 
 Retorne um JSON válido contendo:
 - "briefing": texto motivacional e orientador curto (2 a 4 frases) para direcionar toda a Equipe de Vendas Externas.
 - "rotaSemanal": array com exatos 14 itens (7 dias * 2 turnos, de Segunda a Domingo).
-  Formato do item: {"dateStr": "YYYY-MM-DD", "turno": 1, "foco": "Nome do Bairro - Cidade", "justificativa": "Razão estratégica curta"} (turno 1 = Manhã, turno 2 = Tarde).
-  Use datas consecutivas a partir da segunda-feira (${weekMonday}).`;
+  Formato de cada item: {"dateStr": "YYYY-MM-DD", "turno": 1, "foco": "Nome do Bairro - Cidade", "justificativa": "Razão estratégica curta"} (turno 1 = Manhã, turno 2 = Tarde).
+  A primeira data do array DEVE ser a segunda-feira (${weekMonday}).`;
 
     const response = await safeGenerateContent({
       model: "gemini-2.0-flash",
@@ -5809,40 +6110,27 @@ Retorne um JSON válido contendo:
     });
 
     const parsedData = JSON.parse(response.text || "{}");
-    const briefing = parsedData.briefing || "Foque nos principais bairros com alta densidade e mapa de calor.";
-    const rotaSemanal = parsedData.rotaSemanal || [];
+    const briefing = parsedData.briefing || "Equipe, vamos com foco total nos bairros com alta densidade e mapa de calor aquecido!";
+    const rotaRecebida = parsedData.rotaSemanal || [];
 
-    // Persistir automaticamente no banco JSON de rotas
-    if (loggedUser && weekMonday && rotaSemanal.length > 0) {
-      const id = `rota_${loggedUser}_${weekMonday}`;
-      const idx = rotasVendasDb.findIndex((r: any) => r.id === id || (r.vendedor === loggedUser && r.weekMonday === weekMonday));
-      const newRota = {
-        id,
-        vendedor: loggedUser,
-        weekMonday,
-        briefing,
-        slots: rotaSemanal,
-        updatedAt: Date.now()
-      };
-      if (idx >= 0) {
-        rotasVendasDb[idx] = newRota;
-      } else {
-        rotasVendasDb.push(newRota);
-      }
-      writeJSONDb("rotas_vendas.json", rotasVendasDb);
-    }
+    const rotaCompleta = completar14Turnos(rotaRecebida, weekMonday);
+    salvarRotaNoBanco(briefing, rotaCompleta);
 
     return res.json({ 
       status: "success", 
       briefing,
-      rotaSemanal
+      rotaSemanal: rotaCompleta
     });
   } catch (error: any) {
-    console.info("[IA Fallback] Rota Briefing usou fallback devido aos limites de cota da API.");
+    console.info("[IA Fallback] Rota Briefing usou fallback de segurança devido à cota de API.");
+    const briefingFallback = "Equipe, mantenha o ritmo nos bairros Santo Antônio e Florestal em Lajeado, e Boa União em Estrela para garantir o bate de metas da semana.";
+    const rotaFallback = completar14Turnos([], weekMonday);
+    salvarRotaNoBanco(briefingFallback, rotaFallback);
+
     return res.json({
       status: "success",
-      briefing: "Foque nos bairros Santo Antônio e Florestal em Lajeado, e Boa União em Estrela.",
-      rotaSemanal: []
+      briefing: briefingFallback,
+      rotaSemanal: rotaFallback
     });
   }
 });

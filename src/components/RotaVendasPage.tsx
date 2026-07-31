@@ -349,8 +349,15 @@ export default function RotaVendasPage({ leads, loggedUser, userRole }: RotaVend
     .sort((a, b) => a.nome.localeCompare(b.nome));
 
   const renderSlotCell = (dateStr: string, turno: number, label: string) => {
-    const slot = rotaSemanal.find(r => r.dateStr === dateStr && r.turno === turno);
-    const hasData = slot && slot.foco;
+    let slot = rotaSemanal.find(r => r.dateStr === dateStr && Number(r.turno) === Number(turno));
+    if (!slot) {
+      const dayIndex = weekDays.findIndex(d => formatDateString(d) === dateStr);
+      if (dayIndex >= 0 && rotaSemanal.length === 14) {
+        const idx = dayIndex * 2 + (turno - 1);
+        slot = rotaSemanal[idx];
+      }
+    }
+    const hasData = slot && slot.foco && slot.foco !== "Livre";
 
     return (
       <div 
