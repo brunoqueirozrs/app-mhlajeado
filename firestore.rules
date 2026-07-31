@@ -25,5 +25,11 @@ service cloud.firestore {
     match /test_results/{documentId} {
       allow read, write: if true;
     }
+    match /atendimentos/{documentId} {
+      allow read, write: if true;
+    }
+    match /mensagens/{documentId} {
+      allow read, write: if true;
+    }
   }
 }

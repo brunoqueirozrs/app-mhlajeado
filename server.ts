@@ -2449,6 +2449,306 @@ app.post("/api/n8n/test", async (req, res) => {
     res.status(500).json({ error: "Failed to send test webhook" });
   }
 });
+
+// WAHA / CRM WhatsApp In-Memory Store
+const wahaAtendimentos: any[] = [
+  {
+    chat_id: "5551998887711",
+    cliente_nome: "Lucas Pereira",
+    atendente_atual: "Amanda",
+    fila: "Suporte",
+    status: "em_andamento",
+    tags: ["PRIORIDADE", "EZ TECH"],
+    criado_em: Date.now() - 15 * 60 * 1000,
+    ultima_msg_em: Date.now() - 2 * 60 * 1000,
+    ultima_direcao: "inbound",
+    ultima_mensagem: "Preciso de auxílio para reiniciar o modem no endereço do Centro.",
+    unread_count: 2,
+  },
+  {
+    chat_id: "5551995554433",
+    cliente_nome: "Isabela Costa",
+    atendente_atual: "",
+    fila: "Comercial",
+    status: "novo",
+    tags: ["LEAD WHITE LABEL", "FLUXO IA"],
+    criado_em: Date.now() - 8 * 60 * 1000,
+    ultima_msg_em: Date.now() - 5 * 60 * 1000,
+    ultima_direcao: "inbound",
+    ultima_mensagem: "Gostaria de contratar o plano de 700 Mega para o bairro Conventos em Lajeado.",
+    unread_count: 1,
+  },
+  {
+    chat_id: "5551981112233",
+    cliente_nome: "Fernanda Lima",
+    atendente_atual: "Stefani",
+    fila: "Sucesso do Cliente",
+    status: "em_andamento",
+    tags: ["RENOVAÇÃO", "NOVA ASSINATURA"],
+    criado_em: Date.now() - 45 * 60 * 1000,
+    ultima_msg_em: Date.now() - 12 * 60 * 1000,
+    ultima_direcao: "outbound",
+    ultima_mensagem: "Ótimo Fernanda! Já agendei a sua upgrade de velocidade sem custo extra.",
+    unread_count: 0,
+  }
+];
+
+const wahaMensagens: Record<string, any[]> = {
+  "5551998887711": [
+    {
+      id_atendimento: "5551998887711",
+      direcao: "system",
+      remetente: "Sistema",
+      texto: "Card criado / Atendimento iniciado pelo Agente de IA em Lajeado",
+      timestamp: Date.now() - 15 * 60 * 1000,
+      tipo: "system",
+    },
+    {
+      id_atendimento: "5551998887711",
+      direcao: "inbound",
+      remetente: "Lucas Pereira",
+      texto: "Olá, boa tarde! A internet oscilou aqui na loja no Centro.",
+      timestamp: Date.now() - 14 * 60 * 1000,
+      tipo: "chat",
+    },
+    {
+      id_atendimento: "5551998887711",
+      direcao: "outbound",
+      remetente: "Amanda - Suporte",
+      texto: "Olá Lucas! Me chamo Amanda. Já estou analisando o sinal da sua fibra óptica aqui.",
+      timestamp: Date.now() - 10 * 60 * 1000,
+      tipo: "chat",
+    },
+    {
+      id_atendimento: "5551998887711",
+      direcao: "inbound",
+      remetente: "Lucas Pereira",
+      texto: "Preciso de auxílio para reiniciar o modem no endereço do Centro.",
+      timestamp: Date.now() - 2 * 60 * 1000,
+      tipo: "chat",
+    }
+  ]
+};
+
+async function recordSlaInGoogleSheet(ticketData: {
+  chat_id: string;
+  cliente_nome: string;
+  atendente: string;
+  fila: string;
+  criado_em: number;
+  concluido_em: number;
+  resumo?: string;
+  tag?: string;
+}) {
+  const spreadsheetId = "19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w";
+  const sheetName = "Relatório de SLA - Mhnet";
+  try {
+    const sheets = getGoogleSheetsClient();
+    if (!sheets) return false;
+
+    try {
+      const getRes = await sheets.spreadsheets.get({ spreadsheetId });
+      const sheetExists = getRes.data.sheets?.some(
+        (s) => s.properties?.title?.trim() === sheetName
+      );
+
+      if (!sheetExists) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [
+              {
+                addSheet: {
+                  properties: { title: sheetName },
+                },
+              },
+            ],
+          },
+        });
+
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `'${sheetName}'!A1:G1`,
+          valueInputOption: "USER_ENTERED",
+          requestBody: {
+            values: [
+              [
+                "Data/Hora Conclusão",
+                "Cliente",
+                "Telefone",
+                "Consultor Responsável",
+                "Fila",
+                "Tempo de Atendimento (min)",
+                "Tag / Resumo",
+              ],
+            ],
+          },
+        });
+      }
+    } catch (checkErr: any) {
+      console.warn("[SLA SHEETS] Sheet check/create info:", checkErr?.message);
+    }
+
+    const elapsedMinutes = Math.max(1, Math.floor(((ticketData.concluido_em || Date.now()) - (ticketData.criado_em || Date.now())) / 60000));
+    const formattedDate = new Date(ticketData.concluido_em || Date.now()).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+
+    const row = [
+      formattedDate,
+      ticketData.cliente_nome || "Cliente",
+      ticketData.chat_id || "",
+      ticketData.atendente || "Consultor",
+      ticketData.fila || "Geral",
+      elapsedMinutes,
+      `${ticketData.tag || "Concluído"} ${ticketData.resumo ? `- ${ticketData.resumo}` : ""}`,
+    ];
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `'${sheetName}'!A:G`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [row] },
+    });
+
+    console.log(`[SLA SHEETS] Appended SLA record for ${ticketData.cliente_nome} to sheet '${sheetName}'`);
+    return true;
+  } catch (err: any) {
+    console.error("[SLA SHEETS] Error recording SLA:", err?.message);
+    return false;
+  }
+}
+
+// WAHA CRM Endpoints
+app.get("/api/waha/atendimentos", (req, res) => {
+  res.json({ success: true, atendimentos: wahaAtendimentos });
+});
+
+app.get("/api/waha/mensagens/:id", (req, res) => {
+  const chatId = req.params.id;
+  const msgs = wahaMensagens[chatId] || [];
+  res.json({ success: true, mensagens: msgs });
+});
+
+app.post("/api/waha/webhook", (req, res) => {
+  const { chat_id, cliente_nome, texto, direcao, remetente, fila } = req.body;
+  if (!chat_id) return res.status(400).json({ error: "chat_id is required" });
+
+  const now = Date.now();
+  let ticket = wahaAtendimentos.find((t) => t.chat_id === chat_id);
+  if (!ticket) {
+    ticket = {
+      chat_id,
+      cliente_nome: cliente_nome || "Cliente WhatsApp",
+      atendente_atual: "",
+      fila: fila || "Comercial",
+      status: "novo",
+      tags: ["NOVA MENSAGEM"],
+      criado_em: now,
+      ultima_msg_em: now,
+      ultima_direcao: direcao || "inbound",
+      ultima_mensagem: texto || "",
+      unread_count: 1,
+    };
+    wahaAtendimentos.unshift(ticket);
+  } else {
+    ticket.ultima_msg_em = now;
+    ticket.ultima_direcao = direcao || "inbound";
+    ticket.ultima_mensagem = texto || ticket.ultima_mensagem;
+    ticket.unread_count = (ticket.unread_count || 0) + 1;
+  }
+
+  if (!wahaMensagens[chat_id]) {
+    wahaMensagens[chat_id] = [];
+  }
+
+  wahaMensagens[chat_id].push({
+    id_atendimento: chat_id,
+    direcao: direcao || "inbound",
+    remetente: remetente || cliente_nome || "Cliente",
+    texto: texto || "",
+    timestamp: now,
+    tipo: "chat",
+  });
+
+  res.json({ success: true, ticket });
+});
+
+app.post("/api/waha/send-message", async (req, res) => {
+  const { chat_id, cliente_nome, texto, remetente, fila } = req.body;
+  if (!chat_id || !texto) return res.status(400).json({ error: "Missing required fields" });
+
+  const now = Date.now();
+  let ticket = wahaAtendimentos.find((t) => t.chat_id === chat_id);
+  if (ticket) {
+    ticket.ultima_msg_em = now;
+    ticket.ultima_direcao = "outbound";
+    ticket.ultima_mensagem = texto;
+    ticket.unread_count = 0;
+    if (ticket.status === "novo") ticket.status = "em_andamento";
+    if (!ticket.atendente_atual) ticket.atendente_atual = remetente || "Atendente";
+  }
+
+  if (!wahaMensagens[chat_id]) {
+    wahaMensagens[chat_id] = [];
+  }
+
+  const msg = {
+    id_atendimento: chat_id,
+    direcao: "outbound",
+    remetente: remetente || "Consultor",
+    texto,
+    timestamp: now,
+    tipo: "chat",
+  };
+
+  wahaMensagens[chat_id].push(msg);
+
+  const n8nUrl = process.env.N8N_WAHA_SEND_URL || process.env.N8N_WEBHOOK_URL;
+  if (n8nUrl) {
+    fetch(n8nUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id, texto, remetente, fila }),
+    }).catch((e) => console.warn("WAHA n8n trigger info:", e));
+  }
+
+  res.json({ success: true, message: msg });
+});
+
+app.post("/api/waha/assign-ticket", (req, res) => {
+  const { chat_id, atendente } = req.body;
+  const ticket = wahaAtendimentos.find((t) => t.chat_id === chat_id);
+  if (ticket) {
+    ticket.atendente_atual = atendente || "Consultor";
+    ticket.status = "em_andamento";
+  }
+  res.json({ success: true, ticket });
+});
+
+app.post("/api/waha/complete-ticket", async (req, res) => {
+  const { chat_id, cliente_nome, atendente, fila, criado_em, concluido_em, resumo, tag } = req.body;
+  const now = concluido_em || Date.now();
+
+  const ticket = wahaAtendimentos.find((t) => t.chat_id === chat_id);
+  if (ticket) {
+    ticket.status = "concluido";
+    if (tag && !ticket.tags.includes(tag)) {
+      ticket.tags.push(tag);
+    }
+  }
+
+  await recordSlaInGoogleSheet({
+    chat_id,
+    cliente_nome,
+    atendente,
+    fila,
+    criado_em,
+    concluido_em: now,
+    resumo,
+    tag,
+  });
+
+  res.json({ success: true, message: "Ticket concluído e gravado na planilha Google SLA" });
+});
 app.get("/api/env/n8n", (req, res) => {
   res.json({
     N8N_WEBHOOK_URL: process.env.N8N_WEBHOOK_URL || "",

@@ -8,7 +8,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Terminal, Database, CheckCircle, 
   Bot, Wifi, WifiOff, RefreshCw, LogOut, Loader2, Award, ClipboardList, 
   MapPin, Users, HelpCircle, Activity, Info, CalendarDays, BookOpen, User, Lock, Sparkles, Coins, Download, Sliders, Link, Calculator, Lightbulb, UserCheck, Store, FileSpreadsheet, Zap, Navigation
-, Archive, Search, X, FileText, Sun, Moon } from 'lucide-react';
+, Archive, Search, X, FileText, Sun, Moon, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { 
   Vendor, Lead, Task, Absence, FttaItem, FttaProspeccao, Competitor, BaseClient, BaseActionLog, Cobranca, CobrancaLog, Installation 
@@ -53,6 +53,7 @@ import TradePage from "./components/TradePage";
 import { LeadsFriosTab } from "./components/LeadsFriosTab";
 import ArquivoMortoPage from "./components/ArquivoMortoPage";
 import RotinasPage from "./components/RotinasPage";
+import AtendimentoWahaPage from "./components/AtendimentoWahaPage";
 
 import { initAuth, getAccessToken, googleSignIn } from "./lib/auth";
 import { createGoogleCalendarEvent, createGoogleTask } from "./lib/googleApi";
@@ -109,12 +110,25 @@ export default function App() {
 
   // Navigation Trackings
   const [activeTab, setActiveTab] = useState<
-    "dashboard" | "rotinas" | "ramais_contatos" | "leads" | "cadastroLead" | "ftta" | "tasks" | "indicators" | "base" | "competitors" | "objections" | "absences" | "materials" | "cobrancas" | "vendedores" | "installations" | "installations_queue" | "admin_n8n" | "calculo_multa" | "planos" | "rotas" | "estrategia" | "kaizen" | "pos_venda" | "matriz_objecoes" | "trade" | "leads_frios" | "protocolos_internos" | "admin_logs" | "admin_tests" | "gestao_pessoas" | "database_central"
+    "dashboard" | "rotinas" | "ramais_contatos" | "leads" | "cadastroLead" | "ftta" | "tasks" | "indicators" | "base" | "competitors" | "objections" | "absences" | "materials" | "cobrancas" | "vendedores" | "installations" | "installations_queue" | "admin_n8n" | "calculo_multa" | "planos" | "rotas" | "estrategia" | "kaizen" | "pos_venda" | "matriz_objecoes" | "trade" | "leads_frios" | "protocolos_internos" | "admin_logs" | "admin_tests" | "gestao_pessoas" | "database_central" | "atendimento_waha"
   >("dashboard");
 
   const [leadsFilterSeller, setLeadsFilterSeller] = useState<string | null>(null);
   const [isExternalPartnerMode, setIsExternalPartnerMode] = useState(false);
   const [fttaTab, setFttaTab] = useState<"lajeado" | "estrela" | "prospeccao">("lajeado");
+
+  // Collapsible sidebar state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem("sidebar_collapsed") === "true";
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebar_collapsed", String(next));
+      return next;
+    });
+  };
 
   // Dynamic list of registered vendors (objects)
   const [registeredVendors, setRegisteredVendors] = useState<Vendor[]>([]);
@@ -1310,6 +1324,8 @@ export default function App() {
   // CORE RENDER FLOW OF COMPLETED LOGGED APP
   const renderActivePage = () => {
     switch (activeTab) {
+      case "atendimento_waha":
+        return <AtendimentoWahaPage loggedUser={loggedUser || "Bruno Garcia Queiroz"} userRole={userRole} theme={theme} />;
       case "dashboard":
         return (
           <Dashboard
@@ -1560,306 +1576,386 @@ export default function App() {
         </div>
       )}
       {/* 1. SaaS Persistent Sidebar Navigation (Desktop Only) */}
-      <aside className="hidden lg:flex flex-col w-64 bg-slate-950 text-white border-r border-slate-800/80 shrink-0 select-none h-full py-6 px-4 z-40">
+      <aside className={`hidden lg:flex flex-col ${isSidebarCollapsed ? "w-20 px-2" : "w-64 px-4"} bg-slate-950 text-white border-r border-slate-800/80 shrink-0 select-none h-full py-6 z-40 transition-all duration-300 ease-in-out`}>
         
         <div className="flex flex-col flex-1 overflow-hidden">
-          {/* Brand/Logo Section */}
-          <div className="flex items-center gap-3 px-2 cursor-pointer shrink-0 mb-6" onClick={() => setActiveTab("dashboard")}>
-            <div className="w-9 h-9 bg-sky-600 rounded-xl flex items-center justify-center text-white font-extrabold text-base shadow-lg shadow-sky-900/30">
-              MH
+          {/* Brand/Logo & Toggle Section */}
+          <div className={`flex items-center ${isSidebarCollapsed ? "justify-center flex-col gap-3" : "justify-between px-1"} shrink-0 mb-6 transition-all`}>
+            <div 
+              className="flex items-center gap-3 cursor-pointer shrink-0" 
+              onClick={() => setActiveTab("dashboard")}
+              title="Painel MHNET - Ir para Home"
+            >
+              <div className="w-9 h-9 bg-sky-600 rounded-xl flex items-center justify-center text-white font-extrabold text-base shadow-lg shadow-sky-900/30 shrink-0">
+                MH
+              </div>
+              {!isSidebarCollapsed && (
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-black tracking-tight text-white leading-none truncate">Painel MHNET</span>
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1 truncate">LAJEADO | ESTRELA</span>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-black tracking-tight text-white leading-none">Painel MHNET</span>
-              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">LAJEADO | ESTRELA</span>
-            </div>
+
+            <button
+              onClick={toggleSidebar}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl cursor-pointer transition active:scale-95 shrink-0 flex items-center justify-center border border-slate-800/50"
+              title={isSidebarCollapsed ? "Fixar / Expandir menu (Atalhos)" : "Retrair menu (Apenas ícones)"}
+            >
+              {isSidebarCollapsed ? <ChevronRight className="w-4 h-4 text-sky-400" /> : <ChevronLeft className="w-4 h-4 text-slate-400" />}
+            </button>
           </div>
 
           <div className="h-[1px] bg-slate-800/60 mx-1 shrink-0 mb-6" />
 
           {/* Nav Categories */}
-          <div className="space-y-5 overflow-y-auto flex-1 pr-2 pb-4">
+          <div className="space-y-5 overflow-y-auto flex-1 pr-1 pb-4">
             <div className="space-y-1">
-              <span className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Painel de Trabalho</span>
+              {!isSidebarCollapsed ? (
+                <span className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Painel de Trabalho</span>
+              ) : (
+                <div className="h-[1px] bg-slate-800/50 mx-2 my-2" title="Painel de Trabalho" />
+              )}
               
               <button onClick={() => setActiveTab("dashboard")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Painel Principal"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "dashboard" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <Activity className="w-4 h-4 shrink-0 text-white" />
-                <span>Painel Principal</span>
+                {!isSidebarCollapsed && <span>Painel Principal</span>}
+              </button>
+
+              <button onClick={() => setActiveTab("atendimento_waha")}
+                title="Atendimento WAHA (CRM)"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5 relative" : "justify-between px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  activeTab === "atendimento_waha" 
+                    ? "bg-gradient-to-r from-emerald-600 to-sky-600 text-white font-bold shadow-md shadow-emerald-900/20" 
+                    : "text-white hover:bg-slate-900"
+                }`}>
+                <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"}`}>
+                  <MessageSquare className="w-4 h-4 shrink-0 text-emerald-400" />
+                  {!isSidebarCollapsed && <span>Atendimento WAHA</span>}
+                </div>
+                {!isSidebarCollapsed ? (
+                  <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border border-emerald-500/30">
+                    CRM
+                  </span>
+                ) : (
+                  <span className="absolute top-1.5 right-2 w-2 h-2 bg-emerald-400 rounded-full border border-slate-950" title="CRM" />
+                )}
               </button>
 
               <button onClick={() => setActiveTab("rotinas")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Rotinas & Cronograma"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "rotinas" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <CalendarDays className="w-4 h-4 shrink-0 text-white" />
-                <span>Rotinas & Cronograma</span>
+                {!isSidebarCollapsed && <span>Rotinas & Cronograma</span>}
               </button>
 
               <button onClick={() => setActiveTab("rotas")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Rota de Vendas"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "rotas" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <Navigation className="w-4 h-4 shrink-0 text-white" />
-                <span>Rota de Vendas</span>
+                {!isSidebarCollapsed && <span>Rota de Vendas</span>}
               </button>
 
               <button onClick={() => setActiveTab("pos_venda")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Pós Vendas"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "pos_venda" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <UserCheck className="w-4 h-4 shrink-0 text-white" />
-                <span>Pós Vendas</span>
+                {!isSidebarCollapsed && <span>Pós Vendas</span>}
               </button>
 
               <button onClick={() => setActiveTab("base")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Base de Clientes"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "base" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <Award className="w-4 h-4 shrink-0 text-white" />
-                <span>Base de Clientes</span>
+                {!isSidebarCollapsed && <span>Base de Clientes</span>}
               </button>
 
               <button onClick={() => {
                   setLeadsFilterSeller(null);
                   setActiveTab("leads");
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Leads PAP (Funil)"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "leads" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <Users className="w-4 h-4 shrink-0 text-white" />
-                <span>Leads PAP (Funil)</span>
+                {!isSidebarCollapsed && <span>Leads PAP (Funil)</span>}
               </button>
 
               <button onClick={() => setActiveTab("leads_frios")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Leads Frios"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "leads_frios" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <FileSpreadsheet className="w-4 h-4 shrink-0 text-white " />
-                <span>Leads Frios</span>
+                {!isSidebarCollapsed && <span>Leads Frios</span>}
               </button>
 
               <button onClick={() => setActiveTab("cobrancas")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Controle de Cobranças"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "cobrancas" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
-                    : "text-white hover:bg-slate-900 block"
+                    : "text-white hover:bg-slate-900"
                 }`}>
                 <Coins className="w-4 h-4 shrink-0 text-white" />
-                <span>Controle de Cobranças</span>
+                {!isSidebarCollapsed && <span>Controle de Cobranças</span>}
               </button>
 
               <button onClick={() => setActiveTab("ftta")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Viabilidade FTTA"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "ftta" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <MapPin className="w-4 h-4 shrink-0 text-white" />
-                <span>Viabilidade FTTA</span>
+                {!isSidebarCollapsed && <span>Viabilidade FTTA</span>}
               </button>
 
               <button onClick={() => setActiveTab("tasks")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Minhas Tarefas"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "tasks" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <ClipboardList className="w-4 h-4 shrink-0 text-white" />
-                <span>Minhas Tarefas</span>
+                {!isSidebarCollapsed && <span>Minhas Tarefas</span>}
               </button>
 
               <button onClick={() => setActiveTab("installations")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Agenda de Instalações"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "installations" 
                     ? "bg-sky-600 text-white font-bold shadow-md shadow-sky-950" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <CalendarDays className="w-4 h-4 shrink-0 text-white" />
-                <span>Agenda de Instalações</span>
+                {!isSidebarCollapsed && <span>Agenda de Instalações</span>}
               </button>
+
               <button onClick={() => setActiveTab("installations_queue")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Fila de Monitoramento"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "installations_queue" 
                     ? "bg-sky-600 text-white font-bold shadow-md shadow-sky-950" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <ClipboardList className="w-4 h-4 shrink-0 text-white" />
-                <span>Fila de Monitoramento</span>
+                {!isSidebarCollapsed && <span>Fila de Monitoramento</span>}
               </button>
+
               <button onClick={() => setActiveTab("gestao_pessoas")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title={userRole === "admin" ? "Gestão de Pessoas" : "Meu RH"}
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "gestao_pessoas" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 {userRole === "admin" ? <Users className="w-4 h-4 shrink-0 text-white" /> : <User className="w-4 h-4 shrink-0 text-white" />}
-                <span>{userRole === "admin" ? "Gestão de Pessoas" : "Meu RH"}</span>
+                {!isSidebarCollapsed && <span>{userRole === "admin" ? "Gestão de Pessoas" : "Meu RH"}</span>}
               </button>
+
               <button onClick={() => setActiveTab("ramais_contatos")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Ramais & Contatos Lojas"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "ramais_contatos" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <Store className="w-4 h-4 shrink-0 text-white" />
-                <span>Ramais & Contatos Lojas</span>
+                {!isSidebarCollapsed && <span>Ramais & Contatos Lojas</span>}
               </button>
 
             </div>
 
             {userRole === "admin" && (
               <div className="space-y-1">
-                <span className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2 mt-1">Gestão de Equipe</span>
+                {!isSidebarCollapsed ? (
+                  <span className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2 mt-1">Gestão de Equipe</span>
+                ) : (
+                  <div className="h-[1px] bg-slate-800/50 mx-2 my-2" title="Gestão de Equipe" />
+                )}
+
                 <button onClick={() => setActiveTab("protocolos_internos")}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  title="Protocolos Internos"
+                  className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                     activeTab === "protocolos_internos" 
                       ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                       : "text-white hover:bg-slate-900"
                   }`}>
                   <FileText className="w-4 h-4 shrink-0 text-white" />
-                  <span>Protocolos Internos</span>
+                  {!isSidebarCollapsed && <span>Protocolos Internos</span>}
                 </button>
+
                 <button onClick={() => setActiveTab("estrategia")}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  title="Gestão Estratégica IA"
+                  className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                     activeTab === "estrategia" 
                       ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                       : "text-white hover:bg-slate-900"
                   }`}>
                   <Bot className="w-4 h-4 shrink-0 text-white" />
-                  <span>Gestão Estratégica IA</span>
+                  {!isSidebarCollapsed && <span>Gestão Estratégica IA</span>}
                 </button>
+
                 <button onClick={() => setActiveTab("vendedores")}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  title="Vendedores & Metas"
+                  className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                     activeTab === "vendedores" 
                       ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                       : "text-white hover:bg-slate-900"
                   }`}>
                   <Sliders className="w-4 h-4 shrink-0 text-white" />
-                  <span>Vendedores & Metas</span>
+                  {!isSidebarCollapsed && <span>Vendedores & Metas</span>}
                 </button>
+
                 <button onClick={() => setActiveTab("admin_n8n")}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  title="Integrações N8N"
+                  className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                     activeTab === "admin_n8n" 
                       ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                       : "text-white hover:bg-slate-900"
                   }`}>
                   <Link className="w-4 h-4 shrink-0 text-white" />
-                  <span>Integrações N8N</span>
+                  {!isSidebarCollapsed && <span>Integrações N8N</span>}
                 </button>
                 
-              <button onClick={() => setActiveTab("admin_tests")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
-                  activeTab === "admin_tests" 
-                    ? "bg-rose-600 text-white font-bold shadow-md shadow-rose-950" 
-                    : "text-white hover:bg-slate-900"
-                }`}>
-                <CheckCircle className="w-4 h-4 shrink-0 text-white" />
-                <span>Históricos de Testes</span>
-              </button>
+                <button onClick={() => setActiveTab("admin_tests")}
+                  title="Históricos de Testes"
+                  className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
+                    activeTab === "admin_tests" 
+                      ? "bg-rose-600 text-white font-bold shadow-md shadow-rose-950" 
+                      : "text-white hover:bg-slate-900"
+                  }`}>
+                  <CheckCircle className="w-4 h-4 shrink-0 text-white" />
+                  {!isSidebarCollapsed && <span>Históricos de Testes</span>}
+                </button>
 
-              <button onClick={() => setActiveTab("database_central")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
-                  activeTab === "database_central" 
-                    ? "bg-rose-600 text-white font-bold shadow-md shadow-rose-950" 
-                    : "text-white hover:bg-slate-900"
-                }`}>
-                <Database className="w-4 h-4 shrink-0 text-white" />
-                <span>Base dados</span>
-              </button>
+                <button onClick={() => setActiveTab("database_central")}
+                  title="Base dados"
+                  className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
+                    activeTab === "database_central" 
+                      ? "bg-rose-600 text-white font-bold shadow-md shadow-rose-950" 
+                      : "text-white hover:bg-slate-900"
+                  }`}>
+                  <Database className="w-4 h-4 shrink-0 text-white" />
+                  {!isSidebarCollapsed && <span>Base dados</span>}
+                </button>
 
                 <button onClick={() => setActiveTab("admin_logs")}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  title="Depuração & Logs IA"
+                  className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                     activeTab === "admin_logs" 
                       ? "bg-gradient-to-r from-rose-600 to-rose-500 text-white font-bold shadow-md shadow-rose-900/20" 
                       : "text-white hover:bg-slate-900"
                   }`}>
                   <Terminal className="w-4 h-4 shrink-0 text-white" />
-                  <span>Depuração & Logs IA</span>
+                  {!isSidebarCollapsed && <span>Depuração & Logs IA</span>}
                 </button>
               </div>
             )}
 
             <div className="space-y-1">
-              <span className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Treinamento & Apoio</span>
+              {!isSidebarCollapsed ? (
+                <span className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Treinamento & Apoio</span>
+              ) : (
+                <div className="h-[1px] bg-slate-800/50 mx-2 my-2" title="Treinamento & Apoio" />
+              )}
 
               <button onClick={() => setActiveTab("competitors")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Análise Concorrência"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "competitors" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <Sparkles className="w-4 h-4 shrink-0 text-white" />
-                <span>Análise Concorrência</span>
+                {!isSidebarCollapsed && <span>Análise Concorrência</span>}
               </button>
 
               <button onClick={() => setActiveTab("calculo_multa")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Cálculo de Multa"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "calculo_multa" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
-                    : "text-white hover:bg-slate-900 block"
+                    : "text-white hover:bg-slate-900"
                 }`}>
                 <Calculator className="w-4 h-4 shrink-0 text-white" />
-                <span>Cálculo de Multa</span>
+                {!isSidebarCollapsed && <span>Cálculo de Multa</span>}
               </button>
 
               <button onClick={() => setActiveTab("objections")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Contorno de Objeções"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "objections" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <HelpCircle className="w-4 h-4 shrink-0 text-white" />
-                <span>Contorno de Objeções</span>
+                {!isSidebarCollapsed && <span>Contorno de Objeções</span>}
               </button>
 
               <button onClick={() => setActiveTab("trade")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Ações de Trade"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "trade" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <Store className="w-4 h-4 shrink-0 text-white" />
-                <span>Ações de Trade</span>
+                {!isSidebarCollapsed && <span>Ações de Trade</span>}
               </button>
 
               <button onClick={() => setActiveTab("absences")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Escala & Ausências"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "absences" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <CalendarDays className="w-4 h-4 shrink-0 text-white" />
-                <span>Escala & Ausências</span>
+                {!isSidebarCollapsed && <span>Escala & Ausências</span>}
               </button>
 
               <button onClick={() => setActiveTab("materials")}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Drive & Panfletos"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "materials" 
                     ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
                 <BookOpen className="w-4 h-4 shrink-0 text-white" />
-                <span>Drive & Panfletos</span>
+                {!isSidebarCollapsed && <span>Drive & Panfletos</span>}
               </button>
 
-
-              
             </div>
           </div>
         </div>
@@ -1867,19 +1963,21 @@ export default function App() {
         {/* User profile with logout on sidebar */}
         <div className="space-y-4 shrink-0 pt-4">
           <div className="h-[1px] bg-slate-800/60 mx-1" />
-          <div className="flex items-center justify-between p-2.5 bg-slate-900/50 rounded-2xl border border-slate-800/40">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className={`flex items-center ${isSidebarCollapsed ? "flex-col gap-2 p-1.5" : "justify-between p-2.5"} bg-slate-900/50 rounded-2xl border border-slate-800/40`}>
+            <div className="flex items-center gap-2 min-w-0" title={`${loggedUser} (${userRole === "admin" ? "Coordenador" : "Consultor PAP"})`}>
               <div className="w-8 h-8 rounded-full bg-sky-600/20 text-sky-400 flex items-center justify-center font-bold text-xs shrink-0 select-none">
                 {loggedUser ? loggedUser.substring(0, 2).toUpperCase() : "U"}
               </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[11px] font-bold text-white truncate leading-none mb-1">{loggedUser}</span>
-                <span className="text-[9px] text-sky-400 font-bold uppercase tracking-wide leading-none">
-                  {userRole === "admin" ? "Coordenador" : "Consultor PAP"}
-                </span>
-              </div>
+              {!isSidebarCollapsed && (
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-bold text-white truncate leading-none mb-1">{loggedUser}</span>
+                  <span className="text-[9px] text-sky-400 font-bold uppercase tracking-wide leading-none">
+                    {userRole === "admin" ? "Coordenador" : "Consultor PAP"}
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className={`flex items-center ${isSidebarCollapsed ? "flex-col gap-1" : "gap-1"} shrink-0`}>
               <button 
                 onClick={() => setTheme(theme === "light" ? "dark" : "light")} 
                 className="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800/60 rounded-lg cursor-pointer transition active:scale-95 shrink-0"
@@ -2116,6 +2214,14 @@ export default function App() {
             }`}>
             <Activity className="w-4 h-4" />
             <span className="text-[9px] font-extrabold uppercase tracking-tight">Home</span>
+          </button>
+
+          <button onClick={() => setActiveTab("atendimento_waha")}
+            className={`flex-shrink-0 flex flex-col items-center gap-0.5 cursor-pointer transition ${
+              activeTab === "atendimento_waha" ? "text-emerald-600 font-bold" : "text-slate-400 hover:text-slate-600 font-medium"
+            }`}>
+            <MessageSquare className="w-4 h-4 text-emerald-500" />
+            <span className="text-[9px] font-extrabold uppercase tracking-tight">WAHA</span>
           </button>
 
           <button onClick={() => {
