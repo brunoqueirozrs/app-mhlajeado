@@ -282,61 +282,263 @@ export function AtendimentoWahaPage({ loggedUser, userRole, theme = "dark" }: At
   const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientFila, setNewClientFila] = useState("Comercial");
 
+  // Diagnostic state for Firestore real-time connection check
+  const [diagnostic, setDiagnostic] = useState<{
+    status: "connected" | "connecting" | "error";
+    counts: { atendimentos: number; atendimentos_waha: number; mensagens: number; mensagens_waha: number };
+    lastUpdate: string | null;
+    errorMsg: string | null;
+    isTesting: boolean;
+    testSuccessMsg: string | null;
+  }>({
+    status: "connecting",
+    counts: { atendimentos: 0, atendimentos_waha: 0, mensagens: 0, mensagens_waha: 0 },
+    lastUpdate: null,
+    errorMsg: null,
+    isTesting: false,
+    testSuccessMsg: null,
+  });
+
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Sync with Firestore in Real-Time
+  // Sync with Firestore in Real-Time (listening to 'atendimentos', 'atendimentos_waha', 'mensagens', 'mensagens_waha')
   useEffect(() => {
+    const unsubscribes: (() => void)[] = [];
+
+    const handleTicketsSnapshot = (snapshot: any, colName: "atendimentos" | "atendimentos_waha") => {
+      setDiagnostic((prev) => ({
+        ...prev,
+        status: "connected",
+        lastUpdate: new Date().toLocaleTimeString(),
+        counts: { ...prev.counts, [colName]: snapshot.size || snapshot.docs?.length || 0 },
+      }));
+
+      if (!snapshot.empty) {
+        const list: Ticket[] = [];
+        snapshot.forEach((docSnap: any) => {
+          const data = docSnap.data();
+          
+          // Extract timestamp properly (support seconds vs milliseconds and raw WAHA payload)
+          let rawTs = data.ultima_msg_em || data.timestamp || data.payload?.timestamp || Date.now();
+          if (typeof rawTs === "number" && rawTs < 10000000000) {
+            rawTs = rawTs * 1000;
+          }
+
+          const rawChatId = String(
+            data.chat_id || data.from || data.payload?.from || docSnap.id
+          );
+
+          const ticket: Ticket = {
+            chat_id: rawChatId,
+            cliente_nome:
+              data.cliente_nome ||
+              data.pushName ||
+              data.payload?.pushName ||
+              data.payload?._data?.notifyName ||
+              data.name ||
+              rawChatId.split("@")[0] ||
+              "Cliente WAHA",
+            atendente_atual: data.atendente_atual || "",
+            fila: data.fila || "Comercial",
+            status: data.status || "novo",
+            tags: Array.isArray(data.tags) ? data.tags : ["WAHA"],
+            criado_em: data.criado_em || rawTs,
+            ultima_msg_em: rawTs,
+            ultima_direcao:
+              data.ultima_direcao ||
+              (data.fromMe || data.payload?.fromMe ? "outbound" : "inbound"),
+            ultima_mensagem:
+              data.ultima_mensagem ||
+              data.body ||
+              data.texto ||
+              data.payload?.body ||
+              "",
+            unread_count: data.unread_count ?? (data.fromMe ? 0 : 1),
+            avatar_url: data.avatar_url || "",
+          };
+          list.push(ticket);
+        });
+
+        // Merge snapshot with local tickets
+        setTickets((prev) => {
+          const map = new Map<string, Ticket>();
+          prev.forEach((t) => map.set(t.chat_id, t));
+          list.forEach((t) => map.set(t.chat_id, t));
+          return Array.from(map.values()).sort((a, b) => b.ultima_msg_em - a.ultima_msg_em);
+        });
+      }
+    };
+
     try {
-      const ticketsRef = collection(db, "atendimentos");
-      const unsubscribe = onSnapshot(ticketsRef, (snapshot) => {
-        if (!snapshot.empty) {
-          const list: Ticket[] = [];
-          snapshot.forEach((docSnap) => {
-            list.push(docSnap.data() as Ticket);
-          });
-          // Merge snapshot with local seed list
-          setTickets((prev) => {
-            const map = new Map<string, Ticket>();
-            prev.forEach((t) => map.set(t.chat_id, t));
-            list.forEach((t) => map.set(t.chat_id, t));
-            return Array.from(map.values()).sort((a, b) => b.ultima_msg_em - a.ultima_msg_em);
-          });
-        }
-      }, (err) => {
-        console.warn("Firestore snapshot listener info:", err);
-      });
-      return () => unsubscribe();
-    } catch (e) {
-      console.warn("Firestore error setup:", e);
+      unsubscribes.push(
+        onSnapshot(
+          collection(db, "atendimentos"),
+          (snap) => handleTicketsSnapshot(snap, "atendimentos"),
+          (err) => {
+            console.warn("atendimentos sub error:", err);
+            setDiagnostic((prev) => ({ ...prev, status: "error", errorMsg: err.message }));
+          }
+        )
+      );
+
+      unsubscribes.push(
+        onSnapshot(
+          collection(db, "atendimentos_waha"),
+          (snap) => handleTicketsSnapshot(snap, "atendimentos_waha"),
+          (err) => console.warn("atendimentos_waha sub error:", err)
+        )
+      );
+    } catch (e: any) {
+      console.warn("Firestore tickets error setup:", e);
+      setDiagnostic((prev) => ({ ...prev, status: "error", errorMsg: e.message || String(e) }));
     }
+
+    return () => unsubscribes.forEach((unsub) => unsub());
   }, []);
 
-  // Sync Messages for selected chat
+  // Sync Messages in Real-Time for all chats
   useEffect(() => {
-    if (!selectedChatId) return;
-    try {
-      const msgsRef = collection(db, "mensagens");
-      const q = query(msgsRef, where("id_atendimento", "==", selectedChatId));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        if (!snapshot.empty) {
-          const list: ChatMessage[] = [];
-          snapshot.forEach((docSnap) => {
-            list.push(docSnap.data() as ChatMessage);
+    const unsubscribes: (() => void)[] = [];
+
+    const handleAllMsgsSnapshot = (snapshot: any, colName: "mensagens" | "mensagens_waha") => {
+      setDiagnostic((prev) => ({
+        ...prev,
+        status: "connected",
+        lastUpdate: new Date().toLocaleTimeString(),
+        counts: { ...prev.counts, [colName]: snapshot.size || snapshot.docs?.length || 0 },
+      }));
+
+      if (!snapshot.empty) {
+        const msgsByChat: Record<string, ChatMessage[]> = {};
+
+        snapshot.forEach((docSnap: any) => {
+          const data = docSnap.data();
+          const chatIdRaw = String(
+            data.id_atendimento || data.from || data.payload?.from || data.chat_id || docSnap.id
+          );
+          const cleanPhone = chatIdRaw.split("@")[0].replace(/\D/g, "");
+
+          let msgTs = data.timestamp || data.time || data.payload?.timestamp || Date.now();
+          if (typeof msgTs === "number" && msgTs < 10000000000) {
+            msgTs = msgTs * 1000;
+          }
+
+          const msg: ChatMessage = {
+            id: docSnap.id,
+            id_atendimento: chatIdRaw,
+            id_mensagem_waha: data.id_mensagem_waha || data.id,
+            direcao:
+              data.direcao ||
+              (data.fromMe || data.payload?.fromMe ? "outbound" : "inbound"),
+            remetente:
+              data.remetente ||
+              data.pushName ||
+              data.payload?.pushName ||
+              (data.fromMe || data.payload?.fromMe ? "Atendente" : "Cliente"),
+            texto: data.texto || data.body || data.payload?.body || data.message || "",
+            timestamp: msgTs,
+            tipo: data.tipo || "chat",
+          };
+
+          const keys = Array.from(new Set([chatIdRaw, cleanPhone, `${cleanPhone}@c.us`, `+${cleanPhone}`])).filter(
+            Boolean
+          );
+
+          keys.forEach((key) => {
+            if (!msgsByChat[key]) msgsByChat[key] = [];
+            msgsByChat[key].push(msg);
           });
-          list.sort((a, b) => a.timestamp - b.timestamp);
-          setMessagesMap((prev) => ({
-            ...prev,
-            [selectedChatId]: list
-          }));
-        }
-      }, (err) => {
-        console.warn("Firestore messages snapshot:", err);
-      });
-      return () => unsubscribe();
-    } catch (e) {
+        });
+
+        setMessagesMap((prev) => {
+          const next = { ...prev };
+          Object.keys(msgsByChat).forEach((chatKey) => {
+            const currentList = next[chatKey] || [];
+            const map = new Map<string, ChatMessage>();
+            currentList.forEach((m) => map.set(m.id, m));
+            msgsByChat[chatKey].forEach((m) => map.set(m.id, m));
+            const sorted = Array.from(map.values()).sort((a, b) => a.timestamp - b.timestamp);
+            next[chatKey] = sorted;
+          });
+          return next;
+        });
+      }
+    };
+
+    try {
+      unsubscribes.push(
+        onSnapshot(
+          collection(db, "mensagens"),
+          (snap) => handleAllMsgsSnapshot(snap, "mensagens"),
+          (err) => console.warn("mensagens error:", err)
+        )
+      );
+
+      unsubscribes.push(
+        onSnapshot(
+          collection(db, "mensagens_waha"),
+          (snap) => handleAllMsgsSnapshot(snap, "mensagens_waha"),
+          (err) => console.warn("mensagens_waha error:", err)
+        )
+      );
+    } catch (e: any) {
       console.warn("Messages firestore error:", e);
     }
-  }, [selectedChatId]);
+
+    return () => unsubscribes.forEach((unsub) => unsub());
+  }, []);
+
+  // Handler for Diagnostic Test Message
+  const handleTestFirestoreWrite = async () => {
+    setDiagnostic((prev) => ({ ...prev, isTesting: true, testSuccessMsg: null, errorMsg: null }));
+    try {
+      const testChatId = selectedChatId || "5551998887711";
+      const now = Date.now();
+
+      // Write test message
+      await addDoc(collection(db, "mensagens"), {
+        id_atendimento: testChatId,
+        texto: `🧪 [Teste Real-time] Mensagem recebida em ${new Date().toLocaleTimeString()}`,
+        direcao: "inbound",
+        remetente: "Cliente WAHA (Teste)",
+        timestamp: now,
+        tipo: "chat",
+      });
+
+      // Update ticket
+      await setDoc(
+        doc(db, "atendimentos", testChatId),
+        {
+          chat_id: testChatId,
+          cliente_nome: "Isabela Costa (MHNET Fibra)",
+          ultima_mensagem: "🧪 Teste Real-time recebido com sucesso!",
+          ultima_msg_em: now,
+          ultima_direcao: "inbound",
+          status: "novo",
+          fila: "Comercial",
+          unread_count: 1,
+        },
+        { merge: true }
+      );
+
+      setDiagnostic((prev) => ({
+        ...prev,
+        isTesting: false,
+        testSuccessMsg: "✅ Teste gravado no Firestore! O listener onSnapshot capturou e atualizou a tela instantaneamente.",
+      }));
+
+      setTimeout(() => {
+        setDiagnostic((prev) => ({ ...prev, testSuccessMsg: null }));
+      }, 6000);
+    } catch (err: any) {
+      console.error("Erro no teste do Firestore:", err);
+      setDiagnostic((prev) => ({
+        ...prev,
+        isTesting: false,
+        errorMsg: `Falha no Firestore: ${err.message || String(err)}`,
+      }));
+    }
+  };
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -1214,35 +1416,95 @@ export function AtendimentoWahaPage({ loggedUser, userRole, theme = "dark" }: At
           {/* Botão de Relatórios & Dashboards PDCA */}
           <button
             onClick={() => setShowReportsModal(true)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border shadow-sm cursor-pointer ${
-              isLight
-                ? "bg-sky-50 hover:bg-sky-100 text-sky-800 border-sky-300"
-                : "bg-sky-950/80 hover:bg-sky-900 text-sky-300 border-sky-800"
-            }`}
-            title="Abrir Relatórios, KPIs e Dashboard PDCA"
+            className="px-3 py-1.5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-md shadow-sky-900/20 cursor-pointer"
+            title="Abrir métricas, gráficos e relatórios gerenciais"
           >
-            <BarChart2 className="w-3.5 h-3.5 text-sky-500 animate-pulse" />
-            <span className="hidden md:inline font-bold">Relatórios & KPIs</span>
+            <BarChart2 className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Relatórios & Dashboards</span>
           </button>
 
+          {/* Botão de Novo Lead */}
           <button
             onClick={() => setIsAddingNewLeadModal(true)}
-            className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-sky-900/30 cursor-pointer"
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-md shadow-emerald-900/20 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            Novo Atendimento
-          </button>
-
-          <button
-            onClick={handleRefreshData}
-            disabled={isSyncingServer}
-            className={`p-2 ${isLight ? "bg-slate-100 hover:bg-slate-200 text-slate-700" : "bg-slate-800 hover:bg-slate-700 text-slate-300"} rounded-lg text-xs font-bold transition cursor-pointer`}
-            title="Sincronizar dados"
-          >
-            <RefreshCw className={`w-4 h-4 ${isSyncingServer ? "animate-spin text-sky-500" : ""}`} />
+            <span className="hidden sm:inline">Novo Atendimento</span>
           </button>
         </div>
       </div>
+
+      {/* Bar de Diagnóstico em Tempo Real do Firestore */}
+      <div className={`px-5 py-2 border-b text-xs flex flex-wrap items-center justify-between gap-2.5 transition-colors ${
+        isLight ? "bg-slate-50 border-slate-200" : "bg-slate-950/80 border-slate-800"
+      }`}>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Indicator Status */}
+          <div className="flex items-center gap-1.5 font-bold">
+            {diagnostic.status === "connected" && (
+              <span className="flex items-center gap-1 text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30 text-[11px]">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Firestore Conectado (Real-Time)
+              </span>
+            )}
+            {diagnostic.status === "connecting" && (
+              <span className="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30 text-[11px]">
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                Conectando ao Firestore...
+              </span>
+            )}
+            {diagnostic.status === "error" && (
+              <span className="flex items-center gap-1 text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/30 text-[11px]">
+                <AlertTriangle className="w-3 h-3" />
+                Erro Firestore
+              </span>
+            )}
+          </div>
+
+          {/* Document Counters */}
+          <div className={`flex flex-wrap items-center gap-2 text-[11px] font-medium ${isLight ? "text-slate-600" : "text-slate-300"}`}>
+            <span className={`px-2 py-0.5 rounded border ${isLight ? "bg-slate-200/60 border-slate-300" : "bg-slate-800 border-slate-700"}`}>
+              Tickets no Banco: <strong className="text-sky-500 font-extrabold">{diagnostic.counts.atendimentos + diagnostic.counts.atendimentos_waha}</strong>
+            </span>
+            <span className={`px-2 py-0.5 rounded border ${isLight ? "bg-slate-200/60 border-slate-300" : "bg-slate-800 border-slate-700"}`}>
+              Mensagens Sincronizadas: <strong className="text-sky-500 font-extrabold">{diagnostic.counts.mensagens + diagnostic.counts.mensagens_waha}</strong>
+            </span>
+            {diagnostic.lastUpdate && (
+              <span className="text-[10px] text-slate-400 hidden sm:inline">
+                Sincronizado às {diagnostic.lastUpdate}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Action Button: Test Firestore Read/Write */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleTestFirestoreWrite}
+            disabled={diagnostic.isTesting}
+            className="px-3 py-1 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-[11px] rounded-lg transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Grava uma mensagem de teste no Firestore para validar se o ouvinte onSnapshot atualiza a tela na hora"
+          >
+            <Zap className={`w-3.5 h-3.5 text-amber-300 ${diagnostic.isTesting ? "animate-spin" : ""}`} />
+            <span>{diagnostic.isTesting ? "Testando..." : "⚡ Testar Gravação em Tempo Real"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Feedback Messages Banner */}
+      {diagnostic.testSuccessMsg && (
+        <div className="px-5 py-2 bg-emerald-500/15 border-b border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{diagnostic.testSuccessMsg}</span>
+        </div>
+      )}
+
+      {diagnostic.errorMsg && (
+        <div className="px-5 py-2 bg-rose-500/15 border-b border-rose-500/30 text-rose-400 text-xs font-bold flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+          <span>{diagnostic.errorMsg}</span>
+        </div>
+      )}
 
       {/* Main Three-Pane Grid */}
       <div className={`flex-1 grid grid-cols-1 md:grid-cols-12 overflow-hidden ${isLight ? "bg-slate-50" : "bg-slate-900"}`}>
