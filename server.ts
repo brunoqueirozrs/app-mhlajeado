@@ -7,8 +7,22 @@ import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import fs from "fs";
 import nodemailer from "nodemailer";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore, doc, setDoc, collection, getDocs } from "firebase/firestore";
 
 dotenv.config({ override: true });
+
+// Initialize Firestore on Server for Webhook Sync
+let firebaseConfig: any = {};
+try {
+  const cfgRaw = fs.readFileSync(path.join(process.cwd(), "firebase-applet-config.json"), "utf8");
+  firebaseConfig = JSON.parse(cfgRaw);
+} catch (e) {
+  console.warn("[Server] Could not load firebase-applet-config.json:", e);
+}
+
+const fbApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+const serverDb = getFirestore(fbApp, firebaseConfig.firestoreDatabaseId || undefined);
 
 // System Logger for Admin Debug Panel
 const adminLogs: Array<{timestamp: string, level: string, message: string}> = [];
@@ -2451,84 +2465,8 @@ app.post("/api/n8n/test", async (req, res) => {
 });
 
 // WAHA / CRM WhatsApp In-Memory Store
-const wahaAtendimentos: any[] = [
-  {
-    chat_id: "5551998887711",
-    cliente_nome: "Lucas Pereira",
-    atendente_atual: "Amanda",
-    fila: "Suporte",
-    status: "em_andamento",
-    tags: ["PRIORIDADE", "EZ TECH"],
-    criado_em: Date.now() - 15 * 60 * 1000,
-    ultima_msg_em: Date.now() - 2 * 60 * 1000,
-    ultima_direcao: "inbound",
-    ultima_mensagem: "Preciso de auxílio para reiniciar o modem no endereço do Centro.",
-    unread_count: 2,
-  },
-  {
-    chat_id: "5551995554433",
-    cliente_nome: "Isabela Costa",
-    atendente_atual: "",
-    fila: "Comercial",
-    status: "novo",
-    tags: ["LEAD WHITE LABEL", "FLUXO IA"],
-    criado_em: Date.now() - 8 * 60 * 1000,
-    ultima_msg_em: Date.now() - 5 * 60 * 1000,
-    ultima_direcao: "inbound",
-    ultima_mensagem: "Gostaria de contratar o plano de 700 Mega para o bairro Conventos em Lajeado.",
-    unread_count: 1,
-  },
-  {
-    chat_id: "5551981112233",
-    cliente_nome: "Fernanda Lima",
-    atendente_atual: "Stefani",
-    fila: "Sucesso do Cliente",
-    status: "em_andamento",
-    tags: ["RENOVAÇÃO", "NOVA ASSINATURA"],
-    criado_em: Date.now() - 45 * 60 * 1000,
-    ultima_msg_em: Date.now() - 12 * 60 * 1000,
-    ultima_direcao: "outbound",
-    ultima_mensagem: "Ótimo Fernanda! Já agendei a sua upgrade de velocidade sem custo extra.",
-    unread_count: 0,
-  }
-];
-
-const wahaMensagens: Record<string, any[]> = {
-  "5551998887711": [
-    {
-      id_atendimento: "5551998887711",
-      direcao: "system",
-      remetente: "Sistema",
-      texto: "Card criado / Atendimento iniciado pelo Agente de IA em Lajeado",
-      timestamp: Date.now() - 15 * 60 * 1000,
-      tipo: "system",
-    },
-    {
-      id_atendimento: "5551998887711",
-      direcao: "inbound",
-      remetente: "Lucas Pereira",
-      texto: "Olá, boa tarde! A internet oscilou aqui na loja no Centro.",
-      timestamp: Date.now() - 14 * 60 * 1000,
-      tipo: "chat",
-    },
-    {
-      id_atendimento: "5551998887711",
-      direcao: "outbound",
-      remetente: "Amanda - Suporte",
-      texto: "Olá Lucas! Me chamo Amanda. Já estou analisando o sinal da sua fibra óptica aqui.",
-      timestamp: Date.now() - 10 * 60 * 1000,
-      tipo: "chat",
-    },
-    {
-      id_atendimento: "5551998887711",
-      direcao: "inbound",
-      remetente: "Lucas Pereira",
-      texto: "Preciso de auxílio para reiniciar o modem no endereço do Centro.",
-      timestamp: Date.now() - 2 * 60 * 1000,
-      tipo: "chat",
-    }
-  ]
-};
+const wahaAtendimentos: any[] = [];
+const wahaMensagens: Record<string, any[]> = {};
 
 async function recordSlaInGoogleSheet(ticketData: {
   chat_id: string;
@@ -2628,48 +2566,172 @@ app.get("/api/waha/mensagens/:id", (req, res) => {
   res.json({ success: true, mensagens: msgs });
 });
 
-app.post("/api/waha/webhook", (req, res) => {
-  const { chat_id, cliente_nome, texto, direcao, remetente, fila } = req.body;
-  if (!chat_id) return res.status(400).json({ error: "chat_id is required" });
+// Universal Webhook Endpoint for WAHA and N8N (supports /webhook/*, /webhook/:id/waha, /api/waha/webhook)
+app.all(["/webhook/*", "/webhook", "/api/waha/webhook"], (req, res) => {
+  console.log(`[WAHA/N8N Webhook Receiver] ${req.method} ${req.originalUrl}`, JSON.stringify(req.body).slice(0, 300));
+  
+  // Extract WAHA or n8n message properties from body or payload
+  const bodyData = req.body || {};
+  const payload = bodyData.payload || bodyData;
+  const rawChatId = String(
+    bodyData.chat_id ||
+    payload.from ||
+    payload.chat_id ||
+    bodyData.from ||
+    req.params[0]?.replace(/\D/g, "") ||
+    "cliente_waha"
+  );
+  
+  const cleanPhone = rawChatId.split("@")[0].replace(/\D/g, "");
+  const chat_id = rawChatId.includes("@") ? rawChatId : cleanPhone ? `${cleanPhone}@c.us` : rawChatId;
 
-  const now = Date.now();
-  let ticket = wahaAtendimentos.find((t) => t.chat_id === chat_id);
+  const texto =
+    bodyData.texto ||
+    bodyData.body ||
+    payload.body ||
+    payload.message ||
+    bodyData.message ||
+    "";
+
+  const cliente_nome =
+    bodyData.cliente_nome ||
+    bodyData.pushName ||
+    payload.pushName ||
+    payload._data?.notifyName ||
+    bodyData.name ||
+    cleanPhone ||
+    "Cliente WhatsApp";
+
+  const fromMe = bodyData.fromMe ?? payload.fromMe ?? false;
+  const direcao = bodyData.direcao || (fromMe ? "outbound" : "inbound");
+  const remetente = bodyData.remetente || (fromMe ? "Atendente" : cliente_nome);
+  const fila = bodyData.fila || "Comercial";
+
+  let ts = bodyData.timestamp || payload.timestamp || Date.now();
+  if (typeof ts === "number" && ts < 10000000000) {
+    ts = ts * 1000;
+  }
+
+  // Update memory ticket
+  let ticket = wahaAtendimentos.find((t) => t.chat_id === chat_id || t.chat_id.replace(/\D/g, "") === cleanPhone);
   if (!ticket) {
     ticket = {
       chat_id,
-      cliente_nome: cliente_nome || "Cliente WhatsApp",
+      cliente_nome,
       atendente_atual: "",
-      fila: fila || "Comercial",
+      fila,
       status: "novo",
-      tags: ["NOVA MENSAGEM"],
-      criado_em: now,
-      ultima_msg_em: now,
-      ultima_direcao: direcao || "inbound",
-      ultima_mensagem: texto || "",
-      unread_count: 1,
+      tags: ["WAHA"],
+      criado_em: ts,
+      ultima_msg_em: ts,
+      ultima_direcao: direcao,
+      ultima_mensagem: texto,
+      unread_count: direcao === "inbound" ? 1 : 0,
     };
     wahaAtendimentos.unshift(ticket);
   } else {
-    ticket.ultima_msg_em = now;
-    ticket.ultima_direcao = direcao || "inbound";
+    ticket.ultima_msg_em = ts;
+    ticket.ultima_direcao = direcao;
     ticket.ultima_mensagem = texto || ticket.ultima_mensagem;
-    ticket.unread_count = (ticket.unread_count || 0) + 1;
+    if (direcao === "inbound") {
+      ticket.unread_count = (ticket.unread_count || 0) + 1;
+    }
   }
 
-  if (!wahaMensagens[chat_id]) {
-    wahaMensagens[chat_id] = [];
-  }
+  // Update memory messages
+  const keys = Array.from(new Set([chat_id, cleanPhone, `${cleanPhone}@c.us`, `+${cleanPhone}`])).filter(Boolean);
+  const msgWahaId = payload.id || bodyData.id_mensagem_waha || bodyData.id;
+  const msgDocId = msgWahaId ? `waha_${msgWahaId}` : `msg_srv_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
 
-  wahaMensagens[chat_id].push({
+  const msgObj = {
+    id: msgDocId,
     id_atendimento: chat_id,
-    direcao: direcao || "inbound",
-    remetente: remetente || cliente_nome || "Cliente",
-    texto: texto || "",
-    timestamp: now,
+    id_mensagem_waha: msgWahaId || "",
+    direcao,
+    remetente,
+    texto,
+    timestamp: ts,
     tipo: "chat",
+  };
+
+  keys.forEach((k) => {
+    if (!wahaMensagens[k]) wahaMensagens[k] = [];
+    wahaMensagens[k].push(msgObj);
   });
 
-  res.json({ success: true, ticket });
+  // Sync with Firestore asynchronously so UI updates in real time via onSnapshot
+  if (serverDb && texto) {
+    (async () => {
+      try {
+        const msgDoc = {
+          id_atendimento: chat_id,
+          id_mensagem_waha: msgWahaId || "",
+          direcao,
+          remetente,
+          texto,
+          timestamp: ts,
+          tipo: "chat",
+        };
+
+        const ticketDoc = {
+          chat_id,
+          cliente_nome,
+          atendente_atual: ticket.atendente_atual || "",
+          fila,
+          status: ticket.status || "novo",
+          tags: ["WAHA"],
+          criado_em: ticket.criado_em || ts,
+          ultima_msg_em: ts,
+          ultima_direcao: direcao,
+          ultima_mensagem: texto,
+          unread_count: direcao === "inbound" ? (ticket.unread_count || 1) : 0,
+        };
+
+        await setDoc(doc(serverDb, "mensagens", msgDocId), msgDoc, { merge: true });
+        await setDoc(doc(serverDb, "mensagens_waha", msgDocId), msgDoc, { merge: true });
+
+        await setDoc(doc(serverDb, "atendimentos", chat_id), ticketDoc, { merge: true });
+        await setDoc(doc(serverDb, "atendimentos_waha", chat_id), ticketDoc, { merge: true });
+
+        console.log(`[WAHA/N8N Webhook] Successfully synced to Firestore (mensagens + mensagens_waha): ${chat_id} ("${texto.slice(0, 30)}")`);
+      } catch (fsErr: any) {
+        console.warn("[WAHA/N8N Webhook] Firestore Sync Error:", fsErr?.message || fsErr);
+      }
+    })();
+  }
+
+  return res.status(200).json({ success: true, status: "processed", chat_id, ticket });
+});
+
+app.get("/api/waha/debug-firestore", async (req, res) => {
+  try {
+    const collectionsToTest = ["atendimentos", "atendimentos_waha", "mensagens", "mensagens_waha"];
+    const report: Record<string, any> = {
+      firebaseConfigProjectId: firebaseConfig.projectId || null,
+      firebaseConfigDatabaseId: firebaseConfig.firestoreDatabaseId || "(default)",
+      serverDbConnected: !!serverDb,
+      collections: {}
+    };
+
+    for (const colName of collectionsToTest) {
+      try {
+        const snap = await getDocs(collection(serverDb, colName));
+        const docs = snap.docs.map((d) => ({ _docId: d.id, ...d.data() }));
+        report.collections[colName] = {
+          count: snap.size,
+          documents: docs
+        };
+      } catch (err: any) {
+        report.collections[colName] = {
+          error: err?.message || String(err)
+        };
+      }
+    }
+
+    res.json(report);
+  } catch (globalErr: any) {
+    res.status(500).json({ error: globalErr?.message || String(globalErr) });
+  }
 });
 
 app.post("/api/waha/send-message", async (req, res) => {
