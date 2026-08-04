@@ -8,7 +8,7 @@ import {
   CheckSquare, Calendar, FolderOpen, ShieldAlert, 
   Bot, Trophy, Network, UserPlus, ArrowRight, Bell, ChevronRight,
   TrendingUp, Users, MapPin, Clock, CalendarDays, Zap, Sparkles, RefreshCw, Send, AlertTriangle, X, List, FileSpreadsheet,
-  ClipboardList, FileText, CheckCircle, Coins, Cake, Gift, PartyPopper, Phone, PhoneCall, Store
+  ClipboardList, FileText, CheckCircle, Coins, Cake, Gift, PartyPopper, Phone, PhoneCall, Store, Calculator, DollarSign
 } from "lucide-react";
 import { Database, Mail, Map as MapIcon, Cloud, Car, Navigation, Briefcase } from "lucide-react";
 import { Lead, Task, Vendor } from "../types";
@@ -256,6 +256,8 @@ export default function Dashboard({
       onNavigate("objections");
     } else if (tab === "concorrentes" || tab === "competitors") {
       onNavigate("competitors");
+    } else if (tab === "simulador_comissao" || tab === "simulador") {
+      onNavigate("simulador_comissao");
     } else {
       onNavigate(tab);
     }
@@ -1057,6 +1059,19 @@ export default function Dashboard({
             <div>
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Simulador</span>
               <div className="text-xs font-extrabold text-slate-800 tracking-tight leading-tight mt-0.5">Cálculo de Multa</div>
+            </div>
+          </button>
+
+          <button 
+            onClick={() => navigateTo("simulador_comissao")} 
+            className="card-modern border border-amber-200/80 rounded-[22px] p-4 flex flex-col items-start gap-4 cursor-pointer shadow-sm hover:border-amber-400 hover:shadow-md active:translate-y-0 text-left transition duration-200 bg-gradient-to-br from-amber-50/50 to-emerald-50/30"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-600 text-white flex items-center justify-center shadow-sm">
+              <Calculator className="w-5 h-5 stroke-[2.2]" />
+            </div>
+            <div>
+              <span className="text-[9px] font-black text-amber-700 uppercase tracking-wider">Comissionamento</span>
+              <div className="text-xs font-extrabold text-slate-800 tracking-tight leading-tight mt-0.5">Simulador PAP / AR</div>
             </div>
           </button>
 

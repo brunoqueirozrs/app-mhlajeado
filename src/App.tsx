@@ -46,6 +46,7 @@ import DatabaseCentralPage from "./components/DatabaseCentralPage";
 import { RamaisContatosPage } from "./components/RamaisContatosPage";
 
 import CalculoMultaPage from "./components/CalculoMultaPage";
+import SimuladorComissaoPage from "./components/SimuladorComissaoPage";
 import KaizenPage from "./components/KaizenPage";
 import PosVendaPage from "./components/PosVendaPage";
 import MatrizObjecoesPage from "./components/MatrizObjecoesPage";
@@ -1528,6 +1529,12 @@ export default function App() {
           <CalculoMultaPage 
             onBackToDashboard={() => setActiveTab("dashboard")} />
         );
+      case "simulador_comissao":
+      case "simulador":
+        return (
+          <SimuladorComissaoPage 
+            onBackToDashboard={() => setActiveTab("dashboard")} />
+        );
       default:
         return <div>Não encontrado</div>;
     }
@@ -1910,6 +1917,17 @@ export default function App() {
                 }`}>
                 <Calculator className="w-4 h-4 shrink-0 text-white" />
                 {!isSidebarCollapsed && <span>Cálculo de Multa</span>}
+              </button>
+
+              <button onClick={() => setActiveTab("simulador_comissao")}
+                title="Simulador de Comissão"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
+                  activeTab === "simulador_comissao" || activeTab === "simulador"
+                    ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white font-bold shadow-md shadow-sky-900/20" 
+                    : "text-white hover:bg-slate-900"
+                }`}>
+                <Calculator className="w-4 h-4 shrink-0 text-amber-400" />
+                {!isSidebarCollapsed && <span>Simulador de Comissão</span>}
               </button>
 
               <button onClick={() => setActiveTab("objections")}
