@@ -274,7 +274,7 @@ export default function RotaVendasPage({ leads, loggedUser, userRole }: RotaVend
     setEditJustificativa(slot?.justificativa || "");
   };
 
-  const handleSaveSlot = () => {
+  const handleSaveSlot = async () => {
     if (!editingSlot) return;
     const focoStr = editBairro ? `${editBairro} - ${editCidade}` : "Livre";
     const newSlots = [...rotaSemanal];
@@ -292,7 +292,7 @@ export default function RotaVendasPage({ leads, loggedUser, userRole }: RotaVend
     }
 
     setRotaSemanal(newSlots);
-    saveCurrentRouteToDb(newSlots);
+    await saveCurrentRouteToDb(newSlots);
     setEditingSlot(null);
   };
 

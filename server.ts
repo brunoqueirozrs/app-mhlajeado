@@ -6305,7 +6305,23 @@ async function syncRotasFromGoogleSheet() {
       fetchedRotas.forEach(fRota => {
         const idx = rotasVendasDb.findIndex((r: any) => r.id === fRota.id || (r.vendedor === fRota.vendedor && r.weekMonday === fRota.weekMonday));
         if (idx >= 0) {
-          rotasVendasDb[idx] = fRota;
+          const currentLocal = rotasVendasDb[idx];
+          const sheetHasSlots = Array.isArray(fRota.slots) && fRota.slots.length > 0;
+          const localHasSlots = Array.isArray(currentLocal.slots) && currentLocal.slots.length > 0;
+          const localIsRecent = currentLocal.updatedAt && (Date.now() - Number(currentLocal.updatedAt) < 300000); // 5 minutos de prioridade local pós-salvamento
+
+          if (localIsRecent && localHasSlots) {
+            console.log(`[SYNC] Preservando Rota local recente para ${currentLocal.id}`);
+          } else if (sheetHasSlots) {
+            rotasVendasDb[idx] = {
+              ...currentLocal,
+              ...fRota,
+              slots: fRota.slots,
+              briefing: fRota.briefing || currentLocal.briefing
+            };
+          } else if (fRota.briefing && !currentLocal.briefing) {
+            rotasVendasDb[idx].briefing = fRota.briefing;
+          }
         } else {
           rotasVendasDb.push(fRota);
         }
@@ -6336,19 +6352,20 @@ app.get("/api/rotas", async (req, res) => {
   res.json({ rota: found || null });
 });
 
-app.post("/api/rotas", (req, res) => {
+app.post("/api/rotas", async (req, res) => {
   const { vendedor, weekMonday, briefing, slots } = req.body;
   if (!vendedor || !weekMonday) {
     return res.status(400).json({ error: "Vendedor e weekMonday são obrigatórios" });
   }
   const id = `rota_${vendedor}_${weekMonday}`;
+  const now = Date.now();
   const rotaItem = {
     id,
     vendedor,
     weekMonday,
     briefing: briefing || "",
     slots: slots || [],
-    updatedAt: Date.now()
+    updatedAt: now
   };
 
   const idx = rotasVendasDb.findIndex((r: any) => r.id === id || (r.vendedor === vendedor && r.weekMonday === weekMonday));
@@ -6358,8 +6375,13 @@ app.post("/api/rotas", (req, res) => {
     rotasVendasDb.push(rotaItem);
   }
   writeJSONDb("rotas_vendas.json", rotasVendasDb);
+  lastRotasSyncTime = now;
 
-  writeRotaToGoogleSheet(rotaItem).catch(e => console.error("[SYNC] Erro salvar rota em Google Sheets:", e));
+  try {
+    await writeRotaToGoogleSheet(rotaItem);
+  } catch (e: any) {
+    console.error("[SYNC] Erro ao salvar rota em Google Sheets:", e.message);
+  }
 
   res.json({ status: "success", rota: rotaItem });
 });
@@ -6580,13 +6602,14 @@ app.post("/api/gemini/generateRouteBriefing", async (req, res) => {
     if (weekMonday && slotsArray.length > 0) {
       const id = `rota_${targetUser}_${weekMonday}`;
       const idx = rotasVendasDb.findIndex((r: any) => r.id === id || (r.vendedor === targetUser && r.weekMonday === weekMonday));
+      const now = Date.now();
       const newRota = {
         id,
         vendedor: targetUser,
         weekMonday,
         briefing: briefingText,
         slots: slotsArray,
-        updatedAt: Date.now()
+        updatedAt: now
       };
       if (idx >= 0) {
         rotasVendasDb[idx] = newRota;
@@ -6594,6 +6617,7 @@ app.post("/api/gemini/generateRouteBriefing", async (req, res) => {
         rotasVendasDb.push(newRota);
       }
       writeJSONDb("rotas_vendas.json", rotasVendasDb);
+      lastRotasSyncTime = now;
       writeRotaToGoogleSheet(newRota).catch(e => console.error("[SYNC] Erro ao salvar rota gerada por IA na planilha:", e));
     }
   };
