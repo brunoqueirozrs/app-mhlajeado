@@ -80,7 +80,7 @@ export function AtendimentoWahaPage({ loggedUser, userRole, theme = "dark" }: At
           parameters: {
             operation: "upsert",
             collection: "atendimentos_sla",
-            documentId: "={{ $json.body.data.key.remoteJid }}",
+            documentId: "={{ $json.body.data.key.remoteJid || $json.body.data.remoteJid || $json.body.remoteJid || $json.body.from }}",
             columns: "id_atendimento,cliente_nome,cliente_telefone,atendente_nome,timestamp_ultima_mensagem_cliente,status_resposta,alarme_disparado",
             options: {}
           },

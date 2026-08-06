@@ -25,7 +25,9 @@ import {
   Filter,
   CheckCheck,
   Terminal,
-  Activity
+  Activity,
+  Sun,
+  Moon
 } from "lucide-react";
 import {
   collection,
@@ -64,35 +66,68 @@ interface AtendimentoSlaPageProps {
 // Hyper-robust helper to convert Firestore timestamp, string, or number to Date
 function parseToDate(val: any): Date {
   if (!val) return new Date();
-  if (val instanceof Date) return val;
+  if (val instanceof Date) return isNaN(val.getTime()) ? new Date() : val;
+
+  // 1. Firestore Timestamp object (.toDate())
   if (typeof val?.toDate === "function") {
     try {
-      return val.toDate();
+      const parsed = val.toDate();
+      if (parsed instanceof Date && !isNaN(parsed.getTime())) return parsed;
     } catch {
       /* fallback */
     }
   }
-  if (typeof val?.seconds === "number") {
+
+  // 2. Firestore raw timestamp object {_seconds, _nanoseconds} or {seconds, nanoseconds}
+  if (typeof val?.seconds === "number" && !isNaN(val.seconds)) {
     return new Date(val.seconds * 1000);
   }
-  if (typeof val?._seconds === "number") {
+  if (typeof val?._seconds === "number" && !isNaN(val._seconds)) {
     return new Date(val._seconds * 1000);
   }
-  if (typeof val === "number") {
-    // Check if timestamp is in seconds (10 digits) vs milliseconds (13 digits)
+
+  // 3. Numeric timestamp in seconds or milliseconds (Unix Epoch)
+  if (typeof val === "number" && !isNaN(val) && val > 0) {
     return val < 10000000000 ? new Date(val * 1000) : new Date(val);
   }
+
+  // 4. String format processing
   if (typeof val === "string") {
     const trimmed = val.trim();
-    const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) return d;
+    if (trimmed) {
+      // 4a. Check if string is purely numeric or decimal string (e.g. Unix timestamp)
+      if (/^\d+(\.\d+)?$/.test(trimmed)) {
+        const num = Number(trimmed);
+        if (!isNaN(num) && num > 0) {
+          return num < 10000000000 ? new Date(num * 1000) : new Date(num);
+        }
+      }
 
-    // Try numeric string
-    const num = Number(trimmed);
-    if (!isNaN(num) && num > 0) {
-      return num < 10000000000 ? new Date(num * 1000) : new Date(num);
+      // 4b. Brazilian format: DD/MM/YYYY, HH:mm:ss or DD/MM/YYYY HH:mm:ss
+      const brMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
+      if (brMatch) {
+        const day = parseInt(brMatch[1], 10);
+        const month = parseInt(brMatch[2], 10) - 1;
+        const year = parseInt(brMatch[3], 10);
+        const hour = brMatch[4] ? parseInt(brMatch[4], 10) : 0;
+        const minute = brMatch[5] ? parseInt(brMatch[5], 10) : 0;
+        const second = brMatch[6] ? parseInt(brMatch[6], 10) : 0;
+        const parsedBr = new Date(year, month, day, hour, minute, second);
+        if (!isNaN(parsedBr.getTime())) return parsedBr;
+      }
+
+      // 4c. Standard ISO/Date string parsing
+      let isoStr = trimmed;
+      if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}/.test(isoStr)) {
+        isoStr = isoStr.replace(" ", "T");
+      }
+      const parsedIso = new Date(isoStr);
+      if (!isNaN(parsedIso.getTime()) && parsedIso.getFullYear() >= 2000 && parsedIso.getFullYear() <= 2100) {
+        return parsedIso;
+      }
     }
   }
+
   return new Date();
 }
 
@@ -108,7 +143,8 @@ function formatWaitTime(diffMs: number): { text: string; minutes: number } {
 }
 
 export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSlaPageProps) {
-  const isLight = theme === "light";
+  const [darkMode, setDarkMode] = useState<boolean>(theme === "dark");
+  const isLight = !darkMode;
   const [items, setItems] = useState<AtendimentoSlaItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [now, setNow] = useState<Date>(new Date());
@@ -121,6 +157,7 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
   const [dataFilter, setDataFilter] = useState<"all" | "real" | "mock">("all");
   const [showDebugPanel, setShowDebugPanel] = useState<boolean>(false);
   const [selectedDebugItem, setSelectedDebugItem] = useState<AtendimentoSlaItem | null>(null);
+  const [statusTab, setStatusTab] = useState<"aguardando" | "respondido" | "todos">("aguardando");
 
   // 1. Escuta a coleção "atendimentos_sla" na base de dados especificada em tempo real
   useEffect(() => {
@@ -161,20 +198,56 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
               docSnap.id.startsWith("test_") ||
               (data.id_atendimento && String(data.id_atendimento).startsWith("chat_"));
 
+            // Extraction e conversão 100% segura para String
+            const rawNomeVal =
+              data.cliente_nome ??
+              data.pushName ??
+              data.nome ??
+              data.client_name ??
+              data.body?.data?.pushName ??
+              data.data?.pushName;
+
+            let finalClienteNome = "";
+            if (typeof rawNomeVal === "string") {
+              finalClienteNome = rawNomeVal;
+            } else if (typeof rawNomeVal === "number" || typeof rawNomeVal === "boolean") {
+              finalClienteNome = String(rawNomeVal);
+            } else if (rawNomeVal && typeof rawNomeVal === "object") {
+              finalClienteNome = rawNomeVal.name || rawNomeVal.pushName || rawNomeVal.formattedName || JSON.stringify(rawNomeVal);
+            }
+
+            if (!finalClienteNome || !finalClienteNome.trim()) {
+              finalClienteNome = isGhost
+                ? "Documento Mapeado Errado (n8n)"
+                : formattedPhone
+                ? `Cliente (+${formattedPhone})`
+                : "Cliente WhatsApp";
+            }
+
+            const rawAtendenteVal = data.atendente_nome || "Equipe WhatsApp";
+            const finalAtendenteNome = typeof rawAtendenteVal === "string" ? rawAtendenteVal : String(rawAtendenteVal);
+
+            const rawStatusStr = String(data.status_resposta || data.status || data.state || "").toLowerCase().trim();
+            const isRespondido =
+              rawStatusStr === "respondido" ||
+              rawStatusStr === "closed" ||
+              rawStatusStr === "fechado" ||
+              rawStatusStr === "atendido" ||
+              rawStatusStr === "resolved" ||
+              rawStatusStr === "finished" ||
+              rawStatusStr === "lida" ||
+              rawStatusStr === "read" ||
+              rawStatusStr === "1" ||
+              data.respondido === true ||
+              data.answered === true;
+
             list.push({
-              id: docSnap.id,
-              id_atendimento: data.id_atendimento || docSnap.id,
-              cliente_nome:
-                data.cliente_nome ||
-                data.pushName ||
-                data.nome ||
-                data.client_name ||
-                data.body?.data?.pushName ||
-                data.data?.pushName ||
-                (isGhost ? "Documento Mapeado Errado (n8n)" : formattedPhone ? `Cliente (+${formattedPhone})` : "Cliente WhatsApp"),
+              id: String(docSnap.id),
+              id_atendimento: String(data.id_atendimento || docSnap.id),
+              cliente_nome: finalClienteNome,
               cliente_telefone: formattedPhone ? (formattedPhone.length > 10 ? `+${formattedPhone}` : formattedPhone) : (isGhost ? "Sem Telefone" : "WhatsApp"),
-              atendente_nome: data.atendente_nome || "Equipe WhatsApp",
-              atendente_id: data.atendente_id || "",
+              atendente_nome: finalAtendenteNome,
+              atendente_id: String(data.atendente_id || ""),
               timestamp_ultima_mensagem_cliente:
                 data.timestamp_ultima_mensagem_cliente ||
                 data.messageTimestamp ||
@@ -184,7 +257,7 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
                 data.createdAt ||
                 data.created_at ||
                 new Date(),
-              status_resposta: data.status_resposta === "respondido" || data.respondido === true ? "respondido" : "aguardando",
+              status_resposta: isRespondido ? "respondido" : "aguardando",
               timestamp_resposta: data.timestamp_resposta,
               alarme_disparado: Boolean(data.alarme_disparado || data.alarmeDisparado || data.body?.alarme_disparado),
               timestamp_alarme: data.timestamp_alarme,
@@ -340,9 +413,18 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
 
   // ================= CALCULA MÉTRICAS =================
   const waitingItems = filteredItems.filter((i) => i.status_resposta === "aguardando");
+  const answeredItems = filteredItems.filter((i) => i.status_resposta === "respondido");
+
+  // Itens exibidos na tabela conforme a aba selecionada (Aguardando / Respondidos / Todos)
+  const baseQueue =
+    statusTab === "aguardando"
+      ? waitingItems
+      : statusTab === "respondido"
+      ? answeredItems
+      : filteredItems;
 
   // Ordenar Fila do MAIOR tempo de espera para o MENOR (mais crítico no topo)
-  const sortedQueue = [...waitingItems].sort((a, b) => {
+  const sortedQueue = [...baseQueue].sort((a, b) => {
     const dateA = parseToDate(a.timestamp_ultima_mensagem_cliente).getTime();
     const dateB = parseToDate(b.timestamp_ultima_mensagem_cliente).getTime();
     return dateA - dateB; // Quanto menor o timestamp, mais antiga a mensagem (maior tempo de espera)
@@ -397,7 +479,7 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
   const countMockData = items.filter((i) => i.isMockData).length;
 
   return (
-    <div className="w-full h-full overflow-y-auto bg-slate-50 dark:bg-slate-950 p-4 md:p-6 space-y-6">
+    <div className={`w-full h-full overflow-y-auto ${darkMode ? "dark bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"} p-4 md:p-6 space-y-6 transition-colors duration-200`}>
       {/* Header Bar */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -422,6 +504,25 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Dark / Light Mode Toggle Button */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
+              title={darkMode ? "Alternar para Modo Claro" : "Alternar para Modo Escuro"}
+            >
+              {darkMode ? (
+                <>
+                  <Sun className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Modo Claro</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Modo Escuro</span>
+                </>
+              )}
+            </button>
+
             {/* Filter Toggle */}
             <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
               <button
@@ -685,16 +786,51 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
-              &lt; 15 min (Normal)
-            </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold">
-              15-30 min (Alerta)
-            </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] font-bold">
-              &gt; 30 min (Estourado)
-            </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Status Filter Tabs */}
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+              <button
+                onClick={() => setStatusTab("aguardando")}
+                className={`px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-2 cursor-pointer ${
+                  statusTab === "aguardando"
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <span>Aguardando</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${statusTab === "aguardando" ? "bg-black/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
+                  {waitingItems.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusTab("respondido")}
+                className={`px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-2 cursor-pointer ${
+                  statusTab === "respondido"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <span>Respondidos</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${statusTab === "respondido" ? "bg-black/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
+                  {answeredItems.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusTab("todos")}
+                className={`px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-2 cursor-pointer ${
+                  statusTab === "todos"
+                    ? "bg-sky-600 text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                <span>Todos os Registros</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${statusTab === "todos" ? "bg-black/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
+                  {filteredItems.length}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -747,8 +883,10 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
               }
 
               // Iniciais do cliente
-              const initials = (item.cliente_nome || "CL")
+              const safeNome = typeof item.cliente_nome === "string" ? item.cliente_nome : String(item.cliente_nome || "CL");
+              const initials = safeNome
                 .split(" ")
+                .filter(Boolean)
                 .map((n) => n[0])
                 .join("")
                 .substring(0, 2)
