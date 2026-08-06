@@ -27,7 +27,8 @@ import {
   Terminal,
   Activity,
   Sun,
-  Moon
+  Moon,
+  Users
 } from "lucide-react";
 import {
   collection,
@@ -227,17 +228,22 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
             const rawAtendenteVal = data.atendente_nome || "Equipe WhatsApp";
             const finalAtendenteNome = typeof rawAtendenteVal === "string" ? rawAtendenteVal : String(rawAtendenteVal);
 
-            const rawStatusStr = String(data.status_resposta || data.status || data.state || "").toLowerCase().trim();
+            // Status da RESPOSTA ao cliente no SLA (Não usar data.status genérico do protocolo do WhatsApp ex: "READ" ou 1)
+            const rawStatusResposta = String(
+              data.status_resposta ||
+              data.status_atendimento ||
+              data.atendimento_status ||
+              data.resposta_status ||
+              ""
+            ).toLowerCase().trim();
+
             const isRespondido =
-              rawStatusStr === "respondido" ||
-              rawStatusStr === "closed" ||
-              rawStatusStr === "fechado" ||
-              rawStatusStr === "atendido" ||
-              rawStatusStr === "resolved" ||
-              rawStatusStr === "finished" ||
-              rawStatusStr === "lida" ||
-              rawStatusStr === "read" ||
-              rawStatusStr === "1" ||
+              rawStatusResposta === "respondido" ||
+              rawStatusResposta === "closed" ||
+              rawStatusResposta === "fechado" ||
+              rawStatusResposta === "atendido" ||
+              rawStatusResposta === "resolved" ||
+              rawStatusResposta === "finished" ||
               data.respondido === true ||
               data.answered === true;
 
@@ -341,6 +347,52 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
       alert("Erro ao apagar alguns registros de teste.");
     } finally {
       setClearing(false);
+    }
+  };
+
+  // Gerar dados de demonstração (2 clientes simultâneos como no teste do WhatsApp)
+  const handleSeedMultiplesClientes = async () => {
+    setSeeding(true);
+    setSeedSuccess(false);
+    try {
+      const colRef = collection(db, "atendimentos_sla");
+      const currentTime = new Date();
+
+      // Cliente 1: Stefani Lazaron Mhnet
+      const t1 = new Date(currentTime.getTime() - 12 * 60 * 1000); // 12 min aguardando
+      await setDoc(doc(colRef, "5551991234567@s.whatsapp.net"), {
+        id_atendimento: "5551991234567@s.whatsapp.net",
+        cliente_nome: "Stefani Lazaron Mhnet",
+        cliente_telefone: "5551991234567",
+        atendente_nome: "Equipe de Atendimento",
+        timestamp_ultima_mensagem_cliente: Timestamp.fromDate(t1),
+        status_resposta: "aguardando",
+        alarme_disparado: false,
+        timestamp_alarme: null,
+        isMockData: false
+      });
+
+      // Cliente 2: João Mhnet
+      const t2 = new Date(currentTime.getTime() - 25 * 60 * 1000); // 25 min aguardando
+      await setDoc(doc(colRef, "5551998765432@s.whatsapp.net"), {
+        id_atendimento: "5551998765432@s.whatsapp.net",
+        cliente_nome: "João Mhnet",
+        cliente_telefone: "5551998765432",
+        atendente_nome: "Equipe de Atendimento",
+        timestamp_ultima_mensagem_cliente: Timestamp.fromDate(t2),
+        status_resposta: "aguardando",
+        alarme_disparado: false,
+        timestamp_alarme: null,
+        isMockData: false
+      });
+
+      setSeedSuccess(true);
+      setTimeout(() => setSeedSuccess(false), 3000);
+    } catch (err) {
+      console.error("Erro ao gerar clientes múltiplos no Firestore:", err);
+      alert("Erro ao criar documentos de teste. Verifique permissões do Firestore.");
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -589,6 +641,17 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
               <Plus className="w-3.5 h-3.5 text-emerald-400" />
               <span>{seeding ? "Criando..." : seedSuccess ? "Criados! ✓" : "Gerar Dados de Teste"}</span>
             </button>
+
+            {/* Test Multi-Client Button */}
+            <button
+              onClick={handleSeedMultiplesClientes}
+              disabled={seeding}
+              className="px-3 py-2 bg-purple-950/80 hover:bg-purple-900 text-purple-200 border border-purple-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Simular 2 clientes em espera ao mesmo tempo no WhatsApp (Stefani + João)"
+            >
+              <Users className="w-3.5 h-3.5 text-purple-400" />
+              <span>Simular 2 Clientes na Fila</span>
+            </button>
           </div>
         </div>
       </div>
@@ -603,58 +666,94 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
               </div>
               <div>
                 <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
-                  Painel de Depuração & Validação do Fluxo SLA
+                  Painel de Depuração & Diagnóstico do Fluxo SLA
                   <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-500/20 text-purple-300 font-mono">
                     Coleção: atendimentos_sla
                   </span>
                 </h3>
                 <p className="text-[11px] text-slate-400">
-                  Inspeção técnica dos documentos injetados pelo n8n / Evolution API
+                  Inspeção em tempo real dos documentos do Firestore e verificação de baixa automática
                 </p>
               </div>
             </div>
 
             <button
               onClick={() => setShowDebugPanel(false)}
-              className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-800"
+              className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-800 cursor-pointer"
             >
               Fechar ✕
             </button>
+          </div>
+
+          {/* DIAGNÓSTICO DE MÚLTIPLOS CLIENTES E BAIXA AUTOMÁTICA */}
+          <div className="p-4 bg-purple-950/40 border border-purple-800/60 rounded-2xl space-y-2 text-xs">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 font-bold text-purple-300">
+                <Bug className="w-4 h-4 text-purple-400" />
+                <span>Diagnóstico: Por que os clientes não apareciam ou sumiam da fila?</span>
+              </div>
+              <button
+                onClick={handleSeedMultiplesClientes}
+                disabled={seeding}
+                className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-[11px] transition cursor-pointer"
+              >
+                + Criar 2 Clientes de Teste Agora
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-[11px] text-slate-300">
+              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+                <strong className="text-amber-300 font-bold block">1. Sobrescrita de Documento no n8n (ID Fixo):</strong>
+                <p className="text-slate-400 leading-relaxed">
+                  Se o nó do Firestore no n8n não usar o identificador único da conversa, o cliente 2 <strong>sobrescreve</strong> o cliente 1 no banco, mantendo sempre apenas 1 documento no Firestore.
+                </p>
+                <div className="mt-2 text-[10px] font-mono bg-slate-900 p-1.5 rounded text-amber-200">
+                  Document ID correto no n8n: <code>{"={{ $json.body.data.key.remoteJid }}"}</code>
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+                <strong className="text-emerald-300 font-bold block">2. Como funciona a Baixa Automática:</strong>
+                <p className="text-slate-400 leading-relaxed">
+                  A baixa é <strong>100% AUTOMÁTICA</strong> quando o atendente responde no WhatsApp (<code className="text-emerald-300">fromMe: true</code>). O n8n grava <code className="text-emerald-300">status_resposta: "respondido"</code> e a mensagem sai da fila de aguardando para a aba de respondidos sem nenhuma intervenção manual!
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             {/* Health Check */}
             <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                1. Status da Conexão
+                1. Documentos no Banco
               </span>
               <div className="flex items-center gap-2 font-mono text-emerald-400 font-bold">
                 <Activity className="w-4 h-4 animate-pulse text-emerald-400" />
-                <span>Firestore Conectado ({items.length} docs)</span>
+                <span>Firestore ({items.length} total)</span>
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                Reais: <strong className="text-emerald-400">{countRealData}</strong> | Testes:{" "}
-                <strong className="text-amber-400">{countMockData}</strong>
+                Aguardando: <strong className="text-amber-400">{waitingItems.length}</strong> | Respondidos:{" "}
+                <strong className="text-emerald-400">{answeredItems.length}</strong>
               </p>
             </div>
 
             {/* Rules / Condition Validator */}
             <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                2. Validação da Condição n8n
+                2. Status da Resposta Automática
               </span>
               <div className="text-[11px] font-mono text-amber-300 bg-slate-900 p-2 rounded-xl border border-slate-800">
-                Ainda sem resposta? == {"{{ $json.messages?.records?.[0]?.key?.fromMe ?? false }}"}
+                fromMe == true ➔ status_resposta = "respondido"
               </div>
               <p className="text-[11px] text-slate-400">
-                Se <code className="text-emerald-400">fromMe == false</code> por &gt; 30 min, o alarme é disparado.
+                Respostas do atendente alteram o status automaticamente.
               </p>
             </div>
 
             {/* Inspector Selector */}
             <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                3. Inspecionar Documento
+                3. Inspecionar Documento Solicitado
               </span>
               <select
                 onChange={(e) => {
