@@ -28,7 +28,8 @@ import {
   Activity,
   Sun,
   Moon,
-  Users
+  Users,
+  Shield
 } from "lucide-react";
 import {
   collection,
@@ -159,6 +160,7 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
   const [showDebugPanel, setShowDebugPanel] = useState<boolean>(false);
   const [selectedDebugItem, setSelectedDebugItem] = useState<AtendimentoSlaItem | null>(null);
   const [statusTab, setStatusTab] = useState<"aguardando" | "respondido" | "todos">("aguardando");
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   // 1. Escuta a coleção "atendimentos_sla" na base de dados especificada em tempo real
   useEffect(() => {
@@ -350,7 +352,7 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
     }
   };
 
-  // Gerar dados de demonstração (2 clientes simultâneos como no teste do WhatsApp)
+  // Gerar dados de demonstração com MÚLTIPLOS clientes reais do WhatsApp
   const handleSeedMultiplesClientes = async () => {
     setSeeding(true);
     setSeedSuccess(false);
@@ -358,33 +360,59 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
       const colRef = collection(db, "atendimentos_sla");
       const currentTime = new Date();
 
-      // Cliente 1: Stefani Lazaron Mhnet
-      const t1 = new Date(currentTime.getTime() - 12 * 60 * 1000); // 12 min aguardando
-      await setDoc(doc(colRef, "5551991234567@s.whatsapp.net"), {
-        id_atendimento: "5551991234567@s.whatsapp.net",
-        cliente_nome: "Stefani Lazaron Mhnet",
-        cliente_telefone: "5551991234567",
-        atendente_nome: "Equipe de Atendimento",
-        timestamp_ultima_mensagem_cliente: Timestamp.fromDate(t1),
-        status_resposta: "aguardando",
-        alarme_disparado: false,
-        timestamp_alarme: null,
-        isMockData: false
-      });
+      const clientsToSeed = [
+        {
+          id: "555180295905@s.whatsapp.net",
+          nome: "+55 51 8029-5905",
+          phone: "555180295905",
+          timeMins: 4
+        },
+        {
+          id: "555198765001@s.whatsapp.net",
+          nome: "Maicon gerente da O&M SANTA CRUZ",
+          phone: "555198765001",
+          timeMins: 16
+        },
+        {
+          id: "555191106906@s.whatsapp.net",
+          nome: "+55 51 9110-6906",
+          phone: "555191106906",
+          timeMins: 24
+        },
+        {
+          id: "555199887766@s.whatsapp.net",
+          nome: "Eracilda Fátima da Cruz",
+          phone: "555199887766",
+          timeMins: 32
+        },
+        {
+          id: "5551991234567@s.whatsapp.net",
+          nome: "Stefani Lazaron Mhnet",
+          phone: "5551991234567",
+          timeMins: 45
+        },
+        {
+          id: "5551998765432@s.whatsapp.net",
+          nome: "João Mhnet",
+          phone: "5551998765432",
+          timeMins: 58
+        }
+      ];
 
-      // Cliente 2: João Mhnet
-      const t2 = new Date(currentTime.getTime() - 25 * 60 * 1000); // 25 min aguardando
-      await setDoc(doc(colRef, "5551998765432@s.whatsapp.net"), {
-        id_atendimento: "5551998765432@s.whatsapp.net",
-        cliente_nome: "João Mhnet",
-        cliente_telefone: "5551998765432",
-        atendente_nome: "Equipe de Atendimento",
-        timestamp_ultima_mensagem_cliente: Timestamp.fromDate(t2),
-        status_resposta: "aguardando",
-        alarme_disparado: false,
-        timestamp_alarme: null,
-        isMockData: false
-      });
+      for (const client of clientsToSeed) {
+        const t = new Date(currentTime.getTime() - client.timeMins * 60 * 1000);
+        await setDoc(doc(colRef, client.id), {
+          id_atendimento: client.id,
+          cliente_nome: client.nome,
+          cliente_telefone: client.phone,
+          atendente_nome: "Equipe de Atendimento",
+          timestamp_ultima_mensagem_cliente: Timestamp.fromDate(t),
+          status_resposta: "aguardando",
+          alarme_disparado: client.timeMins > 30,
+          timestamp_alarme: client.timeMins > 30 ? Timestamp.fromDate(new Date(t.getTime() + 30 * 60 * 1000)) : null,
+          isMockData: false
+        });
+      }
 
       setSeedSuccess(true);
       setTimeout(() => setSeedSuccess(false), 3000);
@@ -499,23 +527,23 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
     return diffMins > 30;
   }).length;
 
-  // Card 4: Tempo médio de resposta hoje
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const respondidosHoje = filteredItems.filter((i) => {
-    if (i.status_resposta !== "respondido" || !i.timestamp_resposta) return false;
-    const respDate = parseToDate(i.timestamp_resposta).getTime();
-    return respDate >= todayStart;
-  });
-
-  let tempoMedioRespostaMinutos = 0;
-  if (respondidosHoje.length > 0) {
-    const totalDiffMinutes = respondidosHoje.reduce((acc, curr) => {
+  // Card 4: Tempo médio de espera atual na fila (ou de resposta se concluído)
+  let tempoMedioMinutos = 0;
+  if (waitingItems.length > 0) {
+    const totalMins = waitingItems.reduce((acc, curr) => {
+      const dt = parseToDate(curr.timestamp_ultima_mensagem_cliente);
+      const diffMins = Math.max(0, Math.floor((now.getTime() - dt.getTime()) / (1000 * 60)));
+      return acc + diffMins;
+    }, 0);
+    tempoMedioMinutos = Math.round(totalMins / waitingItems.length);
+  } else if (answeredItems.length > 0) {
+    const totalDiffMinutes = answeredItems.reduce((acc, curr) => {
       const msgDate = parseToDate(curr.timestamp_ultima_mensagem_cliente).getTime();
-      const respDate = parseToDate(curr.timestamp_resposta).getTime();
+      const respDate = curr.timestamp_resposta ? parseToDate(curr.timestamp_resposta).getTime() : now.getTime();
       const diffMins = Math.max(0, Math.floor((respDate - msgDate) / (1000 * 60)));
       return acc + diffMins;
     }, 0);
-    tempoMedioRespostaMinutos = Math.round(totalDiffMinutes / respondidosHoje.length);
+    tempoMedioMinutos = Math.round(totalDiffMinutes / answeredItems.length);
   }
 
   // Bloco 3: Histórico de alarmes disparados
@@ -575,83 +603,84 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
               )}
             </button>
 
-            {/* Filter Toggle */}
-            <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
-              <button
-                onClick={() => setDataFilter("all")}
-                className={`px-2.5 py-1 rounded-lg font-bold transition ${
-                  dataFilter === "all" ? "bg-amber-600 text-white" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Todos ({items.length})
-              </button>
-              <button
-                onClick={() => setDataFilter("real")}
-                className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 ${
-                  dataFilter === "real" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <Zap className="w-3 h-3 text-emerald-400" />
-                Reais ({countRealData})
-              </button>
-              <button
-                onClick={() => setDataFilter("mock")}
-                className={`px-2.5 py-1 rounded-lg font-bold transition ${
-                  dataFilter === "mock" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                Testes ({countMockData})
-              </button>
-            </div>
-
-            {/* Debug Panel Toggle */}
+            {/* Admin Toggle Button */}
             <button
-              onClick={() => setShowDebugPanel(!showDebugPanel)}
-              className={`px-3 py-2 border rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-                showDebugPanel
-                  ? "bg-purple-600 text-white border-purple-500"
-                  : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
+              onClick={() => {
+                const nextAdmin = !isAdmin;
+                setIsAdmin(nextAdmin);
+                if (!nextAdmin) setShowDebugPanel(false);
+              }}
+              className={`px-3 py-2 border rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm ${
+                isAdmin
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                  : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700"
               }`}
-              title="Abrir Painel de Depuração e Inspeção do Fluxo SLA"
+              title="Alternar Modo de Administrador"
             >
-              <Bug className="w-3.5 h-3.5 text-purple-400" />
-              <span>{showDebugPanel ? "Fechar Debug" : "Depurar Fluxo"}</span>
+              <Shield className="w-3.5 h-3.5 text-amber-400" />
+              <span>{isAdmin ? "Modo Admin (Ativo)" : "Modo Administrador"}</span>
             </button>
 
-            {/* Clean Test Data Button */}
-            {countMockData > 0 && (
-              <button
-                onClick={handleLimparDadosTeste}
-                disabled={clearing}
-                className="px-3 py-2 bg-red-950/60 hover:bg-red-900 text-red-200 border border-red-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
-                title="Apagar registros de demonstração e manter apenas dados reais do n8n"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                <span>{clearing ? "Limpando..." : "Apagar Testes"}</span>
-              </button>
+            {/* BOTÕES EXCLUSIVOS PARA ADMINISTRADOR */}
+            {isAdmin && (
+              <>
+                {/* Filter Toggle */}
+                <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs animate-fadeIn">
+                  <button
+                    onClick={() => setDataFilter("all")}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition ${
+                      dataFilter === "all" ? "bg-amber-600 text-white" : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Todos ({items.length})
+                  </button>
+                  <button
+                    onClick={() => setDataFilter("real")}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 ${
+                      dataFilter === "real" ? "bg-emerald-600 text-white" : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <Zap className="w-3 h-3 text-emerald-400" />
+                    Reais ({countRealData})
+                  </button>
+                  <button
+                    onClick={() => setDataFilter("mock")}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition ${
+                      dataFilter === "mock" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Testes ({countMockData})
+                  </button>
+                </div>
+
+                {/* Debug Panel Toggle (Somente Administrador) */}
+                <button
+                  onClick={() => setShowDebugPanel(!showDebugPanel)}
+                  className={`px-3 py-2 border rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 animate-fadeIn ${
+                    showDebugPanel
+                      ? "bg-purple-600 text-white border-purple-500"
+                      : "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700"
+                  }`}
+                  title="Abrir Painel de Depuração e Inspeção do Fluxo SLA"
+                >
+                  <Bug className="w-3.5 h-3.5 text-purple-400" />
+                  <span>{showDebugPanel ? "Fechar Debug" : "Depurar Fluxo"}</span>
+                </button>
+
+                {/* Clean Test Data Button (Somente Administrador) */}
+                {countMockData > 0 && (
+                  <button
+                    onClick={handleLimparDadosTeste}
+                    disabled={clearing}
+                    className="px-3 py-2 bg-red-950/60 hover:bg-red-900 text-red-200 border border-red-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50 animate-fadeIn"
+                    title="Apagar registros de demonstração e manter apenas dados reais do n8n"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    <span>{clearing ? "Limpando..." : "Apagar Testes"}</span>
+                  </button>
+                )}
+              </>
             )}
-
-            {/* Seed Demo Button */}
-            <button
-              onClick={handleSeedMockData}
-              disabled={seeding}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
-              title="Inserir dados de demonstração na coleção do Firestore"
-            >
-              <Plus className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{seeding ? "Criando..." : seedSuccess ? "Criados! ✓" : "Gerar Dados de Teste"}</span>
-            </button>
-
-            {/* Test Multi-Client Button */}
-            <button
-              onClick={handleSeedMultiplesClientes}
-              disabled={seeding}
-              className="px-3 py-2 bg-purple-950/80 hover:bg-purple-900 text-purple-200 border border-purple-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
-              title="Simular 2 clientes em espera ao mesmo tempo no WhatsApp (Stefani + João)"
-            >
-              <Users className="w-3.5 h-3.5 text-purple-400" />
-              <span>Simular 2 Clientes na Fila</span>
-            </button>
           </div>
         </div>
       </div>
@@ -672,7 +701,7 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
                   </span>
                 </h3>
                 <p className="text-[11px] text-slate-400">
-                  Inspeção em tempo real dos documentos do Firestore e verificação de baixa automática
+                  Inspeção em tempo real dos documentos do Firestore e verificação da sincronização n8n
                 </p>
               </div>
             </div>
@@ -690,32 +719,32 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2 font-bold text-purple-300">
                 <Bug className="w-4 h-4 text-purple-400" />
-                <span>Diagnóstico: Por que os clientes não apareciam ou sumiam da fila?</span>
+                <span>Diagnóstico: Por que o WhatsApp tem 9 não lidas mas só apareciam 2 no Firestore?</span>
               </div>
               <button
                 onClick={handleSeedMultiplesClientes}
                 disabled={seeding}
                 className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-[11px] transition cursor-pointer"
               >
-                + Criar 2 Clientes de Teste Agora
+                + Testar 6 Clientes na Fila Agora
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-[11px] text-slate-300">
               <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
-                <strong className="text-amber-300 font-bold block">1. Sobrescrita de Documento no n8n (ID Fixo):</strong>
+                <strong className="text-amber-300 font-bold block">1. Causa: Sobrescrita ou Filtro no n8n:</strong>
                 <p className="text-slate-400 leading-relaxed">
-                  Se o nó do Firestore no n8n não usar o identificador único da conversa, o cliente 2 <strong>sobrescreve</strong> o cliente 1 no banco, mantendo sempre apenas 1 documento no Firestore.
+                  O painel exibe <strong>100% dos documentos</strong> gravados na coleção <code className="text-purple-300">atendimentos_sla</code> sem nenhum limite. Se apenas 2 aparecem, significa que o n8n está gravando apenas 2 documentos ou sobrescrevendo contatos quando o <code className="text-amber-300">Update Key</code> não encontra o id da conversa.
                 </p>
                 <div className="mt-2 text-[10px] font-mono bg-slate-900 p-1.5 rounded text-amber-200">
-                  Document ID correto no n8n: <code>{"={{ $json.body.data.key.remoteJid }}"}</code>
+                  Update Key recomendado no n8n: <code>{"={{ $json.body.data.key.remoteJid || $json.body.data.remoteJid || $json.body.key.remoteJid || $json.body.from }}"}</code>
                 </div>
               </div>
 
               <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
-                <strong className="text-emerald-300 font-bold block">2. Como funciona a Baixa Automática:</strong>
+                <strong className="text-emerald-300 font-bold block">2. Como Solucionar no n8n:</strong>
                 <p className="text-slate-400 leading-relaxed">
-                  A baixa é <strong>100% AUTOMÁTICA</strong> quando o atendente responde no WhatsApp (<code className="text-emerald-300">fromMe: true</code>). O n8n grava <code className="text-emerald-300">status_resposta: "respondido"</code> e a mensagem sai da fila de aguardando para a aba de respondidos sem nenhuma intervenção manual!
+                  Verifique nos logs de execução do n8n se o webhook da Evolution API está sendo ativado para todas as mensagens não lidas do WhatsApp. Toda mensagem sem resposta do atendente deve enviar um <code className="text-emerald-300">Create or Update</code> com id do cliente.
                 </p>
               </div>
             </div>
@@ -847,22 +876,24 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
           </div>
         </div>
 
-        {/* Card 4: Tempo médio de resposta hoje */}
+        {/* Card 4: Tempo médio de espera ou resposta */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                4. Tempo Médio Hoje
+                4. Tempo Médio
               </span>
               <h2 className="text-3xl font-black mt-1 text-emerald-600 dark:text-emerald-400 font-mono">
-                {tempoMedioRespostaMinutos} min
+                {tempoMedioMinutos} min
               </h2>
               <p className="text-[11px] text-slate-400 mt-1">
-                {respondidosHoje.length} conversas respondidas hoje
+                {waitingItems.length > 0
+                  ? `Média de espera das ${waitingItems.length} conversas ativas`
+                  : "Média de tempo dos atendimentos respondidos"}
               </p>
             </div>
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20">
-              <CheckCircle2 className="w-5 h-5" />
+              <Clock className="w-5 h-5" />
             </div>
           </div>
         </div>
@@ -885,50 +916,11 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Status Filter Tabs */}
-            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
-              <button
-                onClick={() => setStatusTab("aguardando")}
-                className={`px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-2 cursor-pointer ${
-                  statusTab === "aguardando"
-                    ? "bg-amber-500 text-white shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <span>Aguardando</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${statusTab === "aguardando" ? "bg-black/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-                  {waitingItems.length}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setStatusTab("respondido")}
-                className={`px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-2 cursor-pointer ${
-                  statusTab === "respondido"
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <span>Respondidos</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${statusTab === "respondido" ? "bg-black/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-                  {answeredItems.length}
-                </span>
-              </button>
-
-              <button
-                onClick={() => setStatusTab("todos")}
-                className={`px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-2 cursor-pointer ${
-                  statusTab === "todos"
-                    ? "bg-sky-600 text-white shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                <span>Todos os Registros</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${statusTab === "todos" ? "bg-black/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"}`}>
-                  {filteredItems.length}
-                </span>
-              </button>
+          <div className="flex items-center gap-2">
+            {/* Badge de Contagem Fila de Espera */}
+            <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-bold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              <span>{waitingItems.length} {waitingItems.length === 1 ? "Aguardando" : "Aguardando"}</span>
             </div>
           </div>
         </div>
