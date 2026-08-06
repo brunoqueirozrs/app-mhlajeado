@@ -1031,17 +1031,6 @@ export function AtendimentoSlaPage({ onOpenChat, theme = "dark" }: AtendimentoSl
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {/* Dar Baixa / Marcar como Respondido no Firestore */}
-                      <button
-                        onClick={() => handleMarcarComoRespondido(item.id)}
-                        disabled={isActionPending}
-                        className="px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-md shadow-sky-600/20 cursor-pointer active:scale-95 disabled:opacity-50"
-                        title="Registrar resposta no Firestore e remover da fila de SLA"
-                      >
-                        <CheckCheck className="w-3.5 h-3.5" />
-                        <span>Dar Baixa</span>
-                      </button>
-
                       {/* Abrir WhatsApp */}
                       <button
                         onClick={() => {

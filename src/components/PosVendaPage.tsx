@@ -319,6 +319,7 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
   const [vendedoraFilter, setVendedoraFilter] = useState(isAdmin ? "Todas" : (loggedUser || "Todas"));
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedNameId, setCopiedNameId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleCopyName = (e: React.MouseEvent, name: string, id?: string) => {
     e.stopPropagation();
@@ -745,8 +746,9 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
 };
 
   const saveChecklist = async (isComplete: boolean = false) => {
-    if (!selectedClient) return;
+    if (!selectedClient || isSaving) return;
 
+    setIsSaving(true);
     let updatedClientes = [...clientes];
     const idx = updatedClientes.findIndex(c => c.id === selectedClient.id);
     
@@ -796,7 +798,7 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
       setClientes(updatedClientes);
       
       try {
-        await fetch(`/api/pos-vendas/${encodeURIComponent(c.id)}`, {
+        const res = await fetch(`/api/pos-vendas/${encodeURIComponent(c.id)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -806,7 +808,6 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
             checklist: c.checklist,
             observacoes: c.observacoes,
             isConcluido: isComplete,
-            // Client details for Base de Clientes
             nome: c.nome,
             plano: c.plano,
             dataInstalacao: c.dataInstalacao,
@@ -815,14 +816,24 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
             vendedora: c.vendedora,
             cidade: c.cidade || checklist.cidade,
             bairro: c.bairro || checklist.bairro,
-            cpf: checklist.cpf
+            cpf: checklist.cpf,
+            rx_onu: c.rx_onu,
+            rx_olt: c.rx_olt
           })
         });
+        const data = await res.json();
+        if (data.sheetsSynced) {
+          console.log("Planilha sincronizada diretamente com sucesso!");
+        }
       } catch (e) {
-        console.error("Erro ao salvar", e);
+        console.error("Erro ao salvar no backend/planilha:", e);
+      } finally {
+        setIsSaving(false);
       }
 
       setSelectedClient(null);
+    } else {
+      setIsSaving(false);
     }
   };
 
@@ -1368,12 +1379,21 @@ export default function PosVendaPage({ loggedUser, isAdmin }: { loggedUser?: str
                )}
              </div>
              <div className="flex items-center gap-3">
-               <button onClick={() => saveChecklist(false)} className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">
+               <button 
+                 onClick={() => saveChecklist(false)} 
+                 disabled={isSaving}
+                 className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
+               >
+                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                  Salvar e Sair
                </button>
-               <button onClick={() => saveChecklist(true)} className="px-5 py-2.5 text-sm font-black text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-lg shadow-sky-600/30 transition-colors flex items-center gap-2">
-                 <CheckSquare className="w-5 h-5" />
-                 Concluir Pós-Venda
+               <button 
+                 onClick={() => saveChecklist(true)} 
+                 disabled={isSaving}
+                 className="px-5 py-2.5 text-sm font-black text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-lg shadow-sky-600/30 transition-colors flex items-center gap-2 disabled:opacity-50"
+               >
+                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckSquare className="w-5 h-5" />}
+                 {isSaving ? "Salvando..." : "Concluir Pós-Venda"}
                </button>
              </div>
           </div>

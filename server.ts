@@ -3606,6 +3606,13 @@ app.post("/api/pos-vendas/disparar-indicacoes", async (req, res) => {
     posVendasData[c.id].dataHoraIndicacao = nowFormatted;
     c.statusIndicacaoEnvio = "Em Fila";
     c.dataHoraIndicacao = nowFormatted;
+
+    const sheetName = c.id.split("-").slice(0, -1).join("-");
+    const rowIndex = c.id.split("-").pop() || "1";
+    syncPosVendasToGoogleSheet(sheetName, rowIndex, posVendasData[c.id], {
+      statusIndicacaoEnvio: "Em Fila",
+      dataHoraIndicacao: nowFormatted
+    }).catch(e => console.error("Error syncing Google Sheet in disparar-indicacoes:", e.message));
   });
   writeJSONDb("posVendas.json", posVendasData);
 
@@ -3646,6 +3653,13 @@ app.post("/api/pos-vendas/disparar-sva", async (req, res) => {
     posVendasData[c.id].dataHoraSva = nowFormatted;
     c.statusSva = "Em Fila";
     c.dataHoraSva = nowFormatted;
+
+    const sheetName = c.id.split("-").slice(0, -1).join("-");
+    const rowIndex = c.id.split("-").pop() || "1";
+    syncPosVendasToGoogleSheet(sheetName, rowIndex, posVendasData[c.id], {
+      statusSva: "Em Fila",
+      dataHoraSva: nowFormatted
+    }).catch(e => console.error("Error syncing Google Sheet in disparar-sva:", e.message));
   });
   writeJSONDb("posVendas.json", posVendasData);
 
@@ -3672,7 +3686,158 @@ app.post("/api/pos-vendas/disparar-sva", async (req, res) => {
   }
 });
 
-app.post("/api/pos-vendas/:id", (req, res) => {
+function columnIndexToLetter(index: number): string {
+  let temp;
+  let letter = '';
+  while (index >= 0) {
+    temp = index % 26;
+    letter = String.fromCharCode(temp + 65) + letter;
+    index = Math.floor(index / 26) - 1;
+  }
+  return letter;
+}
+
+async function syncPosVendasToGoogleSheet(sheetName: string, rowIndexStr: string, clientRecord: any, updates: any) {
+  const spreadsheetId = "19U8KDUFQUhMOLPIniKCkUfGXZCBY7i3uFyjOQYU003w";
+  
+  try {
+    const sheets = getGoogleSheetsClient();
+    if (!sheets) {
+      console.warn(`[POS-VENDA SYNC] Credentials for Google Sheets API not configured.`);
+      return false;
+    }
+
+    let targetRowNumber = parseInt(rowIndexStr, 10) + 1;
+    if (isNaN(targetRowNumber) || targetRowNumber < 2) {
+      console.warn(`[POS-VENDA SYNC] Invalid row index: ${rowIndexStr}`);
+      return false;
+    }
+
+    // 1. Fetch header row to identify column locations
+    const headerRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `'${sheetName}'!A1:AZ1`
+    });
+    const headers = (headerRes.data.values && headerRes.data.values[0])
+      ? headerRes.data.values[0].map((h: any) => h ? h.toString().trim().toLowerCase() : "")
+      : [];
+
+    if (headers.length === 0) {
+      console.warn(`[POS-VENDA SYNC] Could not read headers for sheet '${sheetName}'.`);
+      return false;
+    }
+
+    const findHeaderIdx = (keywords: string[], defaultIdx: number = -1) => {
+      const idx = headers.findIndex((h: string) => keywords.some(k => h.includes(k)));
+      return idx >= 0 ? idx : defaultIdx;
+    };
+
+    const colMap: Record<string, number> = {
+      nome: findHeaderIdx(["nome", "cliente"]),
+      telefone: findHeaderIdx(["telefone", "celular", "contato", "whats"]),
+      cpf: findHeaderIdx(["cpf", "cnpj"]),
+      endereco: findHeaderIdx(["endereço", "endereco", "rua"]),
+      cidade: findHeaderIdx(["cidade", "municipio"]),
+      bairro: findHeaderIdx(["bairro"]),
+      dataInstalacao: findHeaderIdx(["instalação", "instalacao", "data inst"]),
+      plano: findHeaderIdx(["plano", "pacote"]),
+      rx_onu: findHeaderIdx(["rx onu", "atenuação rx onu", "atenuacao rx onu"]),
+      rx_olt: findHeaderIdx(["rx olt", "atenuação rx olt", "atenuacao rx olt"]),
+      cobrancaMes1: findHeaderIdx(["cobrança 1", "cobranca 1", "cobraça 1", "1° m", "1º m"]),
+      cobrancaMes2: findHeaderIdx(["cobrança 2", "cobranca 2", "cobraça 2", "2° m", "2º m"]),
+      cobrancaMes3: findHeaderIdx(["cobrança 3", "cobranca 3", "cobraça 3", "3° m", "3º m"]),
+      statusIndicacaoEnvio: findHeaderIdx(["indicação", "indicacao"], 18),
+      statusSva: findHeaderIdx(["oferta sva", "sva"], 20),
+      dataHoraIndicacao: findHeaderIdx(["indicação data", "indicacao data"], 25),
+      dataHoraSva: findHeaderIdx(["ofertas sva data", "sva data"], 26),
+      observacoes: findHeaderIdx(["observações", "observacao", "obs"])
+    };
+
+    // 2. Read existing row
+    const rowRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `'${sheetName}'!A${targetRowNumber}:AZ${targetRowNumber}`
+    });
+    let currentCells: string[] = (rowRes.data.values && rowRes.data.values[0])
+      ? rowRes.data.values[0].map((v: any) => v !== undefined && v !== null ? v.toString() : "")
+      : [];
+
+    const clientName = updates.nome || clientRecord?.nome;
+    if (clientName && colMap.nome >= 0 && currentCells[colMap.nome]) {
+      const currentName = currentCells[colMap.nome].trim().toLowerCase();
+      const targetName = clientName.trim().toLowerCase();
+      if (!currentName.includes(targetName) && !targetName.includes(currentName)) {
+        console.warn(`[POS-VENDA SYNC] Name mismatch at row ${targetRowNumber} ('${currentCells[colMap.nome]}' vs '${clientName}'). Searching sheet...`);
+        const namesRes = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: `'${sheetName}'!A1:Z1000`
+        });
+        const allRows = namesRes.data.values || [];
+        for (let r = 1; r < allRows.length; r++) {
+          const nameInRow = colMap.nome >= 0 ? allRows[r][colMap.nome] : allRows[r][1];
+          if (nameInRow && nameInRow.toString().trim().toLowerCase() === targetName) {
+            targetRowNumber = r + 1;
+            currentCells = allRows[r].map((v: any) => v !== undefined && v !== null ? v.toString() : "");
+            console.log(`[POS-VENDA SYNC] Found matching client '${clientName}' at row ${targetRowNumber}.`);
+            break;
+          }
+        }
+      }
+    }
+
+    const newValues: Record<string, string | undefined> = {
+      nome: updates.nome ?? clientRecord?.nome,
+      telefone: updates.telefone ?? clientRecord?.telefone,
+      cpf: updates.cpf ?? updates.checklist?.cpf ?? clientRecord?.cpf,
+      endereco: updates.endereco ?? clientRecord?.endereco,
+      cidade: updates.cidade ?? updates.checklist?.cidade ?? clientRecord?.cidade,
+      bairro: updates.bairro ?? updates.checklist?.bairro ?? clientRecord?.bairro,
+      dataInstalacao: updates.dataInstalacao ?? clientRecord?.dataInstalacao,
+      plano: updates.plano ?? clientRecord?.plano,
+      rx_onu: updates.rx_onu ?? updates.checklist?.atenuacaoRxOnu ?? clientRecord?.rx_onu,
+      rx_olt: updates.rx_olt ?? updates.checklist?.atenuacaoRxOlt ?? clientRecord?.rx_olt,
+      cobrancaMes1: updates.checklist?.cobrancaMes1 ?? clientRecord?.cobrancaMes1,
+      cobrancaMes2: updates.checklist?.cobrancaMes2 ?? clientRecord?.cobrancaMes2,
+      cobrancaMes3: updates.checklist?.cobrancaMes3 ?? clientRecord?.cobrancaMes3,
+      statusIndicacaoEnvio: updates.statusIndicacaoEnvio ?? clientRecord?.statusIndicacaoEnvio,
+      statusSva: updates.statusSva ?? clientRecord?.statusSva,
+      dataHoraIndicacao: updates.dataHoraIndicacao ?? clientRecord?.dataHoraIndicacao,
+      dataHoraSva: updates.dataHoraSva ?? clientRecord?.dataHoraSva,
+      observacoes: updates.observacoes ?? updates.checklist?.observacao ?? clientRecord?.observacoes
+    };
+
+    let maxIdx = Math.max(currentCells.length - 1, 27);
+    Object.values(colMap).forEach(idx => {
+      if (idx > maxIdx) maxIdx = idx;
+    });
+
+    while (currentCells.length <= maxIdx) {
+      currentCells.push("");
+    }
+
+    for (const [key, colIdx] of Object.entries(colMap)) {
+      if (colIdx >= 0 && newValues[key] !== undefined && newValues[key] !== null) {
+        currentCells[colIdx] = String(newValues[key]);
+      }
+    }
+
+    const endColLetter = columnIndexToLetter(currentCells.length - 1);
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `'${sheetName}'!A${targetRowNumber}:${endColLetter}${targetRowNumber}`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [currentCells] }
+    });
+
+    console.log(`[POS-VENDA SYNC] Successfully updated Google Sheet '${sheetName}' row ${targetRowNumber} for client '${clientName || targetRowNumber}'.`);
+    return true;
+  } catch (err: any) {
+    console.error(`[POS-VENDA SYNC] Error updating Google Sheet '${sheetName}':`, err.message);
+    return false;
+  }
+}
+
+app.post("/api/pos-vendas/:id", async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
   
@@ -3685,12 +3850,19 @@ app.post("/api/pos-vendas/:id", (req, res) => {
   
   writeJSONDb("posVendas.json", posVendasData);
   
-  // Enviar para webhook e Apps Script para manter sincronizado o espelho do Fechamento
+  // Direct Google Sheets API update
+  const sheetName = id.split("-").slice(0, -1).join("-");
+  const rowIndex = id.split("-").pop() || "1";
+
+  let sheetsSynced = false;
   try {
-    const sheetName = id.split("-").slice(0, -1).join("-");
-    const rowIndex = id.split("-").pop();
-    
-    // Prepara payload mapeando para os nomes exatos das colunas do Sheets
+    sheetsSynced = await syncPosVendasToGoogleSheet(sheetName, rowIndex, posVendasData[id], updates);
+  } catch (e: any) {
+    console.error("Erro na sincronização direta do Google Sheets:", e.message);
+  }
+
+  // Webhook e Apps Script
+  try {
     const mappedUpdates = {
       ...(updates.checklist || {}),
       "AÇÃO COBRAÇA 1° MES": updates.checklist?.cobrancaMes1,
@@ -3706,7 +3878,6 @@ app.post("/api/pos-vendas/:id", (req, res) => {
       "Bairro": updates.bairro || updates.checklist?.bairro || posVendasData[id]?.bairro
     };
 
-    // Tentativa 1: Webhook N8N para atualizar a planilha se existir
     const isTest = process.env.USE_N8N_TEST_POS_VENDA === "true";
     let webhookUrl = isTest 
       ? (process.env.N8N_TEST_POS_VENDA_WEBHOOK_URL || "http://localhost:5678/webhook-test/pos-venda") 
@@ -3726,7 +3897,6 @@ app.post("/api/pos-vendas/:id", (req, res) => {
       }).catch(e => console.error("Falha webhook posvenda sync:", e.message));
     }
 
-    // Tentativa 2: Apps Script direto
     if (process.env.APPS_SCRIPT_URL) {
       fetch(process.env.APPS_SCRIPT_URL, {
         method: "POST",
@@ -7191,14 +7361,22 @@ async function writeBaseClientToGoogleSheet(client: any) {
 
 
 function getGoogleSheetsClient() {
+  const { google } = require("googleapis");
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN) {
-    const { google } = require("googleapis");
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET
     );
     oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
     return google.sheets({ version: "v4", auth: oauth2Client });
+  }
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+    const auth = new google.auth.JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+    return google.sheets({ version: "v4", auth });
   }
   return null;
 }
