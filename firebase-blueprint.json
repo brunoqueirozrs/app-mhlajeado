@@ -173,6 +173,57 @@
           "condition": "true"
         }
       ]
+    },
+    {
+      "name": "atendimentos_sla",
+      "fields": [
+        {
+          "name": "id_atendimento",
+          "type": "string"
+        },
+        {
+          "name": "cliente_nome",
+          "type": "string"
+        },
+        {
+          "name": "cliente_telefone",
+          "type": "string"
+        },
+        {
+          "name": "atendente_nome",
+          "type": "string"
+        },
+        {
+          "name": "atendente_id",
+          "type": "string"
+        },
+        {
+          "name": "timestamp_ultima_mensagem_cliente",
+          "type": "timestamp"
+        },
+        {
+          "name": "status_resposta",
+          "type": "string"
+        },
+        {
+          "name": "timestamp_resposta",
+          "type": "timestamp"
+        },
+        {
+          "name": "alarme_disparado",
+          "type": "boolean"
+        },
+        {
+          "name": "timestamp_alarme",
+          "type": "timestamp"
+        }
+      ],
+      "rules": [
+        {
+          "allow": "read, write",
+          "condition": "true"
+        }
+      ]
     }
   ]
 }

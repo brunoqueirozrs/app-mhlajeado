@@ -8,7 +8,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Terminal, Database, CheckCircle, 
   Bot, Wifi, WifiOff, RefreshCw, LogOut, Loader2, Award, ClipboardList, 
   MapPin, Users, HelpCircle, Activity, Info, CalendarDays, BookOpen, User, Lock, Sparkles, Coins, Download, Sliders, Link, Calculator, Lightbulb, UserCheck, Store, FileSpreadsheet, Zap, Navigation
-, Archive, Search, X, FileText, Sun, Moon, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+, Archive, Search, X, FileText, Sun, Moon, MessageSquare, ChevronLeft, ChevronRight, BellRing } from 'lucide-react';
 
 import { 
   Vendor, Lead, Task, Absence, FttaItem, FttaProspeccao, Competitor, BaseClient, BaseActionLog, Cobranca, CobrancaLog, Installation 
@@ -111,7 +111,7 @@ export default function App() {
 
   // Navigation Trackings
   const [activeTab, setActiveTab] = useState<
-    "dashboard" | "rotinas" | "ramais_contatos" | "leads" | "cadastroLead" | "ftta" | "tasks" | "indicators" | "base" | "competitors" | "objections" | "absences" | "materials" | "cobrancas" | "vendedores" | "installations" | "installations_queue" | "admin_n8n" | "calculo_multa" | "planos" | "rotas" | "estrategia" | "kaizen" | "pos_venda" | "matriz_objecoes" | "trade" | "leads_frios" | "protocolos_internos" | "admin_logs" | "admin_tests" | "gestao_pessoas" | "database_central" | "atendimento_waha"
+    "dashboard" | "rotinas" | "ramais_contatos" | "leads" | "cadastroLead" | "ftta" | "tasks" | "indicators" | "base" | "competitors" | "objections" | "absences" | "materials" | "cobrancas" | "vendedores" | "installations" | "installations_queue" | "admin_n8n" | "calculo_multa" | "simulador_comissao" | "simulador" | "planos" | "rotas" | "estrategia" | "kaizen" | "pos_venda" | "matriz_objecoes" | "trade" | "leads_frios" | "protocolos_internos" | "admin_logs" | "admin_tests" | "gestao_pessoas" | "database_central" | "atendimento_waha"
   >("dashboard");
 
   const [leadsFilterSeller, setLeadsFilterSeller] = useState<string | null>(null);
@@ -1636,23 +1636,14 @@ export default function App() {
               </button>
 
               <button onClick={() => setActiveTab("atendimento_waha")}
-                title="Atendimento WAHA (CRM)"
-                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5 relative" : "justify-between px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
+                title="Alarmes SLA (WhatsApp)"
+                className={`w-full flex items-center ${isSidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"} rounded-xl text-xs font-semibold cursor-pointer transition ${
                   activeTab === "atendimento_waha" 
-                    ? "bg-gradient-to-r from-emerald-600 to-sky-600 text-white font-bold shadow-md shadow-emerald-900/20" 
+                    ? "bg-gradient-to-r from-amber-600 to-amber-500 text-white font-bold shadow-md shadow-amber-900/20" 
                     : "text-white hover:bg-slate-900"
                 }`}>
-                <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"}`}>
-                  <MessageSquare className="w-4 h-4 shrink-0 text-emerald-400" />
-                  {!isSidebarCollapsed && <span>Atendimento WAHA</span>}
-                </div>
-                {!isSidebarCollapsed ? (
-                  <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border border-emerald-500/30">
-                    CRM
-                  </span>
-                ) : (
-                  <span className="absolute top-1.5 right-2 w-2 h-2 bg-emerald-400 rounded-full border border-slate-950" title="CRM" />
-                )}
+                <BellRing className="w-4 h-4 shrink-0 text-amber-400 animate-pulse" />
+                {!isSidebarCollapsed && <span>Alarmes SLA (Evolution)</span>}
               </button>
 
               <button onClick={() => setActiveTab("rotinas")}
