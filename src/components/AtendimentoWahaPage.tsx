@@ -274,7 +274,7 @@ export function AtendimentoWahaPage({ loggedUser, userRole, theme = "dark" }: At
 
       {/* Main SLA View Area */}
       <div className="flex-1 w-full h-full relative overflow-hidden bg-slate-950">
-        <AtendimentoSlaPage theme={theme} />
+        <AtendimentoSlaPage theme={theme} loggedUser={loggedUser} userRole={userRole} />
       </div>
 
       {/* SLA n8n Integration Modal */}
